@@ -1,3 +1,114 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* ── ACTIA ES Brand Colors ──────────────────────────────── */
+:root {
+  --actia-navy:       #2e4a6b;
+  --actia-navy-dark:  #1e3450;
+  --actia-navy-light: #3d5f84;
+  --actia-green:      #4ab83f;
+  --actia-green-dark: #3a9a31;
+  --actia-green-light:#6dcc63;
+  --actia-bg:         #f0f3f6;
+  --actia-surface:    #ffffff;
+  --actia-border:     #dde4ec;
+  --actia-text:       #1e3452;
+  --actia-muted:      #6b82a0;
+}
+
+@layer base {
+  body {
+    background-color: var(--actia-bg);
+    color: var(--actia-text);
+    /* Inter — clean, readable, professional SaaS typeface */
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Better number rendering */
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Monospace stays as-is for doc codes */
+  .font-mono, [style*="fontFamily: \"monospace\""], [style*="font-family: monospace"] {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+    font-feature-settings: normal;
+  }
+
+  /* Smooth focus outline */
+  :focus-visible {
+    outline: 2px solid var(--actia-green);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--actia-bg); }
+  ::-webkit-scrollbar-thumb { background: var(--actia-border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--actia-muted); }
+}
+
+@layer components {
+  /* ── Primary button (ACTIA green) ──────────────── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background-color: var(--actia-green);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s, box-shadow 0.15s;
+    font-size: 0.875rem;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(74, 184, 63, 0.35);
+    font-family: inherit;
+    letter-spacing: -0.01em;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--actia-green-dark);
+    box-shadow: 0 4px 12px rgba(74, 184, 63, 0.4);
+  }
+
+  /* ── Secondary button (white/bordered) ─────────── */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background-color: #ffffff;
+    color: var(--actia-navy);
+    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--actia-border);
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+    font-size: 0.875rem;
+    text-decoration: none;
+    font-family: inherit;
+  }
+
+  .btn-secondary:hover {
+    background-color: #f0f3f6;
+    border-color: var(--actia-navy);
+  }
+
+  /* ── Card ──────────────────────────────────────── */
+  .card {
+    background-color: var(--actia-surface);
+    border-radius: 0.875rem;
+    box-shadow: 0 1px 4px rgba(46,74,107,0.07), 0 1px 2px rgba(46,74,107,0.05);
+    border: 1px solid var(--actia-border);
+    padding: 1.5rem;
+  }
+}

@@ -1,7 +1,7 @@
 const express = require("express");
-const router = express.Router();
-const { getProcessByFolder } = require("../controllers/processController");
+const router  = express.Router();
+const { getProcesses } = require("../controllers/processController");
 
-router.get("/by-folder/:folderId", getProcessByFolder);
+router.get("/", getProcesses);
 
 module.exports = router;
