@@ -1,119 +1,185 @@
-﻿// ============================================================
-// CreateDocument.jsx — ACTIA ES Brand Theme
 // ============================================================
-import { useEffect, useState } from "react";
+// CreateDocument.jsx — ACTIA ES · Dark Premium Design
+// Custom dropdowns — no white native select popups
+// ============================================================
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { NavLink } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import UserSelector from "../components/UserSelector";
+import AppSidebar from "../components/AppSidebar";
 import {
-  LuHouse, LuFilePlus, LuFileText, LuClipboardCheck, LuArchive,
   LuCircleAlert, LuCircleCheckBig, LuLock, LuUpload,
+  LuFileText, LuHash, LuTag, LuArrowRight, LuArrowLeft,
+  LuPlus, LuChevronDown, LuCheck, LuFolder,
 } from "react-icons/lu";
 
 const API = "http://localhost:4000/api";
 
-/* ── ACTIA colors ─────────────────────────────────────────── */
-const NAVY       = "#2e4a6b";
-const NAVY_DARK  = "#1e3450";
-const NAVY_LIGHT = "#3d5f84";
-const GREEN      = "#4ab83f";
-const GREEN_DARK = "#3a9a31";
-const BG         = "#f0f3f6";
-const BORDER     = "#dde4ec";
-const MUTED      = "#6b82a0";
-const SURFACE    = "#ffffff";
+/* ════════════════════════════════════════════════════════════
+   CUSTOM DARK DROPDOWN
+   Renders a fully-styled dark glass dropdown instead of
+   the browser-native <select> which always shows white.
+════════════════════════════════════════════════════════════ */
+function DarkSelect({ options = [], value, onChange, placeholder = "— Sélectionner —", disabled = false }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
 
-/* ── Nav config ───────────────────────────────────────────── */
-const NAV = [
-  { icon: LuHouse,           label: "Accueil",          href: "/",            end: true  },
-  { icon: LuFilePlus,       label: "Nouveau document", href: "/create",      end: false },
-  { icon: LuFileText,       label: "Liste documents",  href: "/list",        end: false },
-  { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
-  { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
-];
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-/* ── Small form helpers ───────────────────────────────────── */
-const inputStyle = {
-  width: "100%", background: BG, border: `1px solid ${BORDER}`,
-  borderRadius: 8, padding: "9px 14px", color: NAVY, fontSize: 13,
-  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-};
+  const selected = options.find(o => String(o.value) === String(value));
 
+  return (
+    <div ref={ref} className="relative w-full" style={{ zIndex: open ? 999 : "auto" }}>
+      {/* Trigger */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all text-left"
+        style={{
+          background:   disabled ? "rgba(255,255,255,0.02)" : open ? "rgba(74,184,63,0.08)" : "rgba(255,255,255,0.04)",
+          borderColor:  disabled ? "rgba(255,255,255,0.06)" : open ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.10)",
+          color:        disabled ? "rgba(168,191,212,0.3)" : selected ? "rgba(255,255,255,0.9)" : "rgba(168,191,212,0.45)",
+          cursor:       disabled ? "not-allowed" : "pointer",
+          boxShadow:    open ? "0 0 0 3px rgba(74,184,63,0.12)" : "none",
+          fontFamily:   "inherit",
+        }}
+      >
+        <span className="truncate">{selected ? selected.label : placeholder}</span>
+        <LuChevronDown
+          size={15}
+          style={{
+            color: "rgba(168,191,212,0.4)",
+            flexShrink: 0,
+            marginLeft: 8,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+          }}
+        />
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          className="absolute left-0 right-0 top-full mt-1.5 rounded-xl overflow-hidden"
+          style={{
+            background:   "rgba(13,31,48,0.98)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border:       "1px solid rgba(255,255,255,0.12)",
+            boxShadow:    "0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,184,63,0.08)",
+            maxHeight:    260,
+            overflowY:    "auto",
+            zIndex:       9999,
+          }}
+        >
+          {options.map((opt) => {
+            const isSelected = String(opt.value) === String(value);
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(String(opt.value)); setOpen(false); }}
+                className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-all border-none"
+                style={{
+                  background:   isSelected ? "rgba(74,184,63,0.12)" : "transparent",
+                  color:        isSelected ? "#4ab83f" : "rgba(168,191,212,0.85)",
+                  fontWeight:   isSelected ? 600 : 400,
+                  fontFamily:   "inherit",
+                  cursor:       "pointer",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                }}
+                onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; }}}
+                onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(168,191,212,0.85)"; }}}
+              >
+                <span>{opt.label}</span>
+                {isSelected && <LuCheck size={14} style={{ color: "#4ab83f", flexShrink: 0 }} />}
+              </button>
+            );
+          })}
+          {options.length === 0 && (
+            <div className="px-4 py-3 text-sm" style={{ color: "rgba(168,191,212,0.35)" }}>
+              Aucune option disponible
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Dark-themed Label ────────────────────────────────────── */
+function Label({ children }) {
+  return (
+    <label className="block text-xs uppercase tracking-wider font-semibold mb-1.5"
+      style={{ color: "rgba(168,191,212,0.6)" }}>
+      {children}
+    </label>
+  );
+}
+
+/* ── Dark-themed Input ────────────────────────────────────── */
 function I(props) {
   return (
-    <input style={inputStyle} {...props}
-      onFocus={(e) => e.target.style.borderColor = GREEN}
-      onBlur={(e)  => e.target.style.borderColor = BORDER}
+    <input
+      {...props}
+      className="w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        borderColor: "rgba(255,255,255,0.10)",
+        color: "rgba(255,255,255,0.85)",
+        fontFamily: "inherit",
+        ...(props.style || {}),
+      }}
+      onFocus={(e) => {
+        e.target.style.borderColor = "rgba(74,184,63,0.5)";
+        e.target.style.boxShadow   = "0 0 0 3px rgba(74,184,63,0.12)";
+        e.target.style.background  = "rgba(74,184,63,0.06)";
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        e.target.style.borderColor = "rgba(255,255,255,0.10)";
+        e.target.style.boxShadow   = "none";
+        e.target.style.background  = "rgba(255,255,255,0.04)";
+        props.onBlur?.(e);
+      }}
     />
   );
 }
 
-function S({ children, disabled, ...props }) {
-  return (
-    <select
-      style={{ ...inputStyle, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1 }}
-      disabled={disabled} {...props}>
-      {children}
-    </select>
-  );
-}
-
+/* ── Field wrapper ────────────────────────────────────────── */
 function F({ label, children }) {
   return (
-    <div>
-      <label style={{ display: "block", color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>
-        {label}
-      </label>
+    <div className="flex flex-col">
+      <Label>{label}</Label>
       {children}
     </div>
   );
 }
 
-function Card({ children }) {
-  return (
-    <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "22px 24px", boxShadow: "0 1px 4px rgba(46,74,107,0.06)" }}>
-      {children}
-    </div>
-  );
-}
-
+/* ── Section title ────────────────────────────────────────── */
 function STitle({ num, title }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-      <span style={{ color: GREEN, fontFamily: "monospace", fontSize: 11, fontWeight: 700 }}>{num}</span>
-      <h2 style={{ margin: 0, color: NAVY, fontWeight: 700, fontSize: 16 }}>{title}</h2>
-      <div style={{ flex: 1, height: 1, background: BORDER }} />
+    <div className="flex items-center gap-3 mb-6">
+      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg border"
+        style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f", borderColor:"rgba(74,184,63,0.3)" }}>
+        {num}
+      </span>
+      <h2 className="m-0 text-lg font-bold text-white tracking-tight">{title}</h2>
+      <div className="flex-1 h-px" style={{ background:"rgba(255,255,255,0.06)" }} />
     </div>
   );
 }
 
-function Btn({ onClick, children }) {
-  return (
-    <button type="button" onClick={onClick}
-      style={{ padding: "10px 22px", background: NAVY, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "0 2px 8px rgba(46,74,107,0.25)", transition: "all 0.15s" }}
-      onMouseEnter={(e) => e.currentTarget.style.background = NAVY_LIGHT}
-      onMouseLeave={(e) => e.currentTarget.style.background = NAVY}>
-      {children}
-    </button>
-  );
-}
-
-function BtnGhost({ onClick, children }) {
-  return (
-    <button type="button" onClick={onClick}
-      style={{ padding: "10px 22px", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.15s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = NAVY; e.currentTarget.style.color = NAVY; }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = MUTED; }}>
-      {children}
-    </button>
-  );
-}
-
-/* ── Main component ───────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════ */
 export default function CreateDocument() {
   const { can } = useUser();
-  const [types, setTypes] = useState([]);
+
+  const [types,  setTypes]  = useState([]);
   const [level1, setLevel1] = useState([]);
   const [level2, setLevel2] = useState([]);
   const [level3, setLevel3] = useState([]);
@@ -123,443 +189,454 @@ export default function CreateDocument() {
   const [selectedL3, setSelectedL3] = useState("");
 
   const [form, setForm] = useState({
-    title: "", responsible: "", nextReviewDate: "",
-    typeCode: "", origin: "INTERNE", context: "", keywords: "", userId: "1",
+    title:"", responsible:"", nextReviewDate:"",
+    typeCode:"", origin:"INTERNE", context:"", keywords:"", userId:"1",
   });
 
-  const [file, setFile] = useState(null);
+  const [file,    setFile]    = useState(null);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step,    setStep]    = useState(1);
 
   useEffect(() => {
     Promise.all([axios.get(`${API}/types`), axios.get(`${API}/folders/level/1`)])
       .then(([t, l1]) => { setTypes(t.data); setLevel1(l1.data); })
-      .catch(() => setError("Erreur chargement données."));
+      .catch(() => setError("Erreur lors du chargement des données."));
   }, []);
 
   useEffect(() => {
     setSelectedL2(""); setSelectedL3(""); setLevel2([]); setLevel3([]);
     if (!selectedL1) return;
-    axios.get(`${API}/folders/children/${selectedL1}`).then((r) => setLevel2(r.data));
+    axios.get(`${API}/folders/children/${selectedL1}`).then(r => setLevel2(r.data));
   }, [selectedL1]);
 
   useEffect(() => {
     setSelectedL3(""); setLevel3([]);
     if (!selectedL2) return;
-    axios.get(`${API}/folders/children/${selectedL2}`).then((r) => setLevel3(r.data));
+    axios.get(`${API}/folders/children/${selectedL2}`).then(r => setLevel3(r.data));
   }, [selectedL2]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const getFolderId  = () => selectedL3 || selectedL2 || selectedL1 || "";
   const getProcessId = () => selectedL3 || selectedL2 || "";
 
-  const getSelectedProcess = () => {
-    const id = parseInt(getProcessId());
-    return [...level3, ...level2].find((p) => p.id === id);
-  };
-
   const getPreview = () => {
-    const p = getSelectedProcess();
+    const p = [...level3, ...level2].find(p => p.id === parseInt(getProcessId()));
     return form.typeCode && p ? `${form.typeCode.toUpperCase()}-${p.code}-XXXX` : null;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError(""); setMessage("");
 
     const missing = [];
-    if (!form.title)         missing.push("Titre");
-    if (!form.responsible)   missing.push("Responsable");
-    if (!form.nextReviewDate)missing.push("Date de revue");
-    if (!form.typeCode)      missing.push("Type");
-    if (!selectedL1)         missing.push("Processus stratégique");
-    if (!selectedL2)         missing.push("Processus principal");
-    if (!file)               missing.push("Fichier");
-
-    if (missing.length > 0) { setError(`Champs manquants : ${missing.join(" · ")}`); return; }
+    if (!form.title)          missing.push("Titre");
+    if (!form.responsible)    missing.push("Responsable");
+    if (!form.nextReviewDate) missing.push("Date de revue");
+    if (!form.typeCode)       missing.push("Type");
+    if (!selectedL1)          missing.push("Processus stratégique");
+    if (!selectedL2)          missing.push("Processus principal");
+    if (!file)                missing.push("Fichier");
+    if (missing.length)       { setError(`Champs obligatoires : ${missing.join(" · ")}`); return; }
 
     setLoading(true);
     try {
       const fd = new FormData();
-      fd.append("title", form.title);
-      fd.append("responsible", form.responsible);
+      fd.append("title",          form.title);
+      fd.append("responsible",    form.responsible);
       fd.append("nextReviewDate", form.nextReviewDate);
-      fd.append("typeCode", form.typeCode);
-      fd.append("folderId", getFolderId());
-      fd.append("processId", getProcessId());
-      fd.append("origin", form.origin);
-      if (form.context)  fd.append("context", form.context);
+      fd.append("typeCode",       form.typeCode);
+      fd.append("folderId",       getFolderId());
+      fd.append("processId",      getProcessId());
+      fd.append("origin",         form.origin);
+      if (form.context)  fd.append("context",  form.context);
       if (form.keywords) fd.append("keywords", form.keywords);
       fd.append("userId", form.userId);
-      fd.append("file", file);
+      fd.append("file",   file);
 
-      const res = await axios.post(`${API}/documents`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
+      const res = await axios.post(`${API}/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       setMessage(res.data.document.doc_code);
-      setForm({ title: "", responsible: "", nextReviewDate: "", typeCode: "", origin: "INTERNE", context: "", keywords: "", userId: "1" });
-      setFile(null);
-      setSelectedL1(""); setSelectedL2(""); setSelectedL3("");
-      setStep(1);
+      setForm({ title:"", responsible:"", nextReviewDate:"", typeCode:"", origin:"INTERNE", context:"", keywords:"", userId:"1" });
+      setFile(null); setSelectedL1(""); setSelectedL2(""); setSelectedL3(""); setStep(1);
       document.getElementById("fileInput").value = "";
     } catch (err) {
-      setError(err.response?.data?.error || "Erreur serveur.");
+      setError(err.response?.data?.error || "Erreur lors de l'enregistrement.");
     } finally {
       setLoading(false);
     }
   };
 
+  const preview = getPreview();
+
+  /* ── Sidebar step nav ───────────────────────────────────── */
   const STEPS = [
-    { num: "01", label: "Informations", n: 1 },
-    { num: "02", label: "Classification", n: 2 },
-    { num: "03", label: "Fichier", n: 3 },
+    { num: "01", icon: LuFileText, label: "Informations",   n: 1 },
+    { num: "02", icon: LuFolder,   label: "Classification", n: 2 },
+    { num: "03", icon: LuUpload,   label: "Fichier",        n: 3 },
   ];
 
+  const sidebarMiddle = (
+    <div className="px-3 pt-2 pb-4 flex flex-col gap-1.5">
+      <p className="text-[10px] uppercase tracking-[1px] font-bold px-1 mb-2"
+        style={{ color:"rgba(168,191,212,0.45)" }}>Étapes de création</p>
+      {STEPS.map(({ num, icon: StepIcon, label, n }) => (
+        <button key={n} type="button" onClick={() => setStep(n)}
+          className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl text-sm transition-all border-l-4 border-none
+            ${step===n
+              ? "bg-[rgba(74,184,63,0.12)] text-[#4ab83f] border-l-[#4ab83f] font-semibold"
+              : "text-[rgba(168,191,212,0.7)] border-l-transparent hover:bg-[rgba(255,255,255,0.04)]"
+            }`}
+          style={{ fontFamily:"inherit", cursor:"pointer" }}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all
+            ${step===n
+              ? "border-[#4ab83f] bg-[rgba(74,184,63,0.18)] text-[#4ab83f]"
+              : "border-[rgba(255,255,255,0.12)] text-[rgba(168,191,212,0.5)]"
+            }`}>{num}</span>
+          <div className="flex items-center gap-2">
+            <StepIcon size={14} className="text-[rgba(168,191,212,0.5)]" />
+            <span>{label}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
+  const sidebarBottom = (
+    <>
+      {preview && (
+        <div className="rounded-xl px-4 py-3.5 border mb-4"
+          style={{ background:"rgba(74,184,63,0.08)", borderColor:"rgba(74,184,63,0.25)" }}>
+          <p className="text-[10px] uppercase tracking-[1px] mb-1.5 font-semibold"
+            style={{ color:"rgba(168,191,212,0.5)" }}>Référence prévisionnelle</p>
+          <p className="font-mono font-bold text-lg tracking-wide m-0 text-[#4ab83f]">{preview}</p>
+        </div>
+      )}
+      <div className="rounded-xl px-4 py-3.5 border"
+        style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.09)" }}>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>Statut</span>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+            style={{ background:"rgba(251,146,60,0.12)", color:"#fb923c", border:"1px solid rgba(251,146,60,0.3)" }}>
+            Brouillon
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>Version</span>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+            style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f", border:"1px solid rgba(74,184,63,0.3)" }}>
+            —
+          </span>
+        </div>
+      </div>
+    </>
+  );
+
+  /* ── Option helpers ─────────────────────────────────────── */
+  const typeOptions = types.map(t => ({ value: t.code, label: `${t.code} — ${t.label}` }));
+
+  const originOptions = [
+    { value:"INTERNE", label:"Interne" },
+    { value:"EXTERNE", label:"Externe" },
+  ];
+
+  const contextOptions = [
+    { value:"",                label:"— Optionnel —" },
+    { value:"PROCESSUS",       label:"Processus" },
+    { value:"PROJET",          label:"Projet" },
+    { value:"SYSTEME_QUALITE", label:"Système Qualité" },
+    { value:"SUPPORT",         label:"Support" },
+  ];
+
+  const level1Options = level1.map(f => ({ value: String(f.id), label: f.name }));
+  const level2Options = level2.map(f => ({ value: String(f.id), label: f.name }));
+  const level3Options = level3.map(f => ({ value: String(f.id), label: f.name }));
+
   return (
-    <div style={{ minHeight: "100vh", background: BG, display: "flex" }}>
+    <div className="min-h-screen flex"
+      style={{ background:"linear-gradient(145deg, #0a1420 0%, #0f1e30 35%, #1a2f4a 70%, #1e3a55 100%)" }}>
 
-      {/* ── SIDEBAR ──────────────────────────────────────────── */}
-      <aside style={{ width: 220, background: NAVY_DARK, borderRight: `1px solid ${NAVY_LIGHT}`, display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+      <AppSidebar middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
 
-        {/* ACTIA Logo */}
-        <div style={{ padding: "20px 16px 16px", borderBottom: `1px solid ${NAVY_LIGHT}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ display: "flex", gap: 2, padding: 6, background: NAVY, borderRadius: 8 }}>
-              {[...Array(3)].map((_, i) => (
-                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {[...Array(3)].map((_, j) => (
-                    <div key={j} style={{ width: 4, height: 4, borderRadius: 1, background: GREEN, opacity: (i + j) % 2 === 0 ? 1 : 0.5 }} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                <span style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: 1.5 }}>ACTIA</span>
-                <span style={{ color: GREEN, fontWeight: 700, fontSize: 10, letterSpacing: 1 }}>ES</span>
-              </div>
-              <p style={{ color: MUTED, fontSize: 9, margin: 0, letterSpacing: 0.5 }}>Engineering Services · GED</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main navigation */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 10px" }}>
-          {NAV.map((navItem) => {
-            const NavIcon = navItem.icon;
-            return (
-              <NavLink key={navItem.href} to={navItem.href} end={navItem.end}
-                style={({ isActive }) => ({
-                  display: "flex", alignItems: "center", gap: 9,
-                  padding: "9px 12px", borderRadius: 8, textDecoration: "none",
-                  fontSize: 13, fontWeight: isActive ? 600 : 400,
-                  color: isActive ? GREEN : "#a8bfd4",
-                  background: isActive ? "rgba(74,184,63,0.1)" : "transparent",
-                  borderLeft: isActive ? `3px solid ${GREEN}` : "3px solid transparent",
-                  transition: "all 0.15s",
-                })}>
-                <NavIcon size={16} style={{ flexShrink: 0 }} />
-                {navItem.label}
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Step navigator */}
-        <div style={{ padding: "4px 10px 8px", borderTop: `1px solid ${NAVY_LIGHT}` }}>
-          <p style={{ color: MUTED, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, fontWeight: 700, margin: "10px 2px 6px" }}>Étapes</p>
-          {STEPS.map(({ num, label, n }) => (
-            <button key={n} type="button" onClick={() => setStep(n)}
-              style={{
-                display: "flex", alignItems: "center", gap: 9,
-                width: "100%", padding: "8px 12px", borderRadius: 8, marginBottom: 2,
-                border: "none", cursor: "pointer", textAlign: "left",
-                background: step === n ? "rgba(74,184,63,0.1)" : "transparent",
-                color: step === n ? GREEN : "#a8bfd4",
-                fontWeight: step === n ? 600 : 400, fontSize: 13,
-                borderLeft: step === n ? `3px solid ${GREEN}` : "3px solid transparent",
-                transition: "all 0.15s",
-              }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-                border: `1.5px solid ${step === n ? GREEN : NAVY_LIGHT}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 700,
-                color: step === n ? GREEN : "#a8bfd4",
-                background: step === n ? "rgba(74,184,63,0.15)" : "transparent",
-              }}>
-                {num}
-              </span>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Preview + status */}
-        <div style={{ marginTop: "auto", padding: "12px 10px", borderTop: `1px solid ${NAVY_LIGHT}`, display: "flex", flexDirection: "column", gap: 8 }}>
-          {getPreview() && (
-            <div style={{ background: "rgba(74,184,63,0.1)", border: "1px solid rgba(74,184,63,0.25)", borderRadius: 10, padding: "10px 12px" }}>
-              <p style={{ color: MUTED, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Référence</p>
-              <p style={{ color: GREEN, fontFamily: "monospace", fontWeight: 700, fontSize: 12, wordBreak: "break-all", margin: 0 }}>{getPreview()}</p>
-            </div>
-          )}
-
-          <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${NAVY_LIGHT}`, borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <span style={{ color: MUTED, fontSize: 11 }}>Statut</span>
-              <span style={{ background: "rgba(217,119,6,0.2)", color: "#fbbf24", fontSize: 10, padding: "2px 8px", borderRadius: 99, fontWeight: 600, border: "1px solid rgba(217,119,6,0.3)" }}>
-                Brouillon
-              </span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: MUTED, fontSize: 11 }}>Version</span>
-              <span style={{ background: "rgba(74,184,63,0.15)", color: GREEN, fontSize: 10, padding: "2px 8px", borderRadius: 99, fontWeight: 600, border: "1px solid rgba(74,184,63,0.3)" }}>
-                —
-              </span>
-            </div>
-          </div>
-
-          <UserSelector />
-        </div>
-      </aside>
-
-      {/* ── MAIN ─────────────────────────────────────────────── */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <main className="flex-1 flex flex-col min-w-0">
 
         {/* Header */}
-        <header style={{ padding: "14px 36px", background: SURFACE, borderBottom: `1px solid ${BORDER}`, boxShadow: "0 1px 4px rgba(46,74,107,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <header className="flex items-center justify-between px-8 py-4 border-b"
+          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-              <span style={{ display: "inline-block", width: 3, height: 18, background: GREEN, borderRadius: 99 }} />
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: NAVY }}>Nouveau Document</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-1 h-5 rounded-full" style={{ background:"#4ab83f" }} />
+              <h1 className="m-0 text-2xl font-bold text-white">Nouveau Document</h1>
             </div>
-            <p style={{ margin: 0, fontSize: 11, color: MUTED }}>EF01 · EF02 · EF03 · EF04</p>
+            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.55)" }}>
+              Création · EF01 · EF02 · EF03 · EF04
+            </p>
           </div>
-
-          {/* Step dots */}
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {[1, 2, 3].map((n) => (
+          <div className="flex gap-2 items-center">
+            {[1,2,3].map(n => (
               <button key={n} type="button" onClick={() => setStep(n)}
-                style={{ height: 6, width: step === n ? 24 : 6, borderRadius: 99, border: "none", cursor: "pointer", background: step === n ? GREEN : BORDER, transition: "all 0.2s" }}
-              />
+                className={`h-1.5 rounded-full transition-all duration-200 border-none cursor-pointer
+                  ${step===n ? "w-8 bg-[#4ab83f]" : "w-1.5 bg-[rgba(255,255,255,0.12)]"}`} />
             ))}
           </div>
         </header>
 
-        <div style={{ flex: 1, padding: "32px 36px", overflowY: "auto" }}>
+        <div className="flex-1 px-8 py-6 overflow-y-auto">
 
-          {/* Access denied */}
           {!can("document:create") && (
-            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 14, padding: 32, textAlign: "center", marginBottom: 24 }}>
-              <LuLock size={36} style={{ color: "#dc2626", marginBottom: 12 }} />
-              <p style={{ color: "#dc2626", fontWeight: 700, fontSize: 16, margin: "0 0 8px" }}>Accès refusé</p>
-              <p style={{ color: MUTED, fontSize: 13, margin: 0 }}>
-                La création de documents est réservée aux rôles : Rédacteur, Responsable Qualité, Admin GED.<br />
-                Sélectionnez un utilisateur autorisé dans la barre latérale.
+            <div className="rounded-2xl p-8 text-center border mb-6"
+              style={{ background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.25)" }}>
+              <LuLock size={40} className="mx-auto mb-4" style={{ color:"#f87171" }} />
+              <p className="text-lg font-bold text-[#f87171] m-0 mb-2">Accès refusé</p>
+              <p style={{ color:"rgba(168,191,212,0.7)" }}>
+                Seuls les rôles Rédacteur, Responsable Qualité et Admin GED peuvent créer des documents.
               </p>
             </div>
           )}
 
-          {/* Error */}
           {error && (
-            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", padding: "12px 16px", borderRadius: 10, marginBottom: 24, fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <LuCircleAlert size={15} style={{ flexShrink: 0 }} /><span>{error}</span>
+            <div className="flex items-start gap-3 rounded-xl px-5 py-3.5 mb-6 border"
+              style={{ background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.25)", color:"#f87171" }}>
+              <LuCircleAlert size={20} className="mt-0.5 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
             </div>
           )}
 
-          {/* Success */}
           {message && (
-            <div style={{ background: "#f0fdf4", border: "1px solid #86efac", color: "#15803d", padding: "12px 16px", borderRadius: 10, marginBottom: 24, fontSize: 13, display: "flex", alignItems: "center", gap: 12 }}>
-              <LuCircleCheckBig size={18} style={{ color: "#15803d", flexShrink: 0 }} />
+            <div className="flex items-center gap-3 rounded-xl px-5 py-3.5 mb-6 border"
+              style={{ background:"rgba(74,184,63,0.12)", borderColor:"rgba(74,184,63,0.3)", color:"#4ab83f" }}>
+              <LuCircleCheckBig size={22} className="flex-shrink-0" />
               <div>
-                <p style={{ margin: 0, fontWeight: 600 }}>Document créé avec succès</p>
-                <p style={{ margin: "2px 0 0", fontFamily: "monospace", fontSize: 12, color: GREEN_DARK }}>{message}</p>
+                <p className="m-0 font-semibold text-base">Document créé avec succès</p>
+                <p className="m-0 mt-1 font-mono text-lg tracking-wide">{message}</p>
               </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ maxWidth: 680, opacity: can("document:create") ? 1 : 0.3, pointerEvents: can("document:create") ? "auto" : "none" }}>
+          <form onSubmit={handleSubmit}
+            style={{
+              opacity: can("document:create") ? 1 : 0.35,
+              pointerEvents: can("document:create") ? "auto" : "none",
+              maxWidth: 720,
+            }}>
 
-            {/* ── Step 1: Informations ── */}
+            {/* ── STEP 1 ──────────────────────────────────── */}
             {step === 1 && (
               <div>
-                <STitle num="01" title="Informations document" />
-                <Card>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                    <div style={{ gridColumn: "1 / -1" }}>
+                <STitle num="01" title="Informations du document" />
+                <div className="rounded-2xl border p-6 mb-6"
+                  style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)" }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div className="md:col-span-2">
                       <F label="Titre du document *">
-                        <I name="title" value={form.title} onChange={handleChange} placeholder="Ex: Procédure de conception mécanique" />
+                        <I name="title" value={form.title} onChange={handleChange}
+                          placeholder="Ex : Procédure de contrôle qualité" />
                       </F>
                     </div>
 
                     <F label="Responsable *">
-                      <I name="responsible" value={form.responsible} onChange={handleChange} placeholder="Nom du responsable" />
+                      <I name="responsible" value={form.responsible} onChange={handleChange}
+                        placeholder="Nom et prénom" />
                     </F>
 
-                    <F label="Date prochaine revue *">
+                    <F label="Prochaine revue *">
                       <I type="date" name="nextReviewDate" value={form.nextReviewDate} onChange={handleChange} />
                     </F>
 
                     <F label="Type documentaire *">
-                      <S name="typeCode" value={form.typeCode} onChange={handleChange}>
-                        <option value="">-- Choisir --</option>
-                        {types.map((t) => (
-                          <option key={t.id} value={t.code}>{t.code} — {t.label}</option>
-                        ))}
-                      </S>
+                      <DarkSelect
+                        options={typeOptions}
+                        value={form.typeCode}
+                        onChange={v => setForm(f => ({ ...f, typeCode: v }))}
+                        placeholder="— Sélectionner un type —"
+                      />
                     </F>
 
                     <F label="Origine">
-                      <S name="origin" value={form.origin} onChange={handleChange}>
-                        <option value="INTERNE">Interne</option>
-                        <option value="EXTERNE">Externe</option>
-                      </S>
+                      <DarkSelect
+                        options={originOptions}
+                        value={form.origin}
+                        onChange={v => setForm(f => ({ ...f, origin: v }))}
+                      />
                     </F>
 
                     <F label="Contexte">
-                      <S name="context" value={form.context} onChange={handleChange}>
-                        <option value="">— Optionnel —</option>
-                        <option value="PROCESSUS">Processus</option>
-                        <option value="PROJET">Projet</option>
-                        <option value="SYSTEME_QUALITE">Système Qualité</option>
-                        <option value="SUPPORT">Support</option>
-                        <option value="ARCHIVES">Archives</option>
-                      </S>
+                      <DarkSelect
+                        options={contextOptions}
+                        value={form.context}
+                        onChange={v => setForm(f => ({ ...f, context: v }))}
+                        placeholder="— Optionnel —"
+                      />
                     </F>
 
-                    <div style={{ gridColumn: "1 / -1" }}>
+                    <div className="md:col-span-2">
                       <F label="Mots-clés (séparés par virgule)">
-                        <I name="keywords" value={form.keywords} onChange={handleChange} placeholder="qualité, iso, conception..." />
+                        <div className="relative">
+                          <LuTag size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2"
+                            style={{ color:"rgba(168,191,212,0.5)" }} />
+                          <I name="keywords" value={form.keywords} onChange={handleChange}
+                            placeholder="iso9001, audit, conception, ..."
+                            style={{ paddingLeft:"2.5rem" }} />
+                        </div>
                       </F>
                     </div>
                   </div>
-                </Card>
+                </div>
 
-                <div style={{ marginTop: 20 }}>
-                  <Btn onClick={() => setStep(2)}>Classification →</Btn>
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => setStep(2)}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white border-none cursor-pointer"
+                    style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)", fontFamily:"inherit" }}>
+                    Suivant : Classification <LuArrowRight size={15} />
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* ── Step 2: Classification ── */}
+            {/* ── STEP 2 ──────────────────────────────────── */}
             {step === 2 && (
               <div>
                 <STitle num="02" title="Classification ACTIA ES" />
-                <Card>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="rounded-2xl border p-6 mb-6"
+                  style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)" }}>
+                  <div className="flex flex-col gap-5">
+
                     <F label="Processus stratégique *">
-                      <S value={selectedL1} onChange={(e) => setSelectedL1(e.target.value)}>
-                        <option value="">-- Choisir --</option>
-                        {level1.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                      </S>
+                      <DarkSelect
+                        options={level1Options}
+                        value={selectedL1}
+                        onChange={setSelectedL1}
+                        placeholder="— Sélectionner —"
+                      />
                     </F>
 
                     <F label="Processus principal *">
-                      <S value={selectedL2} disabled={!selectedL1} onChange={(e) => setSelectedL2(e.target.value)}>
-                        <option value="">-- Choisir --</option>
-                        {level2.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                      </S>
+                      <DarkSelect
+                        options={level2Options}
+                        value={selectedL2}
+                        onChange={setSelectedL2}
+                        placeholder={selectedL1 ? "— Sélectionner —" : "Sélectionnez d'abord un processus stratégique"}
+                        disabled={!selectedL1}
+                      />
                     </F>
 
                     <F label="Sous-processus (optionnel)">
-                      <S value={selectedL3} disabled={!selectedL2 || !level3.length} onChange={(e) => setSelectedL3(e.target.value)}>
-                        <option value="">-- Choisir --</option>
-                        {level3.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                      </S>
+                      <DarkSelect
+                        options={level3Options}
+                        value={selectedL3}
+                        onChange={setSelectedL3}
+                        placeholder={!selectedL2 ? "Sélectionnez d'abord un processus principal" : level3.length === 0 ? "Aucun sous-processus disponible" : "— Optionnel —"}
+                        disabled={!selectedL2 || level3.length === 0}
+                      />
                     </F>
 
-                    {getPreview() && (
-                      <div style={{ background: "rgba(74,184,63,0.07)", border: "1px solid rgba(74,184,63,0.3)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ width: 40, height: 40, background: "rgba(74,184,63,0.15)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <span style={{ color: GREEN, fontWeight: 900, fontSize: 18 }}>#</span>
+                    {preview && (
+                      <div className="mt-3 p-5 rounded-xl flex items-center gap-4 border"
+                        style={{ background:"rgba(74,184,63,0.07)", borderColor:"rgba(74,184,63,0.3)" }}>
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center border"
+                          style={{ background:"rgba(74,184,63,0.15)", borderColor:"rgba(74,184,63,0.35)" }}>
+                          <LuHash size={22} style={{ color:"#4ab83f" }} />
                         </div>
                         <div>
-                          <p style={{ color: MUTED, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 2px" }}>Référence générée</p>
-                          <p style={{ color: GREEN, fontFamily: "monospace", fontWeight: 700, fontSize: 20, letterSpacing: 2, margin: 0 }}>{getPreview()}</p>
+                          <p className="text-xs uppercase tracking-wider mb-1" style={{ color:"rgba(168,191,212,0.5)" }}>
+                            Référence générée
+                          </p>
+                          <p className="font-mono font-bold text-2xl tracking-wider m-0 text-[#4ab83f]">{preview}</p>
                         </div>
                       </div>
                     )}
                   </div>
-                </Card>
+                </div>
 
-                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                  <BtnGhost onClick={() => setStep(1)}>← Retour</BtnGhost>
-                  <Btn onClick={() => setStep(3)}>Fichier →</Btn>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setStep(1)}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer border-none"
+                    style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
+                    <LuArrowLeft size={15} /> Retour
+                  </button>
+                  <button type="button" onClick={() => setStep(3)}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white border-none cursor-pointer"
+                    style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)", fontFamily:"inherit" }}>
+                    Suivant : Fichier <LuArrowRight size={15} />
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* ── Step 3: File upload ── */}
+            {/* ── STEP 3 ──────────────────────────────────── */}
             {step === 3 && (
               <div>
                 <STitle num="03" title="Upload du fichier" />
 
                 <label htmlFor="fileInput"
-                  style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    height: 160, borderRadius: 14, marginBottom: 20, cursor: "pointer", transition: "all 0.2s",
-                    border: `2px dashed ${file ? GREEN : BORDER}`,
-                    background: file ? "rgba(74,184,63,0.06)" : SURFACE,
-                  }}>
+                  className={`flex flex-col items-center justify-center h-44 rounded-2xl mb-6 cursor-pointer border-2 border-dashed transition-all
+                    ${file
+                      ? "border-[#4ab83f] bg-[rgba(74,184,63,0.06)]"
+                      : "border-[rgba(255,255,255,0.12)] hover:border-[rgba(74,184,63,0.4)] hover:bg-[rgba(74,184,63,0.03)]"
+                    }`}>
                   {file ? (
-                    <div style={{ textAlign: "center", padding: "0 16px" }}>
-                      <LuFileText size={36} style={{ color: GREEN, marginBottom: 6 }} />
-                      <p style={{ color: GREEN_DARK, fontWeight: 600, fontSize: 13, margin: 0 }}>{file.name}</p>
-                      <p style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>
-                        {(file.size / 1024).toFixed(1)} KB · Cliquer pour changer
+                    <div className="text-center px-6">
+                      <LuFileText size={44} className="mx-auto mb-3" style={{ color:"#4ab83f" }} />
+                      <p className="text-base font-semibold m-0 text-white">{file.name}</p>
+                      <p className="text-xs mt-1.5" style={{ color:"rgba(168,191,212,0.6)" }}>
+                        {(file.size/1024/1024).toFixed(2)} Mo · Cliquer pour changer
                       </p>
                     </div>
                   ) : (
-                    <div style={{ textAlign: "center", padding: "0 16px" }}>
-                      <LuUpload size={40} style={{ color: MUTED, marginBottom: 8, opacity: 0.5 }} />
-                      <p style={{ color: NAVY, fontWeight: 500, fontSize: 13, margin: 0 }}>Cliquer ou déposer votre fichier</p>
-                      <p style={{ color: MUTED, fontSize: 11, marginTop: 4 }}>PDF ou DOCX · Max 50 MB</p>
+                    <div className="text-center px-6">
+                      <LuUpload size={44} className="mx-auto mb-3" style={{ color:"rgba(168,191,212,0.4)" }} />
+                      <p className="text-base font-medium m-0 text-white">Déposer ou cliquer pour uploader</p>
+                      <p className="text-xs mt-1.5" style={{ color:"rgba(168,191,212,0.55)" }}>PDF, DOCX · Max 50 Mo</p>
                     </div>
                   )}
                   <input id="fileInput" type="file" accept=".pdf,.docx"
-                    onChange={(e) => setFile(e.target.files[0])} style={{ display: "none" }} />
+                    onChange={e => setFile(e.target.files?.[0] || null)} className="hidden" />
                 </label>
 
-                <Card>
-                  <p style={{ color: MUTED, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginBottom: 16, fontWeight: 700 }}>Récapitulatif</p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {/* Summary */}
+                <div className="rounded-2xl border p-6 mb-6"
+                  style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)" }}>
+                  <p className="text-xs uppercase tracking-wider font-semibold mb-4"
+                    style={{ color:"rgba(168,191,212,0.55)" }}>Récapitulatif</p>
+                  <div className="space-y-3">
                     {[
-                      ["Titre",     form.title || "—",    false],
-                      ["Type",      form.typeCode || "—", false],
-                      ["Origine",   form.origin,          false],
-                      ["Référence", getPreview() || "—",  true ],
-                      ["Statut",    "Brouillon",          false],
-                      ["Version",   "—",                  false],
-                      ["Fichier",   file ? file.name : "—", false],
-                    ].map(([label, value, hl]) => (
-                      <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>
-                        <span style={{ color: MUTED, fontSize: 12 }}>{label}</span>
-                        <span style={{ color: hl ? GREEN : NAVY, fontFamily: hl ? "monospace" : "inherit", fontWeight: hl ? 700 : 400, fontSize: hl ? 14 : 12 }}>
-                          {value}
+                      ["Titre",    form.title    || "—"],
+                      ["Type",     form.typeCode || "—"],
+                      ["Origine",  form.origin],
+                      ["Référence",preview       || "—"],
+                      ["Fichier",  file?.name    || "—"],
+                    ].map(([label, value], i) => (
+                      <div key={i} className="flex justify-between items-center py-2 border-b last:border-0"
+                        style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+                        <span style={{ color:"rgba(168,191,212,0.7)" }}>{label}</span>
+                        <span className="font-medium text-white">
+                          {label === "Référence" && preview
+                            ? <span className="font-mono text-[#4ab83f]">{value}</span>
+                            : value}
                         </span>
                       </div>
                     ))}
                   </div>
-                </Card>
+                </div>
 
-                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                  <BtnGhost onClick={() => setStep(2)}>← Retour</BtnGhost>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setStep(2)}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-none"
+                    style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
+                    <LuArrowLeft size={15} /> Retour
+                  </button>
                   <button type="submit" disabled={loading}
+                    className={`flex-1 py-3 rounded-xl text-base font-semibold flex items-center justify-center gap-2 transition-all border-none
+                      ${loading ? "cursor-not-allowed" : "cursor-pointer"}`}
                     style={{
-                      flex: 1, padding: "12px 24px", borderRadius: 9, border: "none",
-                      background: loading ? BG : GREEN, color: loading ? MUTED : "#fff",
-                      cursor: loading ? "not-allowed" : "pointer",
-                      fontWeight: 700, fontSize: 14,
-                      boxShadow: loading ? "none" : "0 4px 14px rgba(74,184,63,0.4)",
-                      transition: "all 0.15s",
-                    }}
-                    onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = GREEN_DARK; }}
-                    onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = GREEN; }}>
-                    {loading ? "Enregistrement..." : "Enregistrer le document"}
+                      background: loading ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#4ab83f,#3da333)",
+                      color:      loading ? "rgba(168,191,212,0.5)" : "white",
+                      boxShadow:  loading ? "none" : "0 4px 16px rgba(74,184,63,0.35)",
+                      fontFamily: "inherit",
+                    }}>
+                    {loading ? "Enregistrement en cours…" : <><LuPlus size={16} /> Créer le document</>}
                   </button>
                 </div>
               </div>
@@ -569,12 +646,13 @@ export default function CreateDocument() {
       </main>
 
       <style>{`
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: opacity(0.5); }
-        @media (max-width: 1024px) { aside { display: none !important; } }
-        @media (max-width: 640px) {
-          main > header { padding: 14px 20px !important; }
-          main > div { padding: 20px !important; }
-        }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: brightness(0) invert(0.7); }
+        input[type="date"] { color-scheme: dark; }
+
+        /* Custom scrollbar for dropdown lists */
+        .dark-scroll::-webkit-scrollbar { width: 5px; }
+        .dark-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+        .dark-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
       `}</style>
     </div>
   );

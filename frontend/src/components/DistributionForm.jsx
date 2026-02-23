@@ -25,7 +25,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
   // Check prerequisites
   const canDistribute = document?.status_name === 'Validé';
   const distributionError = !canDistribute
-    ? `⛔ ISO EF14: La distribution nécessite le statut "Validé". Statut actuel: "${document?.status_name || '—'}"`
+    ? `ISO EF14: La distribution nécessite le statut "Validé". Statut actuel: "${document?.status_name || '—'}"`
     : null;
 
   const handleSubmit = async (e) => {
@@ -93,7 +93,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
       padding: 16,
     }}>
       <h3 style={{ margin: '0 0 12px', color: '#e6edf3', fontSize: 14, fontWeight: 600 }}>
-        📢 Nouvelle Distribution
+        Nouvelle distribution
       </h3>
 
       {success && (
@@ -105,7 +105,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
           marginBottom: 12,
         }}>
           <p style={{ color: '#3fb950', margin: 0, fontSize: 12, fontWeight: 600 }}>
-            ✅ Distribution enregistrée avec succès (ISO EF14 conforme)
+            Distribution enregistrée avec succès (ISO EF14 conforme)
           </p>
         </div>
       )}
@@ -133,7 +133,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
           marginBottom: 12,
         }}>
           <p style={{ color: '#ff7b72', margin: 0, fontSize: 12, fontWeight: 600 }}>
-            🔒 Distribution bloquée
+            Distribution bloquée
           </p>
           <p style={{ color: '#8b949e', margin: '4px 0 0', fontSize: 11 }}>
             Le document doit être au statut "Validé" pour être distribué.
@@ -150,7 +150,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
             fontSize: 12,
             fontWeight: 600,
           }}>
-            📧 Destinataires
+            Destinataires
           </label>
           <input
             type="text"
@@ -184,7 +184,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
             fontSize: 12,
             fontWeight: 600,
           }}>
-            📄 Format de Distribution
+            Format de distribution
           </label>
           <select
             value={format}
@@ -203,22 +203,22 @@ export function DistributionForm({ document, onSuccess, onClose }) {
               cursor: canDistribute ? 'pointer' : 'not-allowed',
             }}
           >
-            <option value="PDF">📄 PDF</option>
-            <option value="DOCX">📝 Word (DOCX)</option>
-            <option value="EMAIL">📧 Email</option>
-            <option value="LINK">🔗 Link partagé</option>
+            <option value="PDF">PDF</option>
+            <option value="DOCX">Word (DOCX)</option>
+            <option value="EMAIL">Email</option>
+            <option value="LINK">Link partagé</option>
           </select>
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <label style={{
+            <label style={{
             display: 'block',
             margin: '0 0 6px',
             color: '#e6edf3',
             fontSize: 12,
             fontWeight: 600,
           }}>
-            💬 Commentaires (optionnel)
+            Commentaires (optionnel)
           </label>
           <textarea
             placeholder="Raison de la distribution, commentaires..."
@@ -266,7 +266,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
               if (canDistribute && !loading) e.target.style.background = '#238636';
             }}
           >
-            {loading ? '⏳ Distribution...' : '📢 Distribuer'}
+            {loading ? 'Distribution...' : 'Distribuer'}
           </button>
 
           {onClose && (
@@ -312,7 +312,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
             fontSize: 10,
             lineHeight: 1.4,
           }}>
-            🔐 <strong>ISO EF14 Compliance:</strong> Cette distribution crée une preuve immuable avec validation et signature numérique.
+            <strong>ISO EF14 Compliance:</strong> Cette distribution crée une preuve immuable avec validation et signature numérique.
             Elle sera enregistrée dans l'audit trail permanent.
           </p>
         </div>

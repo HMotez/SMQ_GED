@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { LuClipboardList, LuLock, LuCheck } from 'react-icons/lu';
 
 const ValidationWorkflow = ({ documentId, documentResponsible, userId, userRole }) => {
   const [validations, setValidations] = useState([]);
@@ -207,7 +208,7 @@ const ValidationWorkflow = ({ documentId, documentResponsible, userId, userRole 
 
       {/* Validations List */}
       <div className="mb-6">
-        <h3 className="font-semibold text-gray-900 mb-3">📋 Historique des validations</h3>
+        <h3 className="font-semibold text-gray-900 mb-3"><LuClipboardList className="inline mr-2" size={18} />Historique des validations</h3>
         {loading ? (
           <div className="text-center py-8 text-gray-500">Chargement...</div>
         ) : validations.length === 0 ? (
@@ -238,14 +239,14 @@ const ValidationWorkflow = ({ documentId, documentResponsible, userId, userRole 
                       </span>
 
                       {/* Immutability Badge */}
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
-                        🔒 Immuable
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded flex items-center gap-1">
+                        <LuLock size={12} /> Immuable
                       </span>
 
                       {/* Signed Badge */}
                       {validation.signature_hash && (
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">
-                          ✓ Signé
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded flex items-center gap-1">
+                          <LuCheck size={12} /> Signé
                         </span>
                       )}
                     </div>

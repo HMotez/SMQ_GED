@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { LuFileText, LuRefreshCw, LuUpload, LuArchive, LuTriangleAlert, LuX, LuClipboardCheck, LuCircleCheck, LuClock } from 'react-icons/lu';
 
 const AuditTrailViewer = ({ documentId, userId }) => {
   const [timeline, setTimeline] = useState([]);
@@ -43,31 +44,26 @@ const AuditTrailViewer = ({ documentId, userId }) => {
   }, [fetchAuditTrail, documentId]);
 
   const getTimelineIcon = (event) => {
-    switch (event.type) {
-      case 'LOG':
-        switch (event.action) {
-          case 'CREATE_DOCUMENT':
-            return '📄';
-          case 'STATUS_CHANGE':
-            return '🔄';
-          case 'NEW_VERSION':
-            return '📝';
-          case 'AUTO_ARCHIVE':
-            return '📦';
-          case 'VALIDATION_EDIT_ATTEMPT_BLOCKED':
-            return '⛔';
-          case 'VALIDATION_DELETE_ATTEMPT_BLOCKED':
-            return '🚫';
-          default:
-            return '📋';
-        }
-      case 'VALIDATION':
-        return event.decision === 'APPROUVÉ' ? '✅' : event.decision === 'REJETÉ' ? '❌' : '⏳';
-      case 'VERSION':
-        return '📄';
-      default:
-        return '📌';
+    if (event.type === 'LOG') {
+      switch (event.action) {
+        case 'CREATE_DOCUMENT': return <LuFileText size={18} className="text-gray-700" />;
+        case 'STATUS_CHANGE': return <LuRefreshCw size={18} className="text-blue-600" />;
+        case 'NEW_VERSION': return <LuUpload size={18} className="text-green-600" />;
+        case 'AUTO_ARCHIVE': return <LuArchive size={18} className="text-purple-600" />;
+        case 'VALIDATION_EDIT_ATTEMPT_BLOCKED': return <LuTriangleAlert size={18} className="text-yellow-600" />;
+        case 'VALIDATION_DELETE_ATTEMPT_BLOCKED': return <LuX size={18} className="text-red-600" />;
+        default: return <LuClipboardCheck size={18} className="text-gray-600" />;
+      }
     }
+    if (event.type === 'VALIDATION') {
+      return event.decision === 'APPROUVÉ'
+        ? <LuCircleCheck size={18} className="text-green-600" />
+        : event.decision === 'REJETÉ'
+        ? <LuX size={18} className="text-red-600" />
+        : <LuClock size={18} className="text-yellow-600" />;
+    }
+    if (event.type === 'VERSION') return <LuFileText size={18} className="text-gray-700" />;
+    return <LuClipboardCheck size={18} className="text-gray-600" />;
   };
 
   const getTimelineTitle = (event) => {
@@ -138,12 +134,12 @@ const AuditTrailViewer = ({ documentId, userId }) => {
             <div className="flex gap-2 mt-2">
               {event.immutable && (
                 <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                  🔒 Immuable
+                  Immuable
                 </span>
               )}
               {event.signed && (
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
-                  ✓ Signé
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded flex items-center gap-1">
+                  <LuCheck size={12} /> Signé
                 </span>
               )}
             </div>
@@ -179,7 +175,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          📊 Audit Trail & Traçabilité ISO
+          Audit Trail & Traçabilité ISO
           <span className="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded">EF14</span>
         </h2>
         <p className="text-gray-600 mt-1">
@@ -197,7 +193,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
       {/* Summary Statistics */}
       {summary && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-3">📈 Résumé de l'audit</h3>
+          <h3 className="font-semibold text-gray-900 mb-3">Résumé de l'audit</h3>
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">{summary.total_events}</div>
@@ -239,7 +235,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
               : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
           }`}
         >
-          📋 Logs ({eventTypeCounts.LOG})
+          Logs ({eventTypeCounts.LOG})
         </button>
         <button
           onClick={() => setFilterType('VALIDATION')}
@@ -249,7 +245,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
               : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
           }`}
         >
-          ✅ Validations ({eventTypeCounts.VALIDATION})
+          Validations ({eventTypeCounts.VALIDATION})
         </button>
         <button
           onClick={() => setFilterType('VERSION')}
@@ -259,7 +255,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
               : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
           }`}
         >
-          📄 Versions ({eventTypeCounts.VERSION})
+          Versions ({eventTypeCounts.VERSION})
         </button>
       </div>
 
@@ -333,7 +329,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
 
       {/* ISO Compliance Notice */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
-        <strong>🔐 Conformité ISO:</strong> Cet audit trail est immuable et conservé à des fins
+        <strong>Conformité ISO:</strong> Cet audit trail est immuable et conservé à des fins
         légales. Les suppressions et modifications sont interdites (EF14 - Traçabilité).
       </div>
     </div>

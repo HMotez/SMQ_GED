@@ -57,7 +57,31 @@ const ensureValidationsTable = async () => {
     CREATE INDEX IF NOT EXISTS idx_validations_decision
       ON validations(decision)
   `);
+  // ── Migrations colonnes manquantes (table existante sans ces colonnes) ──
+  await pool.query(`ALTER TABLE validations ADD COLUMN IF NOT EXISTS version_letter  VARCHAR(5)`);
+  await pool.query(`ALTER TABLE validations ADD COLUMN IF NOT EXISTS signature_hash  VARCHAR(512)`);
+  await pool.query(`ALTER TABLE validations ADD COLUMN IF NOT EXISTS is_locked       BOOLEAN DEFAULT TRUE`);
+  await pool.query(`ALTER TABLE validations ADD COLUMN IF NOT EXISTS validator_name  VARCHAR(255)`);
   console.log("[EF05] Table validations prête.");
+
+  // ── Table logs (audit trail — EF14) ──────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id          SERIAL PRIMARY KEY,
+      document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+      action      VARCHAR(100) NOT NULL,
+      user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      details     JSONB,
+      created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_logs_document_id ON logs(document_id)
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_logs_action ON logs(action)
+  `);
+  console.log("[EF14] Table logs prête.");
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -224,7 +248,7 @@ const createValidation = async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("[EF05] createValidation error:", err.message);
-    return res.status(500).json({ error: "Erreur serveur lors de la validation." });
+    return res.status(500).json({ error: "Erreur serveur lors de la validation.", debug: err.message });
   } finally {
     client.release();
   }

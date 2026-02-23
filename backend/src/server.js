@@ -146,6 +146,7 @@ app.use("/api/documents",     require("./routes/documentRoutes"));
 app.use("/api/processes",     require("./routes/processRoutes"));
 app.use("/api/validations", require("./routes/validationRoutes")); // Sprint 2 EF05
 app.use("/api/roles",       require("./routes/roleRoutes"));       // Sprint 2 EF06
+app.use("/api/dashboard",   require("./routes/dashboardRoutes"));  // Sprint 4 — Tableau de bord
 
 // ── Error handler ────────────────────────────────────────────
 app.use((err, _req, res, _next) => {

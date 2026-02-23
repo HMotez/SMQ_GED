@@ -2,84 +2,112 @@
 
 /* ── ACTIA ES Brand Colors ──────────────────────────────── */
 :root {
-  --actia-navy:       #2e4a6b;
-  --actia-navy-dark:  #1e3450;
-  --actia-navy-light: #3d5f84;
-  --actia-green:      #4ab83f;
-  --actia-green-dark: #3a9a31;
-  --actia-green-light:#6dcc63;
-  --actia-bg:         #f0f3f6;
-  --actia-surface:    #ffffff;
-  --actia-border:     #dde4ec;
-  --actia-text:       #1e3452;
-  --actia-muted:      #6b82a0;
+  --actia-navy:        #2e4a6b;
+  --actia-navy-dark:   #1e3450;
+  --actia-navy-light:  #3d5f84;
+  --actia-green:       #4ab83f;
+  --actia-green-dark:  #3a9a31;
+  --actia-green-light: #6dcc63;
+  --actia-bg:          #f0f3f6;
+  --actia-surface:     #ffffff;
+  --actia-border:      #dde4ec;
+  --actia-text:        #1e3452;
+  --actia-muted:       #6b82a0;
 }
 
 @layer base {
   body {
     background-color: var(--actia-bg);
     color: var(--actia-text);
-    /* Inter — clean, readable, professional SaaS typeface */
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Better number rendering */
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     font-size: 14px;
     line-height: 1.5;
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
-  /* Monospace stays as-is for doc codes */
   .font-mono, [style*="fontFamily: \"monospace\""], [style*="font-family: monospace"] {
     font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
     font-feature-settings: normal;
   }
 
-  /* Smooth focus outline */
   :focus-visible {
     outline: 2px solid var(--actia-green);
     outline-offset: 2px;
   }
 
-  /* Scrollbar styling */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--actia-bg); }
   ::-webkit-scrollbar-thumb { background: var(--actia-border); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--actia-muted); }
 }
 
+/* ── Global Keyframes ────────────────────────────────────── */
+@keyframes spin         { to { transform: rotate(360deg); } }
+@keyframes fadeInUp     { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn       { from { opacity:0; } to { opacity:1; } }
+@keyframes slideRight   { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+@keyframes floatY       { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+@keyframes badgePop     { 0% { transform:scale(0.7); opacity:0; } 80% { transform:scale(1.08); } 100% { transform:scale(1); opacity:1; } }
+@keyframes blob         {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(40px,-30px) scale(1.06); }
+  66%     { transform: translate(-25px,35px) scale(0.94); }
+}
+@keyframes shimmer      { from { background-position:-200% 0; } to { background-position:200% 0; } }
+@keyframes pulseDot     { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+@keyframes barGrow      { from { width:0; } to { width:var(--bar-width); } }
+
+/* ── Animation utility classes ───────────────────────────── */
+.animate-fade-in-up   { animation: fadeInUp  0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-in      { animation: fadeIn    0.3s ease both; }
+.animate-slide-right  { animation: slideRight 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-float        { animation: floatY    3s ease-in-out infinite; }
+.animate-blob         { animation: blob      14s ease-in-out infinite; }
+.animate-badge-pop    { animation: badgePop  0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+.animate-pulse-dot    { animation: pulseDot  2s ease-in-out infinite; }
+.animate-spin-fast    { animation: spin      0.7s linear infinite; }
+.animate-bar-grow     { animation: barGrow   0.6s ease both; }
+
+/* ── Stagger delays ──────────────────────────────────────── */
+.delay-75  { animation-delay: 75ms;  }
+.delay-150 { animation-delay: 150ms; }
+.delay-225 { animation-delay: 225ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-375 { animation-delay: 375ms; }
+.delay-450 { animation-delay: 450ms; }
+
 @layer components {
-  /* ── Primary button (ACTIA green) ──────────────── */
+  /* ── Primary button ─────────────────────────────── */
   .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.375rem;
-    background-color: var(--actia-green);
+    background: linear-gradient(135deg, var(--actia-green), var(--actia-green-dark));
     color: #ffffff;
     font-weight: 600;
     padding: 0.625rem 1.25rem;
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     border: none;
     cursor: pointer;
-    transition: background-color 0.15s, box-shadow 0.15s;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
     font-size: 0.875rem;
     text-decoration: none;
-    box-shadow: 0 2px 6px rgba(74, 184, 63, 0.35);
+    box-shadow: 0 4px 14px rgba(74,184,63,0.35);
     font-family: inherit;
     letter-spacing: -0.01em;
   }
-
   .btn-primary:hover {
-    background-color: var(--actia-green-dark);
-    box-shadow: 0 4px 12px rgba(74, 184, 63, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(74,184,63,0.45);
   }
+  .btn-primary:active { transform: translateY(0) scale(0.98); }
 
-  /* ── Secondary button (white/bordered) ─────────── */
+  /* ── Secondary button ───────────────────────────── */
   .btn-secondary {
     display: inline-flex;
     align-items: center;
@@ -89,26 +117,99 @@
     color: var(--actia-navy);
     font-weight: 500;
     padding: 0.625rem 1.25rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--actia-border);
+    border-radius: 0.625rem;
+    border: 1.5px solid var(--actia-border);
     cursor: pointer;
-    transition: background-color 0.15s, border-color 0.15s;
+    transition: all 0.15s ease;
     font-size: 0.875rem;
     text-decoration: none;
     font-family: inherit;
   }
-
   .btn-secondary:hover {
-    background-color: #f0f3f6;
+    background-color: var(--actia-bg);
     border-color: var(--actia-navy);
+    transform: translateY(-1px);
   }
 
-  /* ── Card ──────────────────────────────────────── */
+  /* ── Card ───────────────────────────────────────── */
   .card {
     background-color: var(--actia-surface);
-    border-radius: 0.875rem;
-    box-shadow: 0 1px 4px rgba(46,74,107,0.07), 0 1px 2px rgba(46,74,107,0.05);
-    border: 1px solid var(--actia-border);
+    border-radius: 1rem;
+    box-shadow: 0 1px 4px rgba(46,74,107,0.07), 0 1px 2px rgba(46,74,107,0.04);
+    border: 1.5px solid var(--actia-border);
     padding: 1.5rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card:hover { box-shadow: 0 4px 16px rgba(46,74,107,0.11); }
+
+  /* ── Sidebar nav link ───────────────────────────── */
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    color: #a8bfd4;
+    background: transparent;
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
+    margin-bottom: 2px;
+  }
+  .sidebar-link:hover {
+    background: rgba(255,255,255,0.05);
+    color: #ffffff;
+  }
+  .sidebar-link.active {
+    background: rgba(74,184,63,0.12);
+    color: #4ab83f;
+    font-weight: 600;
+    border-left-color: #4ab83f;
+  }
+
+  /* ── Section label ──────────────────────────────── */
+  .section-label {
+    color: var(--actia-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Green bar accent ───────────────────────────── */
+  .bar-accent {
+    display: inline-block;
+    width: 3.5px;
+    height: 16px;
+    background: linear-gradient(to bottom, var(--actia-green), var(--actia-green-dark));
+    border-radius: 99px;
+    flex-shrink: 0;
+  }
+
+  /* ── Status badge ───────────────────────────────── */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+
+  /* ── ACTIA Logo grid dots ───────────────────────── */
+  .logo-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 1px;
+    background-color: var(--actia-green);
   }
 }

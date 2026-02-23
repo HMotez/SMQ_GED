@@ -7,6 +7,7 @@ import CreateDocument from "./pages/CreateDocument";
 import DocumentList   from "./pages/DocumentList";
 import Archive        from "./pages/Archive";
 import Validations    from "./pages/Validations";
+import Dashboard      from "./pages/Dashboard";
 
 // ── Garde toutes les routes protégées ────────────────────────
 function ProtectedRoute({ children }) {
@@ -65,6 +66,9 @@ function AppRoutes() {
       } />
       <Route path="/validations" element={
         <ProtectedRoute><Validations /></ProtectedRoute>
+      } />
+      <Route path="/dashboard" element={
+        <ProtectedRoute><Dashboard /></ProtectedRoute>
       } />
 
       {/* Fallback */}

@@ -1,376 +1,237 @@
-﻿// ============================================================
-// Validations.jsx — ACTIA ES Brand Theme · Inter + Lucide
+// ============================================================
+// Validations.jsx — ACTIA ES · Dark Login-Style Premium Design
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { NavLink } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import UserSelector from "../components/UserSelector";
+import AppSidebar from "../components/AppSidebar";
 import {
-  LuHouse, LuFilePlus, LuFileText, LuClipboardCheck, LuArchive,
   LuRefreshCw, LuCircleCheck, LuCircleX, LuClock,
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2, LuTriangleAlert,
-  LuUser, LuInbox, LuLock,
+  LuUser, LuInbox, LuLock, LuClipboardCheck, LuArchive, LuFileText,
 } from "react-icons/lu";
 
 const API = "http://localhost:4000/api";
 
-/* ── ACTIA colors ─────────────────────────────────────────── */
-const NAVY       = "#2e4a6b";
-const NAVY_DARK  = "#1e3450";
-const NAVY_LIGHT = "#3d5f84";
-const GREEN      = "#4ab83f";
-const GREEN_DARK = "#3a9a31";
-const BG         = "#f0f3f6";
-const BORDER     = "#dde4ec";
-const MUTED      = "#6b82a0";
-const SURFACE    = "#ffffff";
-
-// ── Status config — Lucide icon components ───────────────────
 const STATUS_CFG = {
-  "Brouillon":     { bg: "#f1f5f9", text: "#64748b", border: "#cbd5e1", Icon: LuPencil        },
-  "En rédaction":  { bg: "#f0fdf4", text: "#16a34a", border: "#86efac", Icon: LuPenLine       },
-  "En relecture":  { bg: "#eff6ff", text: "#2563eb", border: "#93c5fd", Icon: LuEye           },
-  "En validation": { bg: "#eef2ff", text: "#4338ca", border: "#a5b4fc", Icon: LuClipboardCheck},
-  "Validé":        { bg: "#f0fdf4", text: "#15803d", border: "#86efac", Icon: LuCircleCheckBig  },
-  "Diffusé":       { bg: "#f0fdfa", text: "#0d9488", border: "#5eead4", Icon: LuShare2        },
-  "Obsolète":      { bg: "#fff7ed", text: "#c2410c", border: "#fdba74", Icon: LuTriangleAlert },
-  "Archivé":       { bg: "#f8fafc", text: "#475569", border: "#cbd5e1", Icon: LuArchive       },
+  "Brouillon":     { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil         },
+  "En rédaction":  { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon:LuPenLine        },
+  "En relecture":  { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon:LuEye            },
+  "En validation": { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon:LuClipboardCheck },
+  "Validé":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon:LuCircleCheckBig },
+  "Diffusé":       { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2         },
+  "Obsolète":      { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert  },
+  "Archivé":       { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive        },
 };
 
 const DECISION_CFG = {
-  "APPROUVÉ":   { bg: "#f0fdf4", text: "#15803d", border: "#86efac", Icon: LuCircleCheck, label: "Approuvé"   },
-  "REJETÉ":     { bg: "#fef2f2", text: "#dc2626", border: "#fca5a5", Icon: LuCircleX,     label: "Rejeté"     },
-  "EN_ATTENTE": { bg: "#eef2ff", text: "#4338ca", border: "#a5b4fc", Icon: LuClock,       label: "En attente" },
+  "APPROUVÉ":   { bg:"rgba(240,253,244,0.12)", text:"#4ade80", border:"rgba(134,239,172,0.25)", Icon:LuCircleCheck, label:"Approuvé"   },
+  "REJETÉ":     { bg:"rgba(254,242,242,0.12)", text:"#f87171", border:"rgba(252,165,165,0.25)", Icon:LuCircleX,     label:"Rejeté"     },
+  "EN_ATTENTE": { bg:"rgba(238,242,255,0.12)", text:"#a5b4fc", border:"rgba(165,180,252,0.25)", Icon:LuClock,       label:"En attente" },
 };
 
-// ── Nav config ───────────────────────────────────────────────
-const NAV = [
-  { icon: LuHouse,           label: "Accueil",          href: "/",            end: true  },
-  { icon: LuFilePlus,       label: "Nouveau document", href: "/create",      end: false },
-  { icon: LuFileText,       label: "Liste documents",  href: "/list",        end: false },
-  { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
-  { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
-];
-
-// ── Sub-components ──────────────────────────────────────────
+/* ── Status badge ─────────────────────────────────────────── */
 function StatusBadge({ name }) {
-  const s = STATUS_CFG[name] || { bg: "#f1f5f9", text: "#64748b", border: "#cbd5e1", Icon: LuFileText };
+  const s = STATUS_CFG[name] || { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuFileText };
   const SI = s.Icon;
   return (
-    <span style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}`, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 99, display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border whitespace-nowrap" style={{ background:s.bg, color:s.text, borderColor:s.border }}>
       <SI size={11} /> {name}
     </span>
   );
 }
 
+/* ── Decision badge ───────────────────────────────────────── */
 function DecisionBadge({ decision }) {
   const d = DECISION_CFG[decision] || DECISION_CFG["EN_ATTENTE"];
   const DI = d.Icon;
   return (
-    <span style={{ background: d.bg, color: d.text, border: `1px solid ${d.border}`, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 99, display: "inline-flex", alignItems: "center", gap: 5 }}>
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border" style={{ background:d.bg, color:d.text, borderColor:d.border }}>
       <DI size={11} /> {d.label}
     </span>
   );
 }
 
-function StatCard({ Icon, label, value, accent = NAVY, bg = SURFACE, border = BORDER }) {
+/* ── Stat card (dark) ─────────────────────────────────────── */
+function StatCard({ Icon, label, value, accent }) {
   return (
-    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 14, padding: "16px 20px", flex: 1, minWidth: 120 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        <Icon size={13} style={{ color: accent }} />
-        <p style={{ color: MUTED, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 700, margin: 0 }}>{label}</p>
+    <div className="flex-1 min-w-[120px] rounded-2xl px-5 py-4 border" style={{ background:"rgba(255,255,255,0.04)", borderColor:`${accent}25`, backdropFilter:"blur(10px)" }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <Icon size={13} style={{ color:accent }} />
+        <p className="m-0 text-[11px] uppercase tracking-[0.8px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>{label}</p>
       </div>
-      <p style={{ color: accent, fontWeight: 800, fontSize: 28, margin: 0, letterSpacing: -0.5 }}>{value}</p>
+      <p className="m-0 font-black text-3xl text-white" style={{ letterSpacing:-0.5 }}>{value}</p>
     </div>
   );
 }
 
+/* ── Empty state ──────────────────────────────────────────── */
 function Empty({ Icon = LuInbox, message }) {
   return (
-    <div style={{ textAlign: "center", padding: "64px 0", color: MUTED }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-        <Icon size={40} style={{ color: BORDER }} />
-      </div>
-      <p style={{ fontSize: 13, margin: 0 }}>{message}</p>
+    <div className="flex flex-col items-center py-16 gap-3">
+      <Icon size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
+      <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>{message}</p>
     </div>
   );
 }
 
-// ── Sidebar ─────────────────────────────────────────────────
-function Sidebar({ pendingCount }) {
-  return (
-    <aside style={{ width: 220, background: NAVY_DARK, borderRight: `1px solid ${NAVY_LIGHT}`, display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
-
-      {/* ACTIA Logo */}
-      <div style={{ padding: "20px 16px 16px", borderBottom: `1px solid ${NAVY_LIGHT}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ display: "flex", gap: 2, padding: 6, background: NAVY, borderRadius: 8 }}>
-            {[...Array(3)].map((_, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {[...Array(3)].map((_, j) => (
-                  <div key={j} style={{ width: 4, height: 4, borderRadius: 1, background: GREEN, opacity: (i + j) % 2 === 0 ? 1 : 0.5 }} />
-                ))}
-              </div>
-            ))}
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: 1.5 }}>ACTIA</span>
-              <span style={{ color: GREEN, fontWeight: 700, fontSize: 10, letterSpacing: 1 }}>ES</span>
-            </div>
-            <p style={{ color: MUTED, fontSize: 9, margin: 0, letterSpacing: 0.3 }}>Engineering Services · GED</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2, padding: "12px 10px" }}>
-        {NAV.map(({ icon: NavIcon, label, href, end }) => (
-          <NavLink
-            key={href} to={href} end={end}
-            style={({ isActive }) => ({
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "9px 12px", borderRadius: 8, textDecoration: "none",
-              fontSize: 13, fontWeight: isActive ? 600 : 400,
-              color: isActive ? GREEN : "#a8bfd4",
-              background: isActive ? "rgba(74,184,63,0.1)" : "transparent",
-              borderLeft: isActive ? `3px solid ${GREEN}` : "3px solid transparent",
-              transition: "all 0.15s",
-            })}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <NavIcon size={16} style={{ flexShrink: 0 }} />
-              {label}
-            </span>
-            {href === "/validations" && pendingCount > 0 && (
-              <span style={{ background: "#f59e0b", color: "#fff", borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>
-                {pendingCount}
-              </span>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Bottom stats */}
-      <div style={{ marginTop: "auto", padding: "12px 10px", borderTop: `1px solid ${NAVY_LIGHT}`, display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ background: "rgba(74,184,63,0.1)", border: `1px solid rgba(74,184,63,0.25)`, borderRadius: 10, padding: "10px 12px" }}>
-          <p style={{ color: MUTED, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 2px" }}>EF05 — Validations</p>
-          <p style={{ color: GREEN, fontWeight: 800, fontSize: 20, margin: 0, letterSpacing: -0.5 }}>{pendingCount} en attente</p>
-        </div>
-        <UserSelector />
-      </div>
-    </aside>
-  );
-}
-
-// ── Validation modal ─────────────────────────────────────────
-function ValidationModal({ doc, users, canValidate = false, onClose, onValidationAdded }) {
+/* ── Validation modal (dark) ──────────────────────────────── */
+function ValidationModal({ doc, users, canValidate=false, onClose, onValidationAdded }) {
   const [history,    setHistory]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ validatorId: "", comment: "", decision: "EN_ATTENTE" });
+  const [form, setForm] = useState({ validatorId:"", comment:"", decision:"EN_ATTENTE" });
   const [error,   setError]   = useState(null);
   const [success, setSuccess] = useState(null);
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await axios.get(`${API}/validations/document/${doc.id}`);
-      setHistory(res.data.validations || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    try { const res = await axios.get(`${API}/validations/document/${doc.id}`); setHistory(res.data.validations||[]); }
+    catch (err) { console.error(err); } finally { setLoading(false); }
   }, [doc.id]);
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null); setSuccess(null); setSubmitting(true);
+    e.preventDefault(); setError(null); setSuccess(null); setSubmitting(true);
     try {
-      const payload = {
-        validatorId:   form.validatorId ? parseInt(form.validatorId) : undefined,
-        validatorName: form.validatorId ? users.find(u => u.id === parseInt(form.validatorId))?.name || "" : "",
-        comment:  form.comment,
-        decision: form.decision,
-      };
+      const payload = { validatorId:form.validatorId?parseInt(form.validatorId):undefined, validatorName:form.validatorId?users.find(u=>u.id===parseInt(form.validatorId))?.name||"":"", comment:form.comment, decision:form.decision };
       await axios.post(`${API}/validations/document/${doc.id}`, payload);
       setSuccess("Validation enregistrée avec succès.");
-      setForm({ validatorId: "", comment: "", decision: "EN_ATTENTE" });
-      await loadHistory();
-      onValidationAdded();
-    } catch (err) {
-      setError(err.response?.data?.error || "Erreur lors de l'enregistrement.");
-    } finally {
-      setSubmitting(false);
-    }
+      setForm({ validatorId:"", comment:"", decision:"EN_ATTENTE" });
+      await loadHistory(); onValidationAdded();
+    } catch (err) { const data=err.response?.data; setError(data?.debug||data?.error||"Erreur lors de l'enregistrement."); }
+    finally { setSubmitting(false); }
   };
 
-  const inputStyle = {
-    width: "100%", padding: "8px 12px", borderRadius: 8,
-    background: BG, border: `1px solid ${BORDER}`,
-    color: NAVY, fontSize: 13, outline: "none",
-    fontFamily: "inherit", boxSizing: "border-box",
-  };
-
-  // Decision options with Lucide icons
   const DECISION_OPTS = [
-    { value: "APPROUVÉ",   Icon: LuCircleCheck, label: "Approuvé",   cfg: DECISION_CFG["APPROUVÉ"]   },
-    { value: "REJETÉ",     Icon: LuCircleX,     label: "Rejeté",     cfg: DECISION_CFG["REJETÉ"]     },
-    { value: "EN_ATTENTE", Icon: LuClock,       label: "En attente", cfg: DECISION_CFG["EN_ATTENTE"] },
+    { value:"APPROUVÉ",   cfg:DECISION_CFG["APPROUVÉ"]   },
+    { value:"REJETÉ",     cfg:DECISION_CFG["REJETÉ"]     },
+    { value:"EN_ATTENTE", cfg:DECISION_CFG["EN_ATTENTE"] },
   ];
 
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
-      <div onClick={(e) => e.stopPropagation()}
-        style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 18, boxShadow: "0 25px 80px rgba(0,0,0,0.3)", width: "min(860px,95vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+  const inputStyle = { background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.85)" };
 
-        {/* Modal header */}
-        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+  return (
+    <div onClick={onClose} className="fixed inset-0 flex items-center justify-center z-50" style={{ background:"rgba(5,12,20,0.85)", backdropFilter:"blur(8px)" }}>
+      <div onClick={e => e.stopPropagation()} className="rounded-2xl border w-[min(860px,95vw)] max-h-[90vh] flex flex-col overflow-hidden"
+        style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b flex items-start justify-between" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <span style={{ fontFamily: "monospace", color: GREEN, fontWeight: 700, fontSize: 13 }}>{doc.doc_code}</span>
+            <div className="flex items-center gap-2.5 mb-1">
+              <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
               <StatusBadge name={doc.status_name} />
-              {doc.version_letter && doc.version_letter !== "-" && (
-                <span style={{ background: BG, border: `1px solid ${BORDER}`, color: MUTED, borderRadius: 6, padding: "2px 8px", fontSize: 11 }}>
-                  v.{doc.version_letter}
-                </span>
+              {doc.version_letter && doc.version_letter!=="-" && (
+                <span className="rounded-md px-2 py-0.5 text-xs border" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)" }}>v.{doc.version_letter}</span>
               )}
             </div>
-            <p style={{ margin: 0, color: NAVY, fontWeight: 600, fontSize: 15 }}>{doc.title}</p>
-            <p style={{ margin: "4px 0 0", color: MUTED, fontSize: 11 }}>{doc.responsible} · {doc.process_name || "—"} · {doc.type_code}</p>
+            <p className="m-0 text-white font-semibold text-[17px]">{doc.title}</p>
+            <p className="m-0 mt-1 text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>{doc.responsible} · {doc.process_name||"—"} · {doc.type_code}</p>
           </div>
-          <button onClick={onClose} style={{ color: MUTED, background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 4, lineHeight: 1 }}>×</button>
+          <button onClick={onClose} className="text-xl leading-none px-1" style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>×</button>
         </div>
 
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
+        <div className="flex flex-1 overflow-hidden">
           {/* Left: form */}
-          <div style={{ width: 280, flexShrink: 0, borderRight: `1px solid ${BORDER}`, padding: "20px", overflowY: "auto" }}>
-            <p style={{ color: NAVY, fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Nouvelle validation</p>
+          <div className="w-[280px] flex-shrink-0 border-r p-5 overflow-y-auto" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+            <p className="text-white font-semibold text-[15px] mb-4">Nouvelle validation</p>
 
             {!canValidate && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <LuLock size={14} style={{ color: "#dc2626", flexShrink: 0, marginTop: 1 }} />
+              <div className="rounded-xl px-3.5 py-3 mb-3.5 flex gap-2 items-start border" style={{ background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.2)" }}>
+                <LuLock size={14} style={{ color:"#f87171" }} className="flex-shrink-0 mt-0.5" />
                 <div>
-                  <p style={{ margin: "0 0 3px", color: "#dc2626", fontSize: 11, fontWeight: 600 }}>Accès refusé</p>
-                  <p style={{ margin: 0, color: MUTED, fontSize: 11 }}>
-                    Seuls Validateur, Responsable Qualité et Admin GED peuvent enregistrer une validation.
-                  </p>
+                  <p className="m-0 mb-0.5 text-xs font-semibold" style={{ color:"#f87171" }}>Accès refusé</p>
+                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.55)" }}>Seuls Validateur, Responsable Qualité et Admin GED peuvent enregistrer une validation.</p>
                 </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14, opacity: canValidate ? 1 : 0.4, pointerEvents: canValidate ? "auto" : "none" }}>
-
-              {/* Validator */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5" style={{ opacity:canValidate?1:0.4, pointerEvents:canValidate?"auto":"none" }}>
               <div>
-                <label style={{ display: "block", color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 5 }}>Validateur</label>
-                <select value={form.validatorId} onChange={(e) => setForm(f => ({ ...f, validatorId: e.target.value }))}
-                  style={inputStyle}>
-                  <option value="">— Sélectionner —</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                <label className="block text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Validateur</label>
+                <select value={form.validatorId} onChange={e => setForm(f=>({...f,validatorId:e.target.value}))}
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none" style={inputStyle}>
+                  <option value="" style={{ background:"#0d1f30" }}>— Sélectionner —</option>
+                  {users.map(u => <option key={u.id} value={u.id} style={{ background:"#0d1f30" }}>{u.name}</option>)}
                 </select>
               </div>
 
-              {/* Decision */}
               <div>
-                <label style={{ display: "block", color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 5 }}>Décision *</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {DECISION_OPTS.map(({ value, Icon: OptIcon, label, cfg }) => (
-                    <button type="button" key={value}
-                      onClick={() => setForm(f => ({ ...f, decision: value }))}
-                      style={{
-                        padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                        textAlign: "left", display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-                        background: form.decision === value ? cfg.bg : BG,
-                        color: form.decision === value ? cfg.text : MUTED,
-                        border: `1px solid ${form.decision === value ? cfg.border : BORDER}`,
-                        transition: "all 0.15s", fontFamily: "inherit",
-                      }}>
-                      <OptIcon size={14} /> {label}
-                    </button>
-                  ))}
+                <label className="block text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Décision *</label>
+                <div className="flex flex-col gap-1.5">
+                  {DECISION_OPTS.map(({ value, cfg }) => {
+                    const DI = cfg.Icon;
+                    return (
+                      <button type="button" key={value} onClick={() => setForm(f=>({...f,decision:value}))}
+                        className="px-3 py-2 rounded-lg text-sm font-semibold text-left flex items-center gap-2 cursor-pointer border transition-all"
+                        style={{ background:form.decision===value?cfg.bg:"rgba(255,255,255,0.04)", color:form.decision===value?cfg.text:"rgba(168,191,212,0.55)", borderColor:form.decision===value?cfg.border:"rgba(255,255,255,0.08)" }}>
+                        <DI size={14} /> {cfg.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Comment */}
               <div>
-                <label style={{ display: "block", color: MUTED, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 5 }}>Commentaire</label>
-                <textarea rows={4} value={form.comment} onChange={(e) => setForm(f => ({ ...f, comment: e.target.value }))}
-                  placeholder="Observations, motif de rejet, conditions d'approbation…"
-                  style={{ ...inputStyle, resize: "vertical", fontSize: 12 }}
-                />
+                <label className="block text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Commentaire</label>
+                <textarea rows={4} value={form.comment} onChange={e => setForm(f=>({...f,comment:e.target.value}))}
+                  placeholder="Observations, motif de rejet…"
+                  className="w-full px-3 py-2 rounded-lg border text-sm resize-y outline-none"
+                  style={{ ...inputStyle, minHeight:90 }} />
               </div>
 
-              {error && (
-                <p style={{ margin: 0, color: "#dc2626", fontSize: 11, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px" }}>{error}</p>
-              )}
-              {success && (
-                <p style={{ margin: 0, color: "#15803d", fontSize: 11, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "8px 12px" }}>{success}</p>
-              )}
+              {error   && <p className="m-0 text-xs rounded-lg px-3 py-2 border" style={{ color:"#f87171", background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.2)" }}>{error}</p>}
+              {success && <p className="m-0 text-xs rounded-lg px-3 py-2 border" style={{ color:"#4ade80", background:"rgba(74,222,128,0.08)", borderColor:"rgba(74,222,128,0.2)" }}>{success}</p>}
 
               <button type="submit" disabled={submitting}
-                style={{
-                  width: "100%", padding: "10px 0", borderRadius: 8, fontWeight: 700, fontSize: 13,
-                  background: submitting ? BG : GREEN, color: submitting ? MUTED : "#fff",
-                  border: "none", cursor: submitting ? "not-allowed" : "pointer",
-                  boxShadow: submitting ? "none" : "0 4px 12px rgba(74,184,63,0.35)",
-                  transition: "all 0.15s", fontFamily: "inherit",
-                }}>
-                {submitting ? "Enregistrement…" : "Enregistrer la validation"}
+                className="w-full py-2.5 rounded-lg font-bold text-sm border-none transition-all"
+                style={{ background:submitting?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#4ab83f,#3da333)", color:submitting?"rgba(168,191,212,0.4)":"white", boxShadow:submitting?"none":"0 4px 16px rgba(74,184,63,0.35)", cursor:submitting?"not-allowed":"pointer" }}>
+                {submitting?"Enregistrement…":"Enregistrer la validation"}
               </button>
             </form>
           </div>
 
           {/* Right: history */}
-          <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
-            <p style={{ color: NAVY, fontWeight: 600, fontSize: 13, marginBottom: 16 }}>
+          <div className="flex-1 p-5 overflow-y-auto">
+            <p className="text-white font-semibold text-[15px] mb-4">
               Historique des validations
-              {history.length > 0 && <span style={{ color: MUTED, fontWeight: 400, marginLeft: 8 }}>({history.length})</span>}
+              {history.length > 0 && <span className="font-normal ml-2 text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>({history.length})</span>}
             </p>
-
-            {loading ? (
-              <p style={{ color: MUTED, fontSize: 13 }}>Chargement…</p>
-            ) : history.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: MUTED }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-                  <LuClipboardCheck size={32} style={{ color: BORDER }} />
+            {loading ? <p className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+              : history.length === 0 ? (
+                <div className="flex flex-col items-center py-10 gap-2">
+                  <LuClipboardCheck size={32} style={{ color:"rgba(168,191,212,0.2)" }} />
+                  <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>Aucune validation enregistrée.</p>
                 </div>
-                <p style={{ fontSize: 13, margin: 0 }}>Aucune validation enregistrée.</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {history.map((v) => (
-                  <div key={v.id} style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <DecisionBadge decision={v.decision} />
-                        {v.version_letter && <span style={{ color: MUTED, fontSize: 11 }}>v.{v.version_letter}</span>}
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {history.map(v => (
+                    <div key={v.id} className="rounded-xl px-4 py-3.5 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <DecisionBadge decision={v.decision} />
+                          {v.version_letter && <span className="text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>v.{v.version_letter}</span>}
+                        </div>
+                        <span className="text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>
+                          {new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}
+                        </span>
                       </div>
-                      <span style={{ color: MUTED, fontSize: 11 }}>
-                        {new Date(v.validated_at).toLocaleDateString("fr-FR", {
-                          day: "2-digit", month: "short", year: "numeric",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </span>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <LuUser size={13} style={{ color:"rgba(168,191,212,0.4)" }} className="flex-shrink-0" />
+                        <span className="text-[15px] font-semibold text-white">{v.validator_name}</span>
+                      </div>
+                      {v.comment && (
+                        <p className="m-0 text-sm rounded-lg px-3 py-2 border leading-relaxed" style={{ color:"rgba(168,191,212,0.65)", background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
+                          {v.comment}
+                        </p>
+                      )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                      <LuUser size={13} style={{ color: MUTED, flexShrink: 0 }} />
-                      <span style={{ color: NAVY_LIGHT, fontSize: 13, fontWeight: 600 }}>{v.validator_name}</span>
-                    </div>
-                    {v.comment && (
-                      <p style={{ margin: 0, color: MUTED, fontSize: 11, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 12px", lineHeight: 1.6 }}>
-                        {v.comment}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -378,10 +239,9 @@ function ValidationModal({ doc, users, canValidate = false, onClose, onValidatio
   );
 }
 
-// ── Main page ────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════ */
 export default function Validations() {
   const { can } = useUser();
-
   const [pendingDocs, setPendingDocs] = useState([]);
   const [allHistory,  setAllHistory]  = useState([]);
   const [stats,       setStats]       = useState(null);
@@ -399,35 +259,34 @@ export default function Validations() {
         axios.get(`${API}/validations/stats`),
         axios.get(`${API}/users`),
       ]);
-      setPendingDocs(pending.data);
-      setAllHistory(hist.data.data || []);
-      setStats(statsRes.data);
-      setUsers(usersRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      setPendingDocs(pending.data); setAllHistory(hist.data.data||[]); setStats(statsRes.data); setUsers(usersRes.data);
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  const sidebarBottom = (
+    <>
+      <div className="rounded-xl px-3 py-2.5 border" style={{ background:"rgba(74,184,63,0.08)", borderColor:"rgba(74,184,63,0.2)" }}>
+        <p className="m-0 text-[10px] uppercase tracking-[1px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>EF05 — Validations</p>
+        <p className="m-0 font-black text-xl" style={{ color:"#4ab83f" }}>{pendingDocs.length} en attente</p>
+      </div>
+      <UserSelector />
+    </>
+  );
+
   const tabBtn = (id, TabIcon, label, count) => (
-    <button
-      onClick={() => setActiveTab(id)}
+    <button key={id} onClick={() => setActiveTab(id)}
+      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border transition-all"
       style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
-        background: activeTab === id ? NAVY : SURFACE,
-        color: activeTab === id ? "#fff" : MUTED,
-        border: `1px solid ${activeTab === id ? NAVY : BORDER}`,
-        boxShadow: activeTab === id ? "0 2px 8px rgba(46,74,107,0.3)" : "none",
-        transition: "all 0.15s", fontFamily: "inherit",
+        background:activeTab===id?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.04)",
+        borderColor:activeTab===id?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)",
+        color:activeTab===id?"white":"rgba(168,191,212,0.6)",
       }}>
       <TabIcon size={14} />
       {label}
       {count > 0 && (
-        <span style={{ borderRadius: 99, padding: "1px 8px", fontSize: 11, fontWeight: 700, background: activeTab === id ? "rgba(255,255,255,0.2)" : BG, color: activeTab === id ? "#fff" : MUTED }}>
+        <span className="rounded-full px-2 py-px text-xs font-bold" style={{ background:activeTab===id?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.08)", color:activeTab===id?"white":"rgba(168,191,212,0.6)" }}>
           {count}
         </span>
       )}
@@ -437,169 +296,114 @@ export default function Validations() {
   const PENDING_COLS = "160px 1fr 120px 100px 110px 140px 110px";
   const HISTORY_COLS = "130px 160px 1fr 130px 120px 1fr";
 
+  const tableRowStyle = { borderBottom:"1px solid rgba(255,255,255,0.05)" };
+
   return (
-    <div style={{ minHeight: "100vh", background: BG, display: "flex" }}>
-      <Sidebar pendingCount={pendingDocs.length} />
+    <div className="min-h-screen flex" style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+      <AppSidebar badges={{ "/validations": pendingDocs.length }} bottomContent={sidebarBottom} />
 
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <main className="flex-1 flex flex-col min-w-0">
 
-        {/* Header */}
-        <header style={{ padding: "14px 36px", background: SURFACE, borderBottom: `1px solid ${BORDER}`, boxShadow: "0 1px 4px rgba(46,74,107,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {/* ── Header ────────────────────────────────────────── */}
+        <header className="px-9 py-3.5 border-b flex items-center justify-between"
+          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-              <span style={{ display: "inline-block", width: 3, height: 18, background: GREEN, borderRadius: 99 }} />
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: NAVY, letterSpacing: -0.3 }}>Validations ISO</h1>
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="w-0.5 h-4 rounded-full" style={{ background:"#4ab83f" }} />
+              <h1 className="m-0 text-xl font-bold text-white">Validations ISO</h1>
             </div>
-            <p style={{ margin: 0, fontSize: 11, color: MUTED }}>
-              EF05 — Enregistrement des décisions de validation · Traçabilité complète
-            </p>
+            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>EF05 — Enregistrement des décisions de validation · Traçabilité complète</p>
           </div>
-          <button onClick={load}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: SURFACE, border: `1px solid ${BORDER}`, color: MUTED, borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer", transition: "all 0.15s", fontFamily: "inherit" }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = GREEN; e.currentTarget.style.color = GREEN; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = MUTED; }}>
+          <button onClick={load} className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm border transition-all"
+            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(74,184,63,0.4)"; e.currentTarget.style.color="#4ab83f"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.6)"; }}>
             <LuRefreshCw size={14} /> Actualiser
           </button>
         </header>
 
-        <div style={{ flex: 1, padding: "24px 36px", overflowY: "auto" }}>
-
+        <div className="flex-1 px-9 py-6 overflow-y-auto">
           {/* Stats */}
           {stats && (
-            <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-              <StatCard
-                Icon={LuClock} label="Docs en validation"
-                value={stats.pending_docs_count}
-                accent={stats.pending_docs_count > 0 ? "#4338ca" : GREEN}
-                bg={stats.pending_docs_count > 0 ? "#eef2ff" : "#f0fdf4"}
-                border={stats.pending_docs_count > 0 ? "#a5b4fc" : "#86efac"}
-              />
-              <StatCard
-                Icon={LuCircleCheck} label="Approuvées"
-                value={stats.decisions?.["APPROUVÉ"] ?? 0}
-                accent={GREEN_DARK} bg="#f0fdf4" border="#86efac"
-              />
-              <StatCard
-                Icon={LuCircleX} label="Rejetées"
-                value={stats.decisions?.["REJETÉ"] ?? 0}
-                accent="#dc2626" bg="#fef2f2" border="#fca5a5"
-              />
-              <StatCard
-                Icon={LuClipboardCheck} label="Total validations"
-                value={stats.total ?? 0}
-                accent={NAVY}
-              />
+            <div className="flex gap-4 mb-6 flex-wrap">
+              <StatCard Icon={LuClock}          label="Docs en validation" value={stats.pending_docs_count}            accent={stats.pending_docs_count>0?"#a5b4fc":"#4ade80"} />
+              <StatCard Icon={LuCircleCheck}    label="Approuvées"         value={stats.decisions?.["APPROUVÉ"]??0}   accent="#4ade80" />
+              <StatCard Icon={LuCircleX}        label="Rejetées"           value={stats.decisions?.["REJETÉ"]??0}     accent="#f87171" />
+              <StatCard Icon={LuClipboardCheck} label="Total validations"  value={stats.total??0}                     accent="#60a5fa" />
             </div>
           )}
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            {tabBtn("pending", LuClock,         "Documents en attente", pendingDocs.length)}
+          <div className="flex gap-2 mb-5">
+            {tabBtn("pending", LuClock,          "Documents en attente", pendingDocs.length)}
             {tabBtn("history", LuClipboardCheck, "Historique complet",   allHistory.length)}
           </div>
 
           {loading ? (
-            <div style={{ textAlign: "center", padding: "64px 0", color: MUTED, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <LuRefreshCw size={32} style={{ color: BORDER, animation: "spin 1s linear infinite" }} />
-              <span style={{ fontSize: 13 }}>Chargement…</span>
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div className="flex flex-col items-center py-16 gap-3">
+              <LuRefreshCw size={32} className="animate-spin" style={{ color:"rgba(74,184,63,0.4)" }} />
+              <span className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</span>
             </div>
           ) : (
             <>
               {/* Pending tab */}
               {activeTab === "pending" && (
-                <div>
-                  {pendingDocs.length === 0 ? (
-                    <Empty Icon={LuCircleCheckBig} message="Aucun document en attente de validation." />
-                  ) : (
-                    <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 4px rgba(46,74,107,0.06)" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: PENDING_COLS, padding: "10px 20px", background: BG, borderBottom: `1px solid ${BORDER}` }}>
-                        {["Référence","Titre","Responsable","Type","Version","Dernière décision","Action"].map(h => (
-                          <span key={h} style={{ color: MUTED, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>{h}</span>
-                        ))}
-                      </div>
-
-                      {pendingDocs.map((doc, i) => (
-                        <div key={doc.id}
-                          style={{ display: "grid", gridTemplateColumns: PENDING_COLS, padding: "12px 20px", alignItems: "center", borderBottom: i < pendingDocs.length - 1 ? `1px solid ${BG}` : "none" }}>
-
-                          <span style={{ fontFamily: "monospace", color: GREEN, fontWeight: 700, fontSize: 12 }}>{doc.doc_code}</span>
-
-                          <div style={{ overflow: "hidden", paddingRight: 12 }}>
-                            <p style={{ margin: 0, color: NAVY, fontSize: 12, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</p>
-                            {doc.process_name && <p style={{ margin: 0, color: MUTED, fontSize: 11 }}>{doc.process_name}</p>}
-                          </div>
-
-                          <span style={{ color: MUTED, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.responsible || "—"}</span>
-
-                          <span style={{ background: "#eef2ff", color: "#4338ca", border: "1px solid #a5b4fc", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600, width: "fit-content" }}>
-                            {doc.type_code}
-                          </span>
-
-                          <span style={{ color: MUTED, fontSize: 12 }}>
-                            {doc.version_letter && doc.version_letter !== "-" ? `v.${doc.version_letter}` : "—"}
-                          </span>
-
-                          <div>
-                            {doc.last_decision
-                              ? <DecisionBadge decision={doc.last_decision} />
-                              : <span style={{ color: MUTED, fontSize: 12 }}>Aucune</span>}
-                          </div>
-
-                          <button onClick={() => setSelectedDoc(doc)}
-                            style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 7, background: GREEN, color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, boxShadow: "0 2px 8px rgba(74,184,63,0.3)", whiteSpace: "nowrap", fontFamily: "inherit" }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = GREEN_DARK}
-                            onMouseLeave={(e) => e.currentTarget.style.background = GREEN}>
-                            <LuClipboardCheck size={13} /> Valider
-                          </button>
-                        </div>
+                pendingDocs.length === 0 ? <Empty Icon={LuCircleCheckBig} message="Aucun document en attente de validation." />
+                : (
+                  <div className="rounded-2xl overflow-hidden border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    {/* Header */}
+                    <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:PENDING_COLS, background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      {["Référence","Titre","Responsable","Type","Version","Dernière décision","Action"].map(h => (
+                        <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]" style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
                       ))}
                     </div>
-                  )}
-                </div>
+                    {pendingDocs.map((doc, i) => (
+                      <div key={doc.id} className="grid px-5 py-3 items-center" style={{ gridTemplateColumns:PENDING_COLS, ...(i<pendingDocs.length-1?tableRowStyle:{}) }}>
+                        <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
+                        <div className="overflow-hidden pr-3">
+                          <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
+                          {doc.process_name && <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.process_name}</p>}
+                        </div>
+                        <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible||"—"}</span>
+                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border" style={{ background:"rgba(165,180,252,0.1)", color:"#a5b4fc", borderColor:"rgba(165,180,252,0.2)" }}>{doc.type_code}</span>
+                        <span className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>{doc.version_letter&&doc.version_letter!=="-"?`v.${doc.version_letter}`:"—"}</span>
+                        <div>{doc.last_decision?<DecisionBadge decision={doc.last_decision} />:<span className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune</span>}</div>
+                        <button onClick={() => setSelectedDoc(doc)}
+                          className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-sm font-semibold text-white border-none"
+                          style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 3px 12px rgba(74,184,63,0.35)", cursor:"pointer" }}>
+                          <LuClipboardCheck size={13} /> Valider
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
 
               {/* History tab */}
               {activeTab === "history" && (
-                <div>
-                  {allHistory.length === 0 ? (
-                    <Empty Icon={LuInbox} message="Aucune validation enregistrée." />
-                  ) : (
-                    <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 4px rgba(46,74,107,0.06)" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: HISTORY_COLS, padding: "10px 20px", background: BG, borderBottom: `1px solid ${BORDER}` }}>
-                        {["Date","Référence","Titre doc","Validateur","Décision","Commentaire"].map(h => (
-                          <span key={h} style={{ color: MUTED, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>{h}</span>
-                        ))}
-                      </div>
-
-                      {allHistory.map((v, i) => (
-                        <div key={v.id}
-                          style={{ display: "grid", gridTemplateColumns: HISTORY_COLS, padding: "10px 20px", alignItems: "center", borderBottom: i < allHistory.length - 1 ? `1px solid ${BG}` : "none" }}>
-
-                          <span style={{ color: MUTED, fontSize: 11 }}>
-                            {new Date(v.validated_at).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}
-                            <br />
-                            <span style={{ fontSize: 10 }}>
-                              {new Date(v.validated_at).toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" })}
-                            </span>
-                          </span>
-
-                          <span style={{ fontFamily: "monospace", color: GREEN, fontWeight: 700, fontSize: 11 }}>{v.doc_code}</span>
-
-                          <span style={{ color: NAVY, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 8 }}>{v.doc_title}</span>
-
-                          <span style={{ display: "flex", alignItems: "center", gap: 5, color: NAVY_LIGHT, fontSize: 11 }}>
-                            <LuUser size={12} style={{ flexShrink: 0 }} /> {v.validator_name}
-                          </span>
-
-                          <DecisionBadge decision={v.decision} />
-
-                          <span style={{ color: MUTED, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.comment || "—"}</span>
-                        </div>
+                allHistory.length === 0 ? <Empty Icon={LuInbox} message="Aucune validation enregistrée." />
+                : (
+                  <div className="rounded-2xl overflow-hidden border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:HISTORY_COLS, background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      {["Date","Référence","Titre doc","Validateur","Décision","Commentaire"].map(h => (
+                        <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]" style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
                       ))}
                     </div>
-                  )}
-                </div>
+                    {allHistory.map((v, i) => (
+                      <div key={v.id} className="grid px-5 py-3 items-center" style={{ gridTemplateColumns:HISTORY_COLS, ...(i<allHistory.length-1?tableRowStyle:{}) }}>
+                        <span className="text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>
+                          {new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}
+                          <br /><span className="text-xs opacity-70">{new Date(v.validated_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</span>
+                        </span>
+                        <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{v.doc_code}</span>
+                        <span className="text-sm truncate pr-2 text-white">{v.doc_title}</span>
+                        <span className="flex items-center gap-1.5 text-sm" style={{ color:"rgba(168,191,212,0.7)" }}><LuUser size={12} className="flex-shrink-0" /> {v.validator_name}</span>
+                        <DecisionBadge decision={v.decision} />
+                        <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.5)" }}>{v.comment||"—"}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </>
           )}
@@ -607,13 +411,7 @@ export default function Validations() {
       </main>
 
       {selectedDoc && (
-        <ValidationModal
-          doc={selectedDoc}
-          users={users}
-          canValidate={can("validation:create")}
-          onClose={() => setSelectedDoc(null)}
-          onValidationAdded={load}
-        />
+        <ValidationModal doc={selectedDoc} users={users} canValidate={can("validation:create")} onClose={() => setSelectedDoc(null)} onValidationAdded={load} />
       )}
     </div>
   );

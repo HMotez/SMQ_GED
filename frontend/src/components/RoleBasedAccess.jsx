@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { LuCheck, LuX } from 'react-icons/lu';
 import { useUser } from '../context/UserContext';
 import useRoleCheck from '../hooks/useRoleCheck';
 
@@ -27,14 +28,14 @@ export function AccessDeniedMessage({ reason }) {
       marginBottom: 16,
     }}>
       <p style={{ color: '#ff7b72', fontWeight: 600, margin: '0 0 8px' }}>
-        🔒 Accès refusé
+        Accès refusé
       </p>
       <p style={{ color: '#8b949e', fontSize: 13, margin: 0 }}>
         {reason}
       </p>
       {userRole && (
         <p style={{ color: '#6e7681', fontSize: 12, margin: '8px 0 0', fontStyle: 'italic' }}>
-          👤 Rôle actuel: <strong>{userRole}</strong>
+          Rôle actuel: <strong>{userRole}</strong>
         </p>
       )}
     </div>
@@ -73,7 +74,7 @@ export function RoleInfoBadge() {
       alignItems: 'center',
       gap: 8,
     }}>
-      <span style={{ fontSize: 12 }}>👤</span>
+      <span style={{ width: 12, height: 12, display: 'inline-block', background: style.color, borderRadius: 6 }} />
       <div>
         <p style={{ color: '#6e7681', fontSize: 11, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           User
@@ -114,7 +115,7 @@ export function DocumentAccessStatus({ document }) {
       marginBottom: 16,
     }}>
       <p style={{ color: '#8b949e', fontSize: 12, margin: '0 0 8px', textTransform: 'uppercase', fontWeight: 600 }}>
-        📋 Vos permissions sur ce document
+        Vos permissions sur ce document
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {actions.map(({ label, permission }) => {
@@ -130,9 +131,12 @@ export function DocumentAccessStatus({ document }) {
                 background: allowed ? '#03803d' : '#3d1a1a',
                 color: allowed ? '#3fb950' : '#ff7b72',
                 border: `1px solid ${allowed ? '#196c2e' : '#6e2020'}`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
-              {allowed ? '✓' : '✗'} {label}
+              {allowed ? <LuCheck size={14} /> : <LuX size={14} />} {label}
             </span>
           );
         })}

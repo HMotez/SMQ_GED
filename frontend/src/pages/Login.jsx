@@ -1,40 +1,145 @@
-﻿// ============================================================
-// pages/Login.jsx — ACTIA ES Brand Theme · Inter + Lucide
+// ============================================================
+// pages/Login.jsx — ACTIA ES · Dark Glass Premium · TailwindCSS
 // ============================================================
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import {
   LuMail, LuLock, LuEye, LuEyeOff,
-  LuCircleAlert, LuShieldCheck, LuArrowRight, LuUser,
+  LuCircleAlert, LuShieldCheck, LuArrowRight,
+  LuFileText, LuCheck, LuSettings, LuBookOpen,
 } from "react-icons/lu";
 
-/* ── ACTIA colors ─────────────────────────────────────────── */
-const NAVY      = "#2e4a6b";
-const NAVY_DARK = "#1e3450";
-const GREEN     = "#4ab83f";
-const GREEN_DARK= "#3a9a31";
-const BG        = "#f0f3f6";
-const BORDER    = "#dde4ec";
-const MUTED     = "#6b82a0";
-const SURFACE   = "#ffffff";
-
-/* ── Demo accounts ────────────────────────────────────────── */
-const DEMO_ACCOUNTS = [
-  { role:"Admin GED",           email:"admin@actia.com",      password:"Admin123!", accent:"#ef4444", ring:"rgba(239,68,68,0.25)",   bg:"#fef2f2" },
-  { role:"Responsable Qualité", email:"rq@actia.com",         password:"RQ123!",   accent:"#f59e0b", ring:"rgba(245,158,11,0.25)",  bg:"#fffbeb" },
-  { role:"Rédacteur",           email:"redacteur@actia.com",  password:"Red123!",  accent:"#3b82f6", ring:"rgba(59,130,246,0.25)",  bg:"#eff6ff" },
-  { role:"Validateur",          email:"validateur@actia.com", password:"Val123!",  accent:GREEN,     ring:"rgba(74,184,63,0.25)",   bg:"#f0fdf4" },
-  { role:"Lecteur",             email:"lecteur@actia.com",    password:"Lec123!",  accent:MUTED,     ring:"rgba(107,130,160,0.25)", bg:"#f8fafc" },
+/* ── Role definitions ─────────────────────────────────────── */
+const ROLES = [
+  {
+    name:  "Admin GED",
+    email: "admin@actia.com",
+    badge: "Super Admin",
+    color: "#f87171",
+    icon:  LuSettings,
+    perms: ["Créer", "Valider", "Archiver", "Gérer utilisateurs"],
+  },
+  {
+    name:  "Responsable Qualité",
+    email: "rq@actia.com",
+    badge: "Manager",
+    color: "#fbbf24",
+    icon:  LuCheck,
+    perms: ["Créer", "Valider", "Archiver"],
+  },
+  {
+    name:  "Rédacteur",
+    email: "redacteur@actia.com",
+    badge: "Éditeur",
+    color: "#60a5fa",
+    icon:  LuFileText,
+    perms: ["Créer", "Modifier", "Soumettre"],
+  },
+  {
+    name:  "Validateur",
+    email: "validateur@actia.com",
+    badge: "Valideur",
+    color: "#4ade80",
+    icon:  LuCheck,
+    perms: ["Consulter", "Valider docs"],
+  },
+  {
+    name:  "Lecteur",
+    email: "lecteur@actia.com",
+    badge: "Read-Only",
+    color: "#a78bfa",
+    icon:  LuBookOpen,
+    perms: ["Consulter documents"],
+  },
 ];
 
-const inputCls = {
-  width: "100%", padding: "10px 12px 10px 38px", borderRadius: 8,
-  background: BG, border: `1px solid ${BORDER}`,
-  color: NAVY, fontSize: 13, outline: "none", transition: "border-color 0.15s",
-  fontFamily: "inherit",
-};
+/* ── ISO permission matrix ────────────────────────────────── */
+const PERMISSIONS = [
+  { label: "Créer document",     roles: ["Admin GED", "Resp. Qualité", "Rédacteur"],  icon: LuFileText },
+  { label: "Valider document",   roles: ["Admin GED", "Resp. Qualité", "Validateur"], icon: LuCheck },
+  { label: "Archiver",           roles: ["Admin GED", "Resp. Qualité"],               icon: LuSettings },
+  { label: "Gérer utilisateurs", roles: ["Admin GED"],                                icon: LuShieldCheck },
+];
 
+/* ── Keyframe animations ──────────────────────────────────── */
+const STYLES = `
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+  @keyframes blob {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%     { transform: translate(40px,-30px) scale(1.08); }
+    66%     { transform: translate(-25px,35px) scale(0.93); }
+  }
+  @keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-7px); }
+  }
+  @keyframes roleIn {
+    from { opacity:0; transform:translateX(18px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+  @keyframes badgePop {
+    0%   { transform:scale(0.6); opacity:0; }
+    80%  { transform:scale(1.1); }
+    100% { transform:scale(1); opacity:1; }
+  }
+
+  .anim-fade-up  { animation: fadeInUp 0.55s cubic-bezier(.16,1,.3,1) both; }
+  .anim-fade-up2 { animation: fadeInUp 0.55s cubic-bezier(.16,1,.3,1) 0.1s both; }
+  .anim-fade-in  { animation: fadeIn 0.25s ease both; }
+  .dot-float     { animation: floatY 3s ease-in-out infinite; }
+  .blob1         { animation: blob 14s ease-in-out infinite; }
+  .blob2         { animation: blob 18s ease-in-out infinite 5s; }
+  .blob3         { animation: blob 22s ease-in-out infinite 9s; }
+
+  .role-card {
+    transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease, border-color 0.2s, background 0.2s;
+  }
+  .role-card:hover { transform: translateY(-3px) scale(1.012); }
+
+  .perm-matrix-card { transition: background 0.2s, border-color 0.2s; }
+  .perm-matrix-card:hover {
+    background: rgba(255,255,255,0.06) !important;
+    border-color: rgba(74,184,63,0.2) !important;
+  }
+
+  .perm-chip { transition: transform 0.15s; }
+  .perm-chip:hover { transform: scale(1.06); }
+
+  .submit-btn { transition: all 0.2s cubic-bezier(.34,1.56,.64,1); }
+  .submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(74,184,63,0.48) !important;
+  }
+  .submit-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+
+  /* Custom dark glass input — not expressible purely in Tailwind base classes */
+  .dark-input {
+    width: 100%;
+    padding: 11px 12px 11px 40px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.9);
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .dark-input::placeholder { color: rgba(168,191,212,0.35); }
+  .dark-input:focus {
+    border-color: rgba(74,184,63,0.6);
+    box-shadow: 0 0 0 3.5px rgba(74,184,63,0.15);
+    background: rgba(255,255,255,0.09);
+  }
+  .dark-input:disabled { opacity: 0.5; }
+  .dark-input-pr { padding-right: 44px; }
+`;
+
+/* ════════════════════════════════════════════════════════════ */
 export default function Login() {
   const navigate  = useNavigate();
   const { login } = useUser();
@@ -54,193 +159,427 @@ export default function Login() {
       await login(email.trim(), password);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Erreur de connexion.");
-    } finally { setLoading(false); }
+      setError(err.message || "Identifiants incorrects. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fillDemo = (acc) => { setEmail(acc.email); setPassword(acc.password); setError(""); };
-
   return (
-    <div style={{ minHeight:"100vh", background:`linear-gradient(135deg,${NAVY_DARK} 0%,${NAVY} 100%)`, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-6 overflow-hidden relative"
+      style={{
+        background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)",
+        fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+      }}
+    >
+      <style>{STYLES}</style>
 
-      {/* Background grid */}
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0, opacity:0.06 }}>
-        {[...Array(8)].map((_,i)=>(
-          <div key={i} style={{ position:"absolute", top:`${i*14}%`, left:"-5%", width:"110%", height:1, background:"#fff" }} />
-        ))}
-        {[...Array(8)].map((_,i)=>(
-          <div key={i} style={{ position:"absolute", left:`${i*14}%`, top:"-5%", height:"110%", width:1, background:"#fff" }} />
-        ))}
+      {/* ── Animated background ───────────────────────────── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        {/* Blobs */}
+        <div
+          className="blob1 absolute rounded-full"
+          style={{ width:650,height:650,top:"-20%",left:"-15%",background:"radial-gradient(circle,rgba(74,184,63,0.07) 0%,transparent 70%)" }}
+        />
+        <div
+          className="blob2 absolute rounded-full"
+          style={{ width:550,height:550,bottom:"-10%",right:"-10%",background:"radial-gradient(circle,rgba(96,165,250,0.05) 0%,transparent 70%)" }}
+        />
+        <div
+          className="blob3 absolute rounded-full"
+          style={{ width:380,height:380,top:"40%",right:"22%",background:"radial-gradient(circle,rgba(74,184,63,0.05) 0%,transparent 70%)" }}
+        />
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            opacity: 0.035,
+            backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)",
+            backgroundSize: "52px 52px",
+          }}
+        />
+        {/* Top fade */}
+        <div
+          className="absolute top-0 left-0 right-0 h-52"
+          style={{ background: "linear-gradient(to bottom,rgba(10,20,32,0.5),transparent)" }}
+        />
       </div>
 
-      <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:960, display:"flex", gap:20, alignItems:"flex-start" }}>
+      {/* ── Main two-column layout ───────────────────────── */}
+      <div
+        className="anim-fade-up relative flex gap-5 items-start w-full"
+        style={{ zIndex: 1, maxWidth: 1040 }}
+      >
 
-        {/* ── Left panel: form ──────────────────────────── */}
-        <div style={{ flexShrink:0, width:400, background:SURFACE, borderRadius:18, padding:36, boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+        {/* ════════════════════════════════════════════════
+            LEFT PANEL — Login Form
+        ════════════════════════════════════════════════ */}
+        <div
+          className="flex-shrink-0 rounded-2xl"
+          style={{
+            width: 420,
+            padding: "40px 36px",
+            background: "rgba(255,255,255,0.045)",
+            backdropFilter: "blur(28px)",
+            WebkitBackdropFilter: "blur(28px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1)",
+          }}
+        >
 
-          {/* ACTIA Logo */}
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:28 }}>
-            <div style={{ display:"flex", gap:2, padding:8, background:NAVY_DARK, borderRadius:10 }}>
-              {[...Array(3)].map((_,i)=>(
-                <div key={i} style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                  {[...Array(3)].map((_,j)=>(
-                    <div key={j} style={{ width:6, height:6, borderRadius:1, background:GREEN, opacity:(i+j)%2===0?1:0.5 }} />
+          {/* ── Brand logo ──────────────────────────────── */}
+          <div className="flex items-center gap-3.5 mb-8">
+            <div
+              className="flex gap-0.5 p-2.5 rounded-[13px]"
+              style={{ background: "rgba(74,184,63,0.12)", border: "1px solid rgba(74,184,63,0.25)" }}
+            >
+              {[0,1,2].map(col => (
+                <div key={col} className="flex flex-col gap-0.5">
+                  {[0,1,2].map(row => (
+                    <div
+                      key={row}
+                      className="dot-float rounded-sm"
+                      style={{
+                        width: 7, height: 7,
+                        background: "#4ab83f",
+                        opacity: (col + row) % 2 === 0 ? 1 : 0.4,
+                        animationDelay: `${(col * 3 + row) * 0.12}s`,
+                      }}
+                    />
                   ))}
                 </div>
               ))}
             </div>
             <div>
-              <div style={{ display:"flex", alignItems:"baseline", gap:5 }}>
-                <span style={{ color:NAVY, fontWeight:800, fontSize:17, letterSpacing:2 }}>ACTIA</span>
-                <span style={{ color:GREEN, fontWeight:700, fontSize:11, letterSpacing:1 }}>ES</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-white font-black text-lg tracking-[2.5px]">ACTIA</span>
+                <span
+                  className="text-xs font-bold tracking-wider px-1.5 py-0.5 rounded"
+                  style={{ color:"#4ab83f", background:"rgba(74,184,63,0.15)", border:"1px solid rgba(74,184,63,0.25)" }}
+                >
+                  ES
+                </span>
               </div>
-              <p style={{ color:MUTED, fontSize:10, margin:0, letterSpacing:0.3 }}>Engineering Services · GED</p>
+              <p className="m-0 text-[10.5px] tracking-[0.5px]" style={{ color: "rgba(168,191,212,0.6)" }}>
+                Engineering Services · GED
+              </p>
             </div>
           </div>
 
-          <h1 style={{ color:NAVY, fontSize:22, fontWeight:800, margin:"0 0 4px", letterSpacing:-0.5 }}>Connexion</h1>
-          <p style={{ color:MUTED, fontSize:13, margin:"0 0 24px" }}>Identifiez-vous pour accéder à la plateforme</p>
+          {/* ── Headline ─────────────────────────────────── */}
+          <div className="mb-7">
+            <h1
+              className="text-white text-[26px] font-black m-0 mb-1.5 leading-tight"
+              style={{ letterSpacing: -0.8 }}
+            >
+              Connexion
+            </h1>
+            <p className="m-0 text-[13.5px] leading-relaxed" style={{ color: "rgba(168,191,212,0.65)" }}>
+              Identifiez-vous pour accéder à la plateforme
+            </p>
+          </div>
 
-          {/* Error */}
+          {/* ── Error alert ──────────────────────────────── */}
           {error && (
-            <div style={{ display:"flex", alignItems:"center", gap:10, background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"10px 14px", marginBottom:18 }}>
-              <LuCircleAlert size={17} style={{ color:"#ef4444", flexShrink:0 }} />
-              <p style={{ color:"#dc2626", fontSize:13, margin:0 }}>{error}</p>
+            <div
+              className="anim-fade-in flex items-start gap-2.5 rounded-xl px-3.5 py-3 mb-5"
+              style={{ background: "rgba(248,113,113,0.1)", border: "1.5px solid rgba(248,113,113,0.25)" }}
+            >
+              <LuCircleAlert size={16} className="flex-shrink-0 mt-0.5" style={{ color: "#f87171" }} />
+              <p className="m-0 text-[13px] leading-relaxed" style={{ color: "#f87171" }}>{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          {/* ── Form ─────────────────────────────────────── */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]">
+
             {/* Email */}
             <div>
-              <label style={{ display:"block", color:MUTED, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:0.8, marginBottom:6 }}>Email</label>
-              <div style={{ position:"relative" }}>
-                <LuMail size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:MUTED }} />
-                <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)}
-                  placeholder="votre@actia.com" autoComplete="email" disabled={loading}
-                  style={inputCls}
-                  onFocus={(e)=>{ e.target.style.borderColor=GREEN; e.target.style.boxShadow=`0 0 0 3px rgba(74,184,63,0.12)`; }}
-                  onBlur={(e)=>{ e.target.style.borderColor=BORDER; e.target.style.boxShadow="none"; }}
+              <label
+                className="block text-[11px] font-bold uppercase tracking-[1px] mb-[7px]"
+                style={{ color: "rgba(168,191,212,0.55)" }}
+              >
+                Email
+              </label>
+              <div className="relative">
+                <LuMail
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "rgba(168,191,212,0.4)" }}
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="votre@actia.com"
+                  autoComplete="email"
+                  disabled={loading}
+                  className="dark-input"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label style={{ display:"block", color:MUTED, fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:0.8, marginBottom:6 }}>Mot de passe</label>
-              <div style={{ position:"relative" }}>
-                <LuLock size={15} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:MUTED }} />
-                <input type={showPass?"text":"password"} value={password} onChange={(e)=>setPassword(e.target.value)}
-                  placeholder="••••••••" autoComplete="current-password" disabled={loading}
-                  style={{ ...inputCls, paddingRight:40 }}
-                  onFocus={(e)=>{ e.target.style.borderColor=GREEN; e.target.style.boxShadow=`0 0 0 3px rgba(74,184,63,0.12)`; }}
-                  onBlur={(e)=>{ e.target.style.borderColor=BORDER; e.target.style.boxShadow="none"; }}
+              <label
+                className="block text-[11px] font-bold uppercase tracking-[1px] mb-[7px]"
+                style={{ color: "rgba(168,191,212,0.55)" }}
+              >
+                Mot de passe
+              </label>
+              <div className="relative">
+                <LuLock
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: "rgba(168,191,212,0.4)" }}
                 />
-                <button type="button" onClick={()=>setShowPass(s=>!s)}
-                  style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", color:MUTED, background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center" }}>
+                <input
+                  type={showPass ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  disabled={loading}
+                  className="dark-input dark-input-pr"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center p-0.5 bg-transparent border-none cursor-pointer transition-colors duration-150"
+                  style={{ color: "rgba(168,191,212,0.4)" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "rgba(168,191,212,0.9)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "rgba(168,191,212,0.4)"}
+                >
                   {showPass ? <LuEyeOff size={16} /> : <LuEye size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
-            <button type="submit" disabled={loading}
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="submit-btn w-full py-3.5 mt-1 rounded-xl font-bold text-[14.5px] border-none flex items-center justify-center gap-2.5"
               style={{
-                width:"100%", padding:"12px 0", borderRadius:9, fontWeight:700, fontSize:14,
-                background: loading ? "#e5e7eb" : GREEN,
-                color: loading ? MUTED : "#fff",
-                border:"none", cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: loading ? "none" : "0 4px 14px rgba(74,184,63,0.4)",
-                transition:"all 0.15s", display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-                fontFamily:"inherit", letterSpacing:-0.2,
+                background: loading
+                  ? "rgba(255,255,255,0.07)"
+                  : "linear-gradient(135deg,#4ab83f 0%,#3da333 100%)",
+                color: loading ? "rgba(168,191,212,0.4)" : "white",
+                cursor: loading ? "not-allowed" : "pointer",
+                boxShadow: loading ? "none" : "0 6px 24px rgba(74,184,63,0.4)",
+                fontFamily: "inherit",
+                letterSpacing: -0.1,
               }}
-              onMouseEnter={(e)=>{ if(!loading) e.currentTarget.style.background=GREEN_DARK; }}
-              onMouseLeave={(e)=>{ if(!loading) e.currentTarget.style.background=GREEN; }}
             >
               {loading ? (
-                <><span style={{ width:16,height:16,border:"2px solid #ccc",borderTopColor:MUTED,borderRadius:"50%",display:"inline-block",animation:"spin 0.8s linear infinite" }}/> Connexion en cours…</>
+                <>
+                  <span
+                    className="inline-block rounded-full"
+                    style={{
+                      width: 16, height: 16,
+                      border: "2px solid rgba(168,191,212,0.2)",
+                      borderTopColor: "rgba(168,191,212,0.5)",
+                      animation: "spin 0.7s linear infinite",
+                    }}
+                  />
+                  Connexion en cours…
+                </>
               ) : (
                 <>Se connecter <LuArrowRight size={16} /></>
               )}
             </button>
           </form>
 
-          <p style={{ textAlign:"center", color:MUTED, fontSize:12, marginTop:16 }}>
+          {/* Register link */}
+          <p className="text-center text-[12.5px] mt-[18px] mb-0" style={{ color: "rgba(168,191,212,0.5)" }}>
             Pas encore de compte ?{" "}
-            <NavLink to="/register" style={{ color:GREEN, fontWeight:600, textDecoration:"none" }}>Créer un compte →</NavLink>
+            <NavLink to="/register" className="font-bold no-underline" style={{ color: "#4ab83f" }}>
+              Créer un compte →
+            </NavLink>
           </p>
 
           {/* Security badge */}
-          <div style={{ marginTop:20, background:BG, border:`1px solid ${BORDER}`, borderRadius:9, padding:"10px 14px", display:"flex", alignItems:"center", gap:10 }}>
-            <LuShieldCheck size={15} style={{ color:GREEN, flexShrink:0 }} />
-            <p style={{ color:MUTED, fontSize:11, margin:0 }}>Authentification sécurisée JWT · ISO 9001:2015</p>
+          <div
+            className="mt-5 flex items-center gap-2.5 rounded-xl px-4 py-2.5"
+            style={{ background: "rgba(74,184,63,0.06)", border: "1.5px solid rgba(74,184,63,0.18)" }}
+          >
+            <LuShieldCheck size={15} className="flex-shrink-0" style={{ color: "#4ab83f" }} />
+            <p className="m-0 text-[11px] tracking-[0.1px]" style={{ color: "rgba(168,191,212,0.55)" }}>
+              Authentification sécurisée JWT · ISO 9001:2015
+            </p>
           </div>
-
-          <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
         </div>
 
-        {/* ── Right panel: demo accounts ────────────────── */}
-        <div style={{ flex:1, minWidth:0, background:SURFACE, borderRadius:18, padding:28, boxShadow:"0 20px 60px rgba(0,0,0,0.25)" }}>
-
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-            <span style={{ display:"inline-block", width:3, height:16, background:GREEN, borderRadius:99 }} />
-            <p style={{ color:MUTED, fontSize:10, textTransform:"uppercase", letterSpacing:1.5, fontWeight:700, margin:0 }}>Comptes de démonstration</p>
+        {/* ════════════════════════════════════════════════
+            RIGHT PANEL — Roles & Access
+        ════════════════════════════════════════════════ */}
+        <div
+          className="anim-fade-up2 flex-1 min-w-0 rounded-2xl"
+          style={{
+            padding: "32px 28px",
+            background: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07)",
+          }}
+        >
+          {/* Panel header */}
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="inline-block w-[3px] h-4 rounded-full flex-shrink-0"
+                style={{ background: "linear-gradient(to bottom,#4ab83f,#3da333)" }}
+              />
+              <p
+                className="text-[10px] uppercase tracking-[2px] font-bold m-0"
+                style={{ color: "rgba(168,191,212,0.5)" }}
+              >
+                Rôles &amp; Accès
+              </p>
+            </div>
+            <p className="text-white text-[15px] font-bold m-0 mt-1" style={{ letterSpacing: -0.3 }}>
+              Profils d'accès à la plateforme
+            </p>
           </div>
-          <p style={{ color:MUTED, fontSize:12, margin:"0 0 18px" }}>Cliquez pour remplir automatiquement le formulaire</p>
 
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {DEMO_ACCOUNTS.map((acc) => {
-              const sel = email === acc.email;
+          {/* Role cards */}
+          <div className="flex flex-col gap-2">
+            {ROLES.map((r, idx) => {
+              const Icon = r.icon;
               return (
-                <button key={acc.email} type="button" onClick={()=>fillDemo(acc)}
+                <div
+                  key={r.email}
+                  className="role-card flex items-center gap-3 rounded-[13px] px-4 py-3"
                   style={{
-                    width:"100%", textAlign:"left", padding:"13px 14px", borderRadius:12, cursor:"pointer",
-                    background: sel ? acc.bg : BG,
-                    border: `1px solid ${sel ? acc.accent+"55" : BORDER}`,
-                    boxShadow: sel ? `0 0 0 3px ${acc.ring}` : "none",
-                    transition:"all 0.15s", fontFamily:"inherit",
-                  }}>
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ width:32, height:32, borderRadius:9, background: sel ? acc.accent+"22" : "#eef3fa", display:"flex", alignItems:"center", justifyContent:"center", border:`1px solid ${sel?acc.accent+"44":BORDER}` }}>
-                        <LuUser size={15} style={{ color: sel ? acc.accent : NAVY }} />
-                      </div>
-                      <div>
-                        <p style={{ margin:0, fontWeight:700, fontSize:13, color: sel ? acc.accent : NAVY, letterSpacing:-0.2 }}>{acc.role}</p>
-                        <p style={{ margin:0, color:MUTED, fontSize:11, fontFamily:"monospace" }}>{acc.email}</p>
-                      </div>
+                    background: `${r.color}0d`,
+                    border: `1px solid ${r.color}28`,
+                    animation: `roleIn 0.4s cubic-bezier(.16,1,.3,1) ${0.08 + idx * 0.07}s both`,
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background  = `${r.color}15`;
+                    e.currentTarget.style.borderColor  = `${r.color}45`;
+                    e.currentTarget.style.boxShadow    = `0 8px 28px rgba(0,0,0,0.25),0 0 0 1px ${r.color}20`;
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background  = `${r.color}0d`;
+                    e.currentTarget.style.borderColor  = `${r.color}28`;
+                    e.currentTarget.style.boxShadow    = "none";
+                  }}
+                >
+                  {/* Role icon */}
+                  <div
+                    className="w-[38px] h-[38px] rounded-xl flex-shrink-0 flex items-center justify-center"
+                    style={{ background: `${r.color}15`, border: `1px solid ${r.color}30` }}
+                  >
+                    <Icon size={17} style={{ color: r.color }} />
+                  </div>
+
+                  {/* Role info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-[5px]">
+                      <span
+                        className="font-bold text-[13px] whitespace-nowrap"
+                        style={{ color: r.color, letterSpacing: -0.2 }}
+                      >
+                        {r.name}
+                      </span>
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-[0.5px] px-[7px] py-px rounded-full"
+                        style={{
+                          background: `${r.color}18`,
+                          color: r.color,
+                          border: `1px solid ${r.color}30`,
+                          animation: `badgePop 0.4s cubic-bezier(.34,1.56,.64,1) ${0.2 + idx * 0.07}s both`,
+                        }}
+                      >
+                        {r.badge}
+                      </span>
                     </div>
-                    <div style={{ textAlign:"right" }}>
-                      <p style={{ margin:0, color:MUTED, fontSize:10 }}>Mot de passe</p>
-                      <p style={{ margin:0, color:NAVY, fontSize:12, fontFamily:"monospace", fontWeight:600 }}>{acc.password}</p>
+
+                    {/* Permission chips */}
+                    <div className="flex flex-wrap gap-1">
+                      {r.perms.map(p => (
+                        <span
+                          key={p}
+                          className="perm-chip text-[10px] font-semibold tracking-[0.2px] px-2 py-0.5 rounded-full"
+                          style={{
+                            background: "rgba(255,255,255,0.06)",
+                            border: `1px solid ${r.color}20`,
+                            color: "rgba(168,191,212,0.75)",
+                          }}
+                        >
+                          {p}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                </button>
+
+                  {/* Email */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="m-0 text-[10px] mb-0.5" style={{ color: "rgba(168,191,212,0.4)" }}>Email</p>
+                    <p
+                      className="m-0 text-[10.5px] font-medium"
+                      style={{
+                        color: "rgba(168,191,212,0.7)",
+                        fontFamily: "'SF Mono','Fira Code',monospace",
+                        letterSpacing: -0.2,
+                      }}
+                    >
+                      {r.email}
+                    </p>
+                  </div>
+                </div>
               );
             })}
           </div>
 
-          {/* Permissions grid */}
-          <div style={{ marginTop:20, paddingTop:20, borderTop:`1px solid ${BORDER}` }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-              <span style={{ display:"inline-block", width:3, height:14, background:GREEN, borderRadius:99 }} />
-              <p style={{ color:MUTED, fontSize:10, textTransform:"uppercase", letterSpacing:1.5, fontWeight:700, margin:0 }}>Permissions ISO par rôle</p>
+          {/* ── ISO Permissions matrix ─────────────────── */}
+          <div className="mt-5 pt-[18px]" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="inline-block w-[3px] h-3.5 rounded-full flex-shrink-0"
+                style={{ background: "linear-gradient(to bottom,#4ab83f,#3da333)" }}
+              />
+              <p
+                className="text-[10px] uppercase tracking-[2px] font-bold m-0"
+                style={{ color: "rgba(168,191,212,0.5)" }}
+              >
+                Matrice des permissions ISO
+              </p>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-              {[
-                { label:"Créer document",    roles:["Admin GED","Responsable Qualité","Rédacteur"] },
-                { label:"Valider document",  roles:["Admin GED","Responsable Qualité","Validateur"] },
-                { label:"Archiver",          roles:["Admin GED","Responsable Qualité"] },
-                { label:"Gérer utilisateurs",roles:["Admin GED"] },
-              ].map(({label,roles}) => (
-                <div key={label} style={{ background:BG, border:`1px solid ${BORDER}`, borderRadius:9, padding:"10px 12px" }}>
-                  <p style={{ color:NAVY, fontSize:10, fontWeight:700, marginBottom:3, letterSpacing:-0.1 }}>{label}</p>
-                  <p style={{ color:MUTED, fontSize:10, margin:0, lineHeight:1.5 }}>{roles.join(", ")}</p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {PERMISSIONS.map(({ label, roles, icon }) => (
+                <div
+                  key={label}
+                  className="perm-matrix-card rounded-xl px-3.5 py-3"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs">{icon}</span>
+                    <p
+                      className="text-[10.5px] font-bold m-0"
+                      style={{ color: "rgba(255,255,255,0.85)", letterSpacing: -0.1 }}
+                    >
+                      {label}
+                    </p>
+                  </div>
+                  <p
+                    className="text-[9.5px] m-0 leading-relaxed"
+                    style={{ color: "rgba(168,191,212,0.45)" }}
+                  >
+                    {roles.join(", ")}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

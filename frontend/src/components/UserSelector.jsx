@@ -3,6 +3,7 @@
 // Affiche l'utilisateur connecté + bouton Déconnexion
 // ============================================================
 import { useNavigate } from "react-router-dom";
+import { LuUser } from "react-icons/lu";
 import { useUser } from "../context/UserContext";
 
 const ROLE_COLOR = {
@@ -42,8 +43,9 @@ export default function UserSelector() {
         <p style={{
           margin: 0, color: "#e6edf3", fontWeight: 600, fontSize: 12,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          display: "flex", alignItems: "center", gap: "6px",
         }}>
-          👤 {currentUser.name}
+          <LuUser size={14} /> {currentUser.name}
         </p>
         <p style={{ margin: "2px 0 0", color: "#484f58", fontSize: 10,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
