@@ -118,6 +118,25 @@ function Navbar() {
             </NavLink>
           ))}
 
+          {/* Lien admin uniquement visible pour Admin GED */}
+          {userRole === "Admin GED" && (
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) =>
+                `px-3.5 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                  isActive ? "text-red-400" : "text-[#a8bfd4] hover:text-red-400"
+                }`
+              }
+              style={({ isActive }) => isActive ? {
+                background: "rgba(239,68,68,0.1)",
+                boxShadow: "inset 0 1px 0 rgba(239,68,68,0.1)",
+              } : {}}
+            >
+              <LuUsers size={14} />
+              Utilisateurs
+            </NavLink>
+          )}
+
           <NavLink
             to="/create"
             className="ml-2 px-4 py-2 rounded-xl no-underline text-sm font-semibold flex items-center gap-1.5 text-white transition-all duration-200 hover:-translate-y-px"

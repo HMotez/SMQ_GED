@@ -30,7 +30,17 @@ async function ensureAuthColumns() {
   await pool.query(`
     ALTER TABLE users
       ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255),
-      ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE;
+      ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE,
+      ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT false;
+  `);
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS requested_role VARCHAR(100);
+  `);
+  // Migration : activer les comptes existants qui ont déjà un rôle assigné
+  await pool.query(`
+    UPDATE users SET is_active = true
+    WHERE role_id IS NOT NULL AND (is_active IS NULL OR is_active = false);
   `);
   console.log("[Auth] Colonnes auth vérifiées.");
 }
@@ -42,13 +52,6 @@ async function seedDefaultUsers() {
   const client = await pool.connect();
   try {
     for (const u of DEFAULT_USERS) {
-      // Vérifier si l'email existe déjà
-      const exists = await client.query(
-        "SELECT id FROM users WHERE email = $1",
-        [u.email]
-      );
-      if (exists.rows.length > 0) continue;
-
       // Trouver le role_id
       const roleRow = await client.query(
         "SELECT id FROM roles WHERE name = $1",
@@ -57,10 +60,30 @@ async function seedDefaultUsers() {
       if (!roleRow.rows.length) continue;
       const roleId = roleRow.rows[0].id;
 
+      // Vérifier si l'email existe déjà
+      const exists = await client.query(
+        "SELECT id, password_hash FROM users WHERE LOWER(email) = LOWER($1)",
+        [u.email]
+      );
+
+      if (exists.rows.length > 0) {
+        // Mettre à jour si password_hash manquant ou rôle/activation manquants
+        if (!exists.rows[0].password_hash) {
+          const hash = await bcrypt.hash(u.password, 10);
+          await client.query(
+            `UPDATE users SET password_hash = $1, role_id = $2, is_active = true
+             WHERE id = $3`,
+            [hash, roleId, exists.rows[0].id]
+          );
+          console.log(`[Auth] Mot de passe mis à jour pour : ${u.email}`);
+        }
+        continue;
+      }
+
       const hash = await bcrypt.hash(u.password, 10);
       await client.query(
-        `INSERT INTO users (name, email, password_hash, role_id)
-         VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO users (name, email, password_hash, role_id, is_active)
+         VALUES ($1, $2, $3, $4, true)`,
         [u.name, u.email, hash, roleId]
       );
       console.log(`[Auth] Utilisateur créé : ${u.email} (${u.role})`);
@@ -102,7 +125,7 @@ async function login(req, res) {
 
   try {
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.password_hash, r.name AS role
+      `SELECT u.id, u.name, u.email, u.password_hash, u.is_active, r.name AS role
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE LOWER(u.email) = LOWER($1)`,
@@ -122,6 +145,13 @@ async function login(req, res) {
       return res.status(401).json({
         error: "Compte non configuré. Contactez l'administrateur.",
         code:  "NO_PASSWORD",
+      });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({
+        error: "Votre compte est en attente d'activation par l'administrateur.",
+        code:  "ACCOUNT_INACTIVE",
       });
     }
 
@@ -194,19 +224,20 @@ async function me(req, res) {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/register
-// Body: { name, email, password, confirmPassword, role }
+// Body: { name, email, password, confirmPassword }
+// Crée un compte inactif — l'admin attribue le rôle lors de l'activation
 // ─────────────────────────────────────────────────────────────
-const VALID_ROLES = ["Admin GED", "Responsable Qualité", "Rédacteur", "Validateur", "Lecteur"];
+const VALID_ROLES = ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur", "Validateur", "Lecteur"];
 
 async function register(req, res) {
-  const { name, email, password, confirmPassword, role } = req.body;
+  const { name, email, password, confirmPassword, requestedRole } = req.body;
 
   // ── Validations ──────────────────────────────────────────
   const errors = [];
-  if (!name?.trim())           errors.push("Le nom est requis.");
-  if (!email?.trim())          errors.push("L'email est requis.");
-  if (!password)               errors.push("Le mot de passe est requis.");
-  if (!role)                   errors.push("Le rôle est requis.");
+  if (!name?.trim())  errors.push("Le nom est requis.");
+  if (!email?.trim()) errors.push("L'email est requis.");
+  if (!password)      errors.push("Le mot de passe est requis.");
+  if (!requestedRole) errors.push("Le rôle souhaité est requis.");
 
   if (name?.trim().length < 2)
     errors.push("Le nom doit contenir au moins 2 caractères.");
@@ -221,7 +252,7 @@ async function register(req, res) {
   if (password && confirmPassword && password !== confirmPassword)
     errors.push("Les mots de passe ne correspondent pas.");
 
-  if (role && !VALID_ROLES.includes(role))
+  if (requestedRole && !VALID_ROLES.includes(requestedRole))
     errors.push(`Rôle invalide. Valeurs acceptées : ${VALID_ROLES.join(", ")}.`);
 
   if (errors.length > 0) {
@@ -241,37 +272,22 @@ async function register(req, res) {
       });
     }
 
-    // ── Résoudre role_id ────────────────────────────────────
-    const roleRow = await pool.query(
-      "SELECT id FROM roles WHERE name = $1",
-      [role]
-    );
-    if (!roleRow.rows.length) {
-      return res.status(400).json({ error: "Rôle introuvable en base.", code: "ROLE_NOT_FOUND" });
-    }
-    const roleId = roleRow.rows[0].id;
-
     // ── Hasher le mot de passe ──────────────────────────────
     const hash = await bcrypt.hash(password, 10);
 
-    // ── Insérer l'utilisateur ───────────────────────────────
+    // ── Insérer l'utilisateur (inactif, sans rôle assigné) ──
     const insert = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role_id)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO users (name, email, password_hash, requested_role, is_active)
+       VALUES ($1, $2, $3, $4, false)
        RETURNING id, name, email`,
-      [name.trim(), email.trim().toLowerCase(), hash, roleId]
+      [name.trim(), email.trim().toLowerCase(), hash, requestedRole]
     );
-    const newUser = { ...insert.rows[0], role };
 
-    // ── Générer le token (auto-login) ───────────────────────
-    const token = signToken(newUser);
-
-    console.log(`[Auth] Nouveau compte : ${newUser.email} (${role})`);
+    console.log(`[Auth] Nouveau compte en attente d'activation : ${insert.rows[0].email} (rôle demandé: ${requestedRole})`);
 
     return res.status(201).json({
-      message: `Compte créé avec succès. Bienvenue ${newUser.name} !`,
-      token,
-      user: newUser,
+      message: `Compte créé. Votre accès sera activé par l'administrateur.`,
+      pending: true,
     });
   } catch (err) {
     console.error("[Auth] register error:", err);

@@ -13,6 +13,7 @@ const { ROLE_PERMISSIONS, TRANSITION_ROLE_MAP } = require("../middleware/roleMid
 const REQUIRED_ROLES = [
   { name: "Admin GED",          description: "Accès complet à toutes les fonctionnalités" },
   { name: "Responsable Qualité",description: "Gestion du workflow documentaire complet" },
+  { name: "Ing. Qualité",       description: "Création, modification, soumission et validation de documents" },
   { name: "Rédacteur",          description: "Création et édition de documents" },
   { name: "Validateur",         description: "Validation des documents (En validation → Validé)" },
   { name: "Lecteur",            description: "Lecture seule — aucune modification" },
@@ -73,11 +74,11 @@ const getRoles = async (_req, res) => {
 const getUsersWithRoles = async (_req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email,
+      `SELECT u.id, u.name, u.email, u.is_active, u.requested_role,
               r.id AS role_id, r.name AS role
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
-       ORDER BY r.name, u.name`
+       ORDER BY u.is_active ASC, r.name, u.name`
     );
     return res.json(result.rows);
   } catch (err) {
@@ -115,13 +116,13 @@ const assignRole = async (req, res) => {
     if (!userCheck.rows.length) {
       return res.status(404).json({ error: "Utilisateur introuvable." });
     }
-    // Assigner le rôle
+    // Assigner le rôle et activer le compte
     await pool.query(
-      "UPDATE users SET role_id = $1 WHERE id = $2",
+      "UPDATE users SET role_id = $1, is_active = true WHERE id = $2",
       [roleId, userId]
     );
     return res.json({
-      message:  `Rôle "${roleCheck.rows[0].name}" assigné à "${userCheck.rows[0].name}".`,
+      message:  `Rôle "${roleCheck.rows[0].name}" assigné à "${userCheck.rows[0].name}" — compte activé.`,
       userId:   parseInt(userId),
       roleId:   parseInt(roleId),
       roleName: roleCheck.rows[0].name,
@@ -132,4 +133,30 @@ const assignRole = async (req, res) => {
   }
 };
 
-module.exports = { ensureRoles, getRoles, getUsersWithRoles, assignRole };
+// ─────────────────────────────────────────────────────────────
+// DELETE /api/roles/users/:userId — Rejeter et supprimer un compte
+// Réservé : Admin GED
+// ─────────────────────────────────────────────────────────────
+const rejectUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const userCheck = await pool.query(
+      "SELECT id, name, email FROM users WHERE id = $1",
+      [userId]
+    );
+    if (!userCheck.rows.length) {
+      return res.status(404).json({ error: "Utilisateur introuvable." });
+    }
+    const u = userCheck.rows[0];
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    return res.json({
+      message: `Compte de "${u.name}" (${u.email}) rejeté et supprimé.`,
+      userId: parseInt(userId),
+    });
+  } catch (err) {
+    console.error("[EF06] rejectUser error:", err.message);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+module.exports = { ensureRoles, getRoles, getUsersWithRoles, assignRole, rejectUser };

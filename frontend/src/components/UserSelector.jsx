@@ -1,86 +1,80 @@
 // ============================================================
-// components/UserSelector.jsx — Sprint 3 : JWT Auth
-// Affiche l'utilisateur connecté + bouton Déconnexion
+// components/UserSelector.jsx — Premium dark profile card
 // ============================================================
 import { useNavigate } from "react-router-dom";
-import { LuUser } from "react-icons/lu";
+import { LuLogOut, LuShield, LuUser } from "react-icons/lu";
 import { useUser } from "../context/UserContext";
 
-const ROLE_COLOR = {
-  "Admin GED":           { color: "#f78166", bg: "#3d1a1a", border: "#6e2020" },
-  "Responsable Qualité": { color: "#d29922", bg: "#1c1a00", border: "#6e5c1e" },
-  "Rédacteur":           { color: "#79c0ff", bg: "#1a2238", border: "#388bfd" },
-  "Validateur":          { color: "#3fb950", bg: "#04260f", border: "#196c2e" },
-  "Lecteur":             { color: "#8b949e", bg: "#1c2128", border: "#30363d" },
+const ROLE_STYLE = {
+  "Admin GED":           { color: "#f78166", bg: "rgba(247,129,102,0.1)",  border: "rgba(247,129,102,0.25)" },
+  "Responsable Qualité": { color: "#d29922", bg: "rgba(210,153,34,0.1)",   border: "rgba(210,153,34,0.25)"  },
+  "Rédacteur":           { color: "#79c0ff", bg: "rgba(121,192,255,0.1)",  border: "rgba(121,192,255,0.25)" },
+  "Validateur":          { color: "#4ab83f", bg: "rgba(74,184,63,0.1)",    border: "rgba(74,184,63,0.25)"   },
+  "Lecteur":             { color: "#8b949e", bg: "rgba(139,148,158,0.1)",  border: "rgba(139,148,158,0.2)"  },
 };
 
 export default function UserSelector() {
   const { currentUser, userRole, logout } = useUser();
   const navigate = useNavigate();
 
-  const s = ROLE_COLOR[userRole] || { color: "#484f58", bg: "#161b22", border: "#30363d" };
+  if (!currentUser) return null;
+
+  const s = ROLE_STYLE[userRole] || { color: "#8b949e", bg: "rgba(139,148,158,0.08)", border: "rgba(139,148,158,0.15)" };
 
   const handleLogout = async () => {
     await logout();
     navigate("/login", { replace: true });
   };
 
-  if (!currentUser) return null;
-
   return (
-    <div style={{
-      background: s.bg, border: `1px solid ${s.border}`, borderRadius: 10,
-      padding: "12px 12px",
-    }}>
-      <p style={{
-        color: "#484f58", fontSize: 10, textTransform: "uppercase",
-        letterSpacing: 0.8, margin: "0 0 8px",
-      }}>
-        Connecté
-      </p>
+    <div className="rounded-2xl p-4 border"
+      style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
 
-      <div style={{ marginBottom: 10 }}>
-        <p style={{
-          margin: 0, color: "#e6edf3", fontWeight: 600, fontSize: 12,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          display: "flex", alignItems: "center", gap: "6px",
-        }}>
-          <LuUser size={14} /> {currentUser.name}
-        </p>
-        <p style={{ margin: "2px 0 0", color: "#484f58", fontSize: 10,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {currentUser.email}
-        </p>
-        <span style={{
-          display: "inline-block", marginTop: 5,
-          background: s.bg, color: s.color, border: `1px solid ${s.border}`,
-          borderRadius: 99, padding: "1px 8px", fontSize: 10, fontWeight: 700,
-        }}>
+      {/* ── Header status ── */}
+      <div className="flex items-center gap-1.5 mb-3">
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#4ab83f", boxShadow: "0 0 6px rgba(74,184,63,0.7)" }} />
+        <p className="m-0 text-[10px] font-bold uppercase tracking-[1.2px]"
+          style={{ color: "rgba(168,191,212,0.4)" }}>Connecté</p>
+      </div>
+
+      {/* ── Avatar + info ── */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: s.bg, border: `1.5px solid ${s.border}`, color: s.color }}>
+          <LuUser size={18} />
+        </div>
+        <div className="overflow-hidden flex-1">
+          <p className="m-0 text-sm font-semibold text-white truncate leading-tight">{currentUser.name}</p>
+          <p className="m-0 mt-0.5 text-[11px] truncate" style={{ color: "rgba(168,191,212,0.45)" }}>
+            {currentUser.email}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Role badge ── */}
+      <div className="mb-3">
+        <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold border"
+          style={{ background: s.bg, color: s.color, borderColor: s.border }}>
+          <LuShield size={10} />
           {userRole || "Sans rôle"}
         </span>
       </div>
 
-      <button
-        onClick={handleLogout}
-        style={{
-          width: "100%", padding: "6px 8px", borderRadius: 6,
-          background: "transparent", border: "1px solid #30363d",
-          color: "#8b949e", fontSize: 11, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-          transition: "all 0.15s",
+      {/* ── Logout button ── */}
+      <button onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all"
+        style={{ background: "transparent", borderColor: "rgba(255,255,255,0.08)", color: "rgba(168,191,212,0.55)", cursor: "pointer" }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = "rgba(239,68,68,0.08)";
+          e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)";
+          e.currentTarget.style.color = "#f87171";
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#3d1a1a";
-          e.currentTarget.style.borderColor = "#6e2020";
-          e.currentTarget.style.color = "#ff7b72";
-        }}
-        onMouseLeave={(e) => {
+        onMouseLeave={e => {
           e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.borderColor = "#30363d";
-          e.currentTarget.style.color = "#8b949e";
-        }}
-      >
-        🚪 Déconnexion
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+          e.currentTarget.style.color = "rgba(168,191,212,0.55)";
+        }}>
+        <LuLogOut size={12} /> Déconnexion
       </button>
     </div>
   );

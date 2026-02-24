@@ -20,6 +20,7 @@ import {
   LuChartBar,
   LuCircleUser,
   LuLogOut,
+  LuUsers,
 } from "react-icons/lu";
 
 export const NAV_ITEMS = [
@@ -96,7 +97,8 @@ function SectionLabel({ children }) {
 }
 
 /* ── Nav links ────────────────────────────────────────────── */
-export function SidebarNav({ badges = {} }) {
+export function SidebarNav({ badges = {}, user }) {
+  const isAdmin = user?.role === "Admin GED";
   return (
     <nav className="px-2 pt-1">
       <SectionLabel>Navigation</SectionLabel>
@@ -127,6 +129,35 @@ export function SidebarNav({ badges = {} }) {
             )}
           </NavLink>
         ))}
+
+        {/* Admin-only: Gestion utilisateurs */}
+        {isAdmin && (
+          <>
+            <SectionLabel>Administration</SectionLabel>
+            <NavLink
+              to="/admin/users"
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 border border-transparent ${
+                  isActive
+                    ? "bg-red-500/10 text-red-400 font-semibold border-red-500/25"
+                    : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.05] hover:text-white/90 hover:border-white/[0.08]"
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <LuUsers size={14} className={`flex-shrink-0 ${isActive ? "text-red-400" : "text-[#a8bfd4]/50"}`} />
+                  <span className="flex-1 leading-none">Utilisateurs</span>
+                  {badges["/admin/users"] > 0 && (
+                    <span className="bg-red-500 text-white rounded-full px-1.5 py-px text-[10px] font-bold min-w-[18px] text-center leading-none shadow-lg shadow-red-500/30">
+                      {badges["/admin/users"]}
+                    </span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          </>
+        )}
       </div>
     </nav>
   );
@@ -171,7 +202,7 @@ export default function AppSidebar({
     <aside className="w-[230px] bg-[#0b1929] border-r border-white/[0.06] flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
 
       <SidebarBrand />
-      <SidebarNav badges={badges} />
+      <SidebarNav badges={badges} user={user} />
 
       {/* Late alert */}
       {lateCount > 0 && (

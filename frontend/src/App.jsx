@@ -7,7 +7,8 @@ import CreateDocument from "./pages/CreateDocument";
 import DocumentList   from "./pages/DocumentList";
 import Archive        from "./pages/Archive";
 import Validations    from "./pages/Validations";
-import Dashboard      from "./pages/Dashboard";
+import Dashboard        from "./pages/Dashboard";
+import UserManagement  from "./pages/UserManagement";
 
 // ── Garde toutes les routes protégées ────────────────────────
 function ProtectedRoute({ children }) {
@@ -69,6 +70,9 @@ function AppRoutes() {
       } />
       <Route path="/dashboard" element={
         <ProtectedRoute><Dashboard /></ProtectedRoute>
+      } />
+      <Route path="/admin/users" element={
+        <ProtectedRoute><UserManagement /></ProtectedRoute>
       } />
 
       {/* Fallback */}

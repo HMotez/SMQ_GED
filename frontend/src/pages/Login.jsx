@@ -8,7 +8,7 @@ import logoImg from "../assets/Logo.png";
 import {
   LuMail, LuLock, LuEye, LuEyeOff,
   LuCircleAlert, LuShieldCheck, LuArrowRight,
-  LuFileText, LuCheck, LuSettings, LuBookOpen,
+  LuFileText, LuCheck, LuSettings, LuBookOpen, LuWrench,
 } from "react-icons/lu";
 
 /* ── Role definitions ─────────────────────────────────────── */
@@ -28,6 +28,14 @@ const ROLES = [
     color: "#fbbf24",
     icon:  LuCheck,
     perms: ["Créer", "Valider", "Archiver"],
+  },
+  {
+    name:  "Ing. Qualité",
+    email: "via inscription",
+    badge: "Ingénieur",
+    color: "#2dd4bf",
+    icon:  LuWrench,
+    perms: ["Créer", "Modifier", "Soumettre", "Valider"],
   },
   {
     name:  "Rédacteur",
@@ -57,10 +65,10 @@ const ROLES = [
 
 /* ── ISO permission matrix ────────────────────────────────── */
 const PERMISSIONS = [
-  { label: "Créer document",     roles: ["Admin GED", "Resp. Qualité", "Rédacteur"],  icon: LuFileText },
-  { label: "Valider document",   roles: ["Admin GED", "Resp. Qualité", "Validateur"], icon: LuCheck },
-  { label: "Archiver",           roles: ["Admin GED", "Resp. Qualité"],               icon: LuSettings },
-  { label: "Gérer utilisateurs", roles: ["Admin GED"],                                icon: LuShieldCheck },
+  { label: "Créer document",     roles: ["Admin GED", "Resp. Qualité", "Ing. Qualité", "Rédacteur"],  icon: LuFileText },
+  { label: "Valider document",   roles: ["Admin GED", "Resp. Qualité", "Ing. Qualité", "Validateur"], icon: LuCheck },
+  { label: "Archiver",           roles: ["Admin GED", "Resp. Qualité"],                               icon: LuSettings },
+  { label: "Gérer utilisateurs", roles: ["Admin GED"],                                                icon: LuShieldCheck },
 ];
 
 /* ── Keyframe animations ──────────────────────────────────── */
@@ -160,7 +168,7 @@ export default function Login() {
       await login(email.trim(), password);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Identifiants incorrects. Veuillez réessayer.");
+      setError(err.response?.data?.error || err.message || "Identifiants incorrects. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }

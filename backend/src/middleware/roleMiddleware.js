@@ -3,11 +3,12 @@
 // ACTIA ES — GED Sprint 2, Carte 2 : Séparation des rôles (EF06)
 //
 // Rôles définis :
-//   Admin GED          — accès total
+//   Admin GED           — accès total
 //   Responsable Qualité — gestion workflow complet
-//   Rédacteur          — création / édition / premières étapes
-//   Validateur         — validation uniquement (En validation → Validé)
-//   Lecteur            — lecture seule
+//   Ing. Qualité        — créer, modifier, soumettre, valider
+//   Rédacteur           — création / édition / premières étapes
+//   Validateur          — validation uniquement (En validation → Validé)
+//   Lecteur             — lecture seule
 // ============================================================
 
 const pool = require("../db");
@@ -26,6 +27,10 @@ const ROLE_PERMISSIONS = {
     "document:read", "document:create", "document:update",
     "document:status", "validation:create", "archive:manage",
   ],
+  "Ing. Qualité": [
+    "document:read", "document:create", "document:update",
+    "document:status", "validation:create",
+  ],
   "Rédacteur": [
     "document:read", "document:create", "document:update",
     "document:status",
@@ -40,10 +45,10 @@ const ROLE_PERMISSIONS = {
 
 // Transitions autorisées par rôle (EF06 — Rédacteur ≠ Validateur)
 const TRANSITION_ROLE_MAP = {
-  "Brouillon→En rédaction":     ["Admin GED", "Responsable Qualité", "Rédacteur"],
-  "En rédaction→En relecture":  ["Admin GED", "Responsable Qualité", "Rédacteur"],
-  "En relecture→En validation": ["Admin GED", "Responsable Qualité", "Rédacteur"],
-  "En validation→Validé":       ["Admin GED", "Responsable Qualité", "Validateur"],
+  "Brouillon→En rédaction":     ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur"],
+  "En rédaction→En relecture":  ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur"],
+  "En relecture→En validation": ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur"],
+  "En validation→Validé":       ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Validateur"],
   "Validé→Diffusé":             ["Admin GED", "Responsable Qualité"],
   "Diffusé→Obsolète":           ["Admin GED", "Responsable Qualité"],
   "Obsolète→Archivé":           ["Admin GED", "Responsable Qualité"],

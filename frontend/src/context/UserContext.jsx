@@ -12,16 +12,17 @@ const API = "http://localhost:4000/api";
 export const ROLE_PERMISSIONS = {
   "Admin GED":           ["document:read","document:create","document:update","document:status","validation:create","archive:manage","user:manage"],
   "Responsable Qualité": ["document:read","document:create","document:update","document:status","validation:create","archive:manage"],
+  "Ing. Qualité":        ["document:read","document:create","document:update","document:status","validation:create"],
   "Rédacteur":           ["document:read","document:create","document:update","document:status"],
   "Validateur":          ["document:read","validation:create"],
   "Lecteur":             ["document:read"],
 };
 
 export const TRANSITION_ROLE_MAP = {
-  "Brouillon→En rédaction":     ["Admin GED","Responsable Qualité","Rédacteur"],
-  "En rédaction→En relecture":  ["Admin GED","Responsable Qualité","Rédacteur"],
-  "En relecture→En validation": ["Admin GED","Responsable Qualité","Rédacteur"],
-  "En validation→Validé":       ["Admin GED","Responsable Qualité","Validateur"],
+  "Brouillon→En rédaction":     ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
+  "En rédaction→En relecture":  ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
+  "En relecture→En validation": ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
+  "En validation→Validé":       ["Admin GED","Responsable Qualité","Ing. Qualité","Validateur"],
   "Validé→Diffusé":             ["Admin GED","Responsable Qualité"],
   "Diffusé→Obsolète":           ["Admin GED","Responsable Qualité"],
   "Obsolète→Archivé":           ["Admin GED","Responsable Qualité"],
