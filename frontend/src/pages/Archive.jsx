@@ -33,10 +33,11 @@ function StatusBadge({ name }) {
 
 /* ── Stat card (dark) ─────────────────────────────────────── */
 function StatCard({ Icon, label, value, accent }) {
+  const I = Icon;
   return (
     <div className="flex-1 min-w-[120px] rounded-2xl px-5 py-4 border" style={{ background:"rgba(255,255,255,0.04)", borderColor:`${accent}25`, backdropFilter:"blur(10px)" }}>
       <div className="flex items-center gap-1.5 mb-2">
-        <Icon size={13} style={{ color:accent }} />
+        <I size={13} style={{ color:accent }} />
         <p className="m-0 text-[11px] uppercase tracking-[0.8px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>{label}</p>
       </div>
       <p className="m-0 font-black text-3xl text-white" style={{ letterSpacing:-0.5 }}>{value}</p>
@@ -46,9 +47,10 @@ function StatCard({ Icon, label, value, accent }) {
 
 /* ── Empty state ──────────────────────────────────────────── */
 function Empty({ Icon = LuInbox, message }) {
+  const I = Icon;
   return (
     <div className="flex flex-col items-center py-16 gap-3">
-      <Icon size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
+      <I size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
       <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>{message}</p>
     </div>
   );
@@ -73,13 +75,11 @@ function DocTable({ docs, action, showDaysOverdue=false, showArchivedAt=false })
   const lastCol = showDaysOverdue ? "Retard (j)" : showArchivedAt ? "Archivé" : "Révision";
   return (
     <div className="rounded-2xl overflow-hidden border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
-      {/* Header */}
       <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:"150px 1fr 120px 110px 120px 130px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
         {["Référence","Titre","Responsable","Type","Statut",lastCol].map(h => (
           <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]" style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
         ))}
       </div>
-      {/* Rows */}
       {docs.map((doc, i) => (
         <div key={doc.id} className="grid px-5 py-3 items-center" style={{ gridTemplateColumns:"150px 1fr 120px 110px 120px 130px", borderBottom:i<docs.length-1?"1px solid rgba(255,255,255,0.05)":"none" }}>
           <span className="font-mono font-bold text-[13px]" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
@@ -115,8 +115,6 @@ export default function Archive() {
   const [archived,   setArchived]   = useState([]);
   const [history,    setHistory]    = useState([]);
   const [loading,    setLoading]    = useState(true);
-  const [running,    setRunning]    = useState(false);
-  const [lastRun,    setLastRun]    = useState(null);
   const [activeTab,  setActiveTab]  = useState("candidates");
 
   const load = async () => {
@@ -131,15 +129,6 @@ export default function Archive() {
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
-
-  const handleAutoArchive = async () => {
-    setRunning(true);
-    try {
-      const res = await axios.post(`${API}/documents/archive-expired`);
-      setLastRun(res.data); await load();
-    } catch (err) { alert(err.response?.data?.error||"Erreur lors de l'archivage automatique."); }
-    finally { setRunning(false); }
-  };
 
   const handleManualArchive = async (doc) => {
     if (!window.confirm(`Archiver définitivement "${doc.doc_code} — ${doc.title}" ?\nCette action est irréversible.`)) return;
@@ -197,50 +186,20 @@ export default function Archive() {
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <div className="w-0.5 h-4 rounded-full" style={{ background:"#4ab83f" }} />
-              <h1 className="m-0 text-xl font-bold text-white">Archivage automatique</h1>
+              <h1 className="m-0 text-xl font-bold text-white">Archivage</h1>
             </div>
             <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>EF11 — Gestion des documents obsolètes · Aucune suppression définitive</p>
           </div>
-
-          {can("archive:manage") ? (
-            <button onClick={handleAutoArchive} disabled={running||expiredDiffuse.length===0}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-none transition-all"
-              style={{
-                background:expiredDiffuse.length>0&&!running?"linear-gradient(135deg,#ef4444,#dc2626)":"rgba(255,255,255,0.06)",
-                color:expiredDiffuse.length>0&&!running?"white":"rgba(168,191,212,0.35)",
-                boxShadow:expiredDiffuse.length>0&&!running?"0 4px 16px rgba(239,68,68,0.35)":"none",
-                cursor:running||expiredDiffuse.length===0?"not-allowed":"pointer",
-                opacity:running?0.6:1,
-              }}>
-              <LuZap size={15} />
-              {running?"Archivage en cours…":`Archiver les ${expiredDiffuse.length} expiré(s)`}
-            </button>
-          ) : (
-            <span className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.5)" }}>
-              <LuLock size={13} /> Archivage réservé à Admin GED / Responsable Qualité
-            </span>
-          )}
         </header>
 
         <div className="flex-1 px-9 py-6 overflow-y-auto">
 
-          {/* Last run result */}
-          {lastRun && (
-            <div className="rounded-xl px-5 py-4 mb-5 flex items-start gap-3 border" style={{ background:"rgba(74,222,128,0.06)", borderColor:"rgba(74,222,128,0.2)" }}>
-              <LuCircleCheckBig size={20} style={{ color:"#4ade80" }} className="flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="m-0 font-semibold text-sm" style={{ color:"#4ade80" }}>{lastRun.message}</p>
-                {lastRun.documents?.length > 0 && <p className="m-0 mt-1 text-xs" style={{ color:"rgba(74,222,128,0.65)" }}>{lastRun.documents.join(" · ")}</p>}
-              </div>
-            </div>
-          )}
-
           {/* Stats */}
           <div className="flex gap-4 mb-6 flex-wrap">
-            <StatCard Icon={LuShare2}        label="Diffusés expirés"   value={expiredDiffuse.length} accent={expiredDiffuse.length>0?"#f87171":"#4ade80"} />
-            <StatCard Icon={LuTriangleAlert} label="En attente archivage" value={obsoletes.length}    accent={obsoletes.length>0?"#fb923c":"#4ade80"} />
-            <StatCard Icon={LuArchive}       label="Archivés (total)"    value={archived.length}      accent="#94a3b8" />
-            <StatCard Icon={LuLock}          label="Aucune suppression"  value="EF11"                 accent="#4ade80" />
+            <StatCard Icon={LuShare2}        label="Diffusés expirés"    value={expiredDiffuse.length} accent={expiredDiffuse.length>0?"#f87171":"#4ade80"} />
+            <StatCard Icon={LuTriangleAlert} label="En attente archivage" value={obsoletes.length}     accent={obsoletes.length>0?"#fb923c":"#4ade80"} />
+            <StatCard Icon={LuArchive}       label="Archivés (total)"     value={archived.length}      accent="#94a3b8" />
+            <StatCard Icon={LuLock}          label="Aucune suppression"   value="EF11"                 accent="#4ade80" />
           </div>
 
           {/* Tabs */}
@@ -264,8 +223,8 @@ export default function Archive() {
                   : (
                     <>
                       {expiredDiffuse.length > 0 && (
-                        <Section title="Documents diffusés expirés — à archiver" subtitle={`${expiredDiffuse.length} document(s) dont la date de révision est dépassée`} accentColor="#f87171">
-                          <DocTable docs={expiredDiffuse} showDaysOverdue action={() => <span className="text-sm" style={{ color:"#fb923c" }}>→ sera passé en Obsolète</span>} />
+                        <Section title="Documents diffusés expirés" subtitle={`${expiredDiffuse.length} document(s) dont la date de révision est dépassée`} accentColor="#f87171">
+                          <DocTable docs={expiredDiffuse} showDaysOverdue />
                         </Section>
                       )}
                       {obsoletes.length > 0 && (
@@ -303,14 +262,14 @@ export default function Archive() {
                 history.length === 0
                   ? <Empty Icon={LuInbox} message="Aucune action d'archivage enregistrée." />
                   : (
-                    <Section title="Journal d'archivage (EF11)" subtitle="Toutes les opérations : archivage auto, versions remplacées, changements de statut" accentColor="#4ab83f">
+                    <Section title="Journal d'archivage (EF11)" subtitle="Toutes les opérations : versions remplacées, changements de statut" accentColor="#4ab83f">
                       <div className="rounded-2xl overflow-hidden border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                         {history.map((entry, i) => {
                           const details = (() => { try { return JSON.parse(entry.details); } catch { return {}; } })();
                           const actionMeta = {
-                            AUTO_ARCHIVE:       { color:"#f87171", Icon:LuZap,           label:"Archivage auto"     },
-                            VERSION_SUPERSEDED: { color:"#fb923c", Icon:LuRefreshCw,     label:"Version remplacée"  },
-                            STATUS_CHANGE:      { color:"#a5b4fc", Icon:LuArrowLeftRight, label:"Changement statut"  },
+                            AUTO_ARCHIVE:       { color:"#f87171", Icon:LuZap,            label:"Archivage"         },
+                            VERSION_SUPERSEDED: { color:"#fb923c", Icon:LuRefreshCw,      label:"Version remplacée" },
+                            STATUS_CHANGE:      { color:"#a5b4fc", Icon:LuArrowLeftRight,  label:"Changement statut" },
                           }[entry.action] || { color:"#94a3b8", Icon:LuFileText, label:entry.action };
                           const ActionIcon = actionMeta.Icon;
 

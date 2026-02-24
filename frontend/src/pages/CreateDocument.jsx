@@ -223,8 +223,7 @@ export default function CreateDocument() {
   const getProcessId = () => selectedL3 || selectedL2 || "";
 
   const getPreview = () => {
-    const p = [...level3, ...level2].find(p => p.id === parseInt(getProcessId()));
-    return form.typeCode && p ? `${form.typeCode.toUpperCase()}-${p.code}-XXXX` : null;
+    return form.typeCode ? `${form.typeCode.toUpperCase()}XXXX` : null;
   };
 
   const handleSubmit = async e => {

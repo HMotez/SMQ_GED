@@ -105,17 +105,17 @@ const createDocument = async (req, res) => {
       return res.status(400).json({ error: "Origin invalide : INTERNE ou EXTERNE." });
     }
 
-    // 5. Générer doc_code atomique — jamais réutilisé (EF02)
+    // 5. Générer doc_code AES — format {TYPE}{NNNN} ex: PR0002 (séquence globale par type)
     const seqResult = await client.query(
       `INSERT INTO doc_code_sequences (type_code, process_code, last_number)
-       VALUES ($1, $2, 1)
+       VALUES ($1, 'GLOBAL', 1)
        ON CONFLICT (type_code, process_code)
        DO UPDATE SET last_number = doc_code_sequences.last_number + 1
        RETURNING last_number`,
-      [typeCode.toUpperCase(), folderCode]
+      [typeCode.toUpperCase()]
     );
     const num     = seqResult.rows[0].last_number;
-    const docCode = `${typeCode.toUpperCase()}-${folderCode}-${String(num).padStart(4, "0")}`;
+    const docCode = `${typeCode.toUpperCase()}${String(num).padStart(4, "0")}`;
 
     // 5b. Renommer fichier avec doc_code — EF02 (visible dans nom fichier)
     const fileExt     = path.extname(req.file.originalname);
@@ -234,7 +234,12 @@ const getDocuments = async (req, res) => {
     const params     = [];
     let   p          = 1;
 
-    if (folderId)    { conditions.push(`d.folder_id = $${p++}`);            params.push(folderId); }
+    if (folderId)    {
+      // Match the folder itself and all its direct children (one level deep)
+      conditions.push(`d.folder_id IN (SELECT id FROM folders WHERE id = $${p} OR parent_id = $${p})`);
+      params.push(parseInt(folderId, 10));
+      p++;
+    }
     if (typeId)      { conditions.push(`d.type_id = $${p++}`);              params.push(typeId); }
     if (statusId)    { conditions.push(`d.status_id = $${p++}`);            params.push(statusId); }
     // Filtre par nom de statut (Carte 5 — frontend envoie le nom)
@@ -685,10 +690,17 @@ const getFilterOptions = async (_req, res) => {
          ORDER BY responsible`
       ),
       pool.query(
-        `SELECT DISTINCT p.id, p.sub_process AS name
+        `SELECT DISTINCT
+           p.id,
+           p.code,
+           p.strategic_process,
+           p.main_process,
+           p.sub_process,
+           COALESCE(p.sub_process, p.main_process, p.strategic_process, p.code, CAST(p.id AS VARCHAR)) AS display_name,
+           COALESCE(p.main_process, p.strategic_process, p.code, 'Sans catégorie')                     AS group_name
          FROM processes p
          INNER JOIN documents d ON d.process_id = p.id
-         ORDER BY p.sub_process`
+         ORDER BY group_name, display_name`
       ),
     ]);
 

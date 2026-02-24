@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
+import logoImg from "../assets/Logo.png";
 import {
   LuEye, LuEyeOff, LuCircleCheckBig, LuCircleAlert,
   LuCrown, LuChartBar, LuPenLine, LuBadgeCheck, LuBookOpen,
@@ -269,30 +270,13 @@ export default function Register() {
           }}
         >
           {/* Brand logo */}
-          <div className="flex items-center gap-3.5 mb-7">
-            <div
-              className="flex gap-0.5 p-2.5 rounded-[13px]"
-              style={{ background:"rgba(74,184,63,0.12)", border:"1px solid rgba(74,184,63,0.25)" }}
-            >
-              {[0,1,2].map(col => (
-                <div key={col} className="flex flex-col gap-0.5">
-                  {[0,1,2].map(row => (
-                    <div key={row} className="dot-float rounded-sm"
-                      style={{ width:7,height:7,background:"#4ab83f",opacity:(col+row)%2===0?1:0.4,animationDelay:`${(col*3+row)*0.12}s` }} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-white font-black text-lg tracking-[2.5px]">ACTIA</span>
-                <span className="text-xs font-bold tracking-wider px-1.5 py-0.5 rounded"
-                  style={{ color:"#4ab83f", background:"rgba(74,184,63,0.15)", border:"1px solid rgba(74,184,63,0.25)" }}>ES</span>
-              </div>
-              <p className="m-0 text-[10.5px] tracking-[0.5px]" style={{ color:"rgba(168,191,212,0.6)" }}>
-                Plateforme GED · ISO 9001
-              </p>
-            </div>
+          <div className="mb-7">
+            <img
+              src={logoImg}
+              alt="ACTIA ES"
+              className="h-14 w-auto"
+              style={{ filter: "drop-shadow(0 4px 16px rgba(74,184,63,0.25))" }}
+            />
           </div>
 
           {/* Headline */}

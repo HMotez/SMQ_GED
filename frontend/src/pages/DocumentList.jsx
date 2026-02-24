@@ -12,8 +12,8 @@ import AppSidebar from "../components/AppSidebar";
 import {
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2,
   LuTriangleAlert, LuCircleHelp, LuCheck, LuClock, LuRefreshCw,
-  LuInbox, LuX, LuLock, LuUpload, LuPlus, LuFile, LuDownload,
-  LuFolder, LuArrowRight, LuArchive, LuFileText, LuClipboardCheck,
+  LuInbox, LuX, LuLock, LuPlus, LuFile, LuDownload,
+  LuFolder, LuArrowRight, LuArchive, LuFileText, LuClipboardCheck, LuChevronDown,
 } from "react-icons/lu";
 
 const API = "http://localhost:4000/api";
@@ -139,6 +139,66 @@ function ActiveTag({ label, onRemove }) {
   );
 }
 
+/* ── Custom grouped process dropdown ─────────────────────── */
+function ProcessDropdown({ folderTree, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const allChildren = folderTree.flatMap(s => s.children || []);
+  const selected = allChildren.find(f => String(f.id) === String(value));
+  const label = selected ? selected.name.replace(/_/g, " ") : "Processus / Sous-processus";
+  return (
+    <div ref={ref} className="relative" style={{ minWidth: 220 }}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm outline-none transition-all"
+        style={{
+          background: value ? "rgba(74,184,63,0.08)" : "rgba(255,255,255,0.04)",
+          borderColor: value ? "rgba(74,184,63,0.4)" : "rgba(255,255,255,0.1)",
+          color: value ? "rgba(255,255,255,0.9)" : "rgba(168,191,212,0.55)",
+          cursor: "pointer",
+        }}>
+        <span className="truncate">{label}</span>
+        <LuChevronDown size={13} style={{ flexShrink:0, marginLeft:6, color:"rgba(168,191,212,0.4)", transform: open?"rotate(180deg)":"none", transition:"transform 0.2s" }} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1.5 rounded-xl overflow-hidden z-50"
+          style={{ background:"rgba(10,22,36,0.98)", border:"1px solid rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.6)", minWidth:"100%", maxHeight:280, overflowY:"auto" }}>
+          <button type="button" onClick={() => { onChange(""); setOpen(false); }}
+            className="w-full text-left px-4 py-2 text-sm"
+            style={{ color: !value ? "#4ade80" : "rgba(168,191,212,0.5)", background: !value ? "rgba(74,184,63,0.08)" : "transparent" }}>
+            Tous les processus
+          </button>
+          {folderTree.map(strategic => (
+            <div key={strategic.id}>
+              <p className="px-4 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider m-0"
+                style={{ color:"rgba(74,184,63,0.7)", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+                {strategic.name.replace(/_/g, " ")}
+              </p>
+              {(strategic.children || []).map(main => (
+                <button key={main.id} type="button"
+                  onClick={() => { onChange(String(main.id)); setOpen(false); }}
+                  className="w-full text-left px-5 py-2 text-sm transition-all"
+                  style={{
+                    color: String(main.id) === String(value) ? "#4ade80" : "rgba(168,191,212,0.8)",
+                    background: String(main.id) === String(value) ? "rgba(74,184,63,0.1)" : "transparent",
+                  }}
+                  onMouseEnter={e => { if (String(main.id) !== String(value)) e.currentTarget.style.background="rgba(255,255,255,0.05)"; }}
+                  onMouseLeave={e => { if (String(main.id) !== String(value)) e.currentTarget.style.background="transparent"; }}>
+                  {main.name.replace(/_/g, " ")}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Sidebar dark overrides ───────────────────────────────── */
 const SIDEBAR_OVERRIDE_STYLES = `
   .dark-sidebar { background: rgba(10,20,32,0.95) !important; border-right: 1px solid rgba(255,255,255,0.08) !important; }
@@ -154,6 +214,7 @@ export default function DocumentList() {
   const [stats,        setStats]        = useState({ total:0,overdue:0,byStatus:{} });
   const [types,        setTypes]        = useState([]);
   const [filterOpts,   setFilterOpts]   = useState({ responsables:[],processes:[] });
+  const [folderTree,   setFolderTree]   = useState([]); // [{id, name, children:[{id,name}]}]
   const [loading,      setLoading]      = useState(true);
   const [filters, setFilters] = useState({ keyword:"",docCode:"",typeId:"",statusName:"",processId:"",responsible:"",overdue:false });
   const [page, setPage] = useState(1);
@@ -163,19 +224,39 @@ export default function DocumentList() {
   const [versions,       setVersions]       = useState([]);
   const [previewOpen,    setPreviewOpen]     = useState(false);
   const [previewFile,    setPreviewFile]     = useState(null);
-  const [exportOpen,     setExportOpen]      = useState(false);
   const [newVerOpen,     setNewVerOpen]      = useState(false);
+  const [downloadOpen,   setDownloadOpen]    = useState(false);
   const [summary,        setSummary]         = useState("");
   const [newFile,        setNewFile]         = useState(null);
   const [submitting,     setSubmitting]      = useState(false);
   const [statusChanging, setStatusChanging]  = useState(false);
-  const exportRef = useRef(null);
   const debounceTimer = useRef(null);
+  const downloadRef   = useRef(null);
   const debounce = (fn, ms=400) => { clearTimeout(debounceTimer.current); debounceTimer.current=setTimeout(fn,ms); };
 
   useEffect(() => {
-    Promise.all([axios.get(`${API}/types`), axios.get(`${API}/documents/filters`), axios.get(`${API}/documents/stats`)])
-      .then(([t,fo,st]) => { setTypes(t.data); setFilterOpts(fo.data); setStats(st.data); }).catch(console.error);
+    if (!downloadOpen) return;
+    const handler = (e) => { if (downloadRef.current && !downloadRef.current.contains(e.target)) setDownloadOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [downloadOpen]);
+
+  useEffect(() => {
+    Promise.all([
+      axios.get(`${API}/types`),
+      axios.get(`${API}/documents/filters`),
+      axios.get(`${API}/documents/stats`),
+      axios.get(`${API}/folders/level/1`),
+    ])
+      .then(([t, fo, st, l1]) => {
+        setTypes(t.data);
+        setFilterOpts(fo.data);
+        setStats(st.data);
+        // Load children for each level-1 folder to build the tree
+        Promise.all(l1.data.map(f => axios.get(`${API}/folders/children/${f.id}`).then(r => ({ ...f, children: r.data }))))
+          .then(tree => setFolderTree(tree));
+      })
+      .catch(console.error);
   }, []);
 
   const fetchDocuments = useCallback(async (activeFilters, activePage) => {
@@ -186,7 +267,7 @@ export default function DocumentList() {
       if (activeFilters.keyword)     params.set("keyword",     activeFilters.keyword);
       if (activeFilters.docCode)     params.set("docCode",     activeFilters.docCode);
       if (activeFilters.typeId)      params.set("typeId",      activeFilters.typeId);
-      if (activeFilters.processId)   params.set("processId",   activeFilters.processId);
+      if (activeFilters.processId)   params.set("folderId",    activeFilters.processId);
       if (activeFilters.responsible) params.set("responsible", activeFilters.responsible);
       if (activeFilters.overdue)     params.set("overdue",     "true");
       if (activeFilters.statusName)  params.set("statusName",  activeFilters.statusName);
@@ -220,16 +301,12 @@ export default function DocumentList() {
     finally { setStatusChanging(false); }
   };
 
-  const FORMAT_GROUPS = { pdf:["pdf"], docx:["doc","docx"], xlsx:["xls","xlsx"], pptx:["ppt","pptx"] };
-  const fileMatchesFmt = (filename, fmt) => { const ext = filename?.split(".").pop().toLowerCase()||""; return (FORMAT_GROUPS[fmt]||[fmt]).includes(ext); };
-
-  const handleExport = async () => {
-    setExportOpen(false);
+  const handleDownload = async (filename) => {
     try {
-      const response = await fetch(`http://localhost:4000/download/${encodeURIComponent(selected.file_name)}`);
+      const response = await fetch(`http://localhost:4000/download/${encodeURIComponent(filename)}`);
       if (!response.ok) throw new Error("Erreur serveur");
       const blob = await response.blob(); const url = URL.createObjectURL(blob);
-      const link = document.createElement("a"); link.href=url; link.download=selected.file_name;
+      const link = document.createElement("a"); link.href=url; link.download=filename;
       document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
     } catch { alert("Impossible de télécharger le fichier."); }
   };
@@ -363,15 +440,20 @@ export default function DocumentList() {
           </div>
           <div className="flex gap-2.5 flex-wrap items-center">
             {[
-              { value:filters.typeId,     onChange:(e)=>setFilter("typeId",e.target.value),     placeholder:"Type",      options:types.map(t=>({value:t.id,label:`${t.code} — ${t.label}`})) },
-              { value:filters.statusName, onChange:(e)=>setFilter("statusName",e.target.value), placeholder:"Statut",    options:ISO_LIFECYCLE.map(s=>({value:s,label:s})) },
-              { value:filters.processId,  onChange:(e)=>setFilter("processId",e.target.value),  placeholder:"Processus", options:filterOpts.processes.map(p=>({value:p.id,label:p.name})) },
+              { value:filters.typeId,     onChange:(e)=>setFilter("typeId",e.target.value),     placeholder:"Type",   options:types.map(t=>({value:t.id,label:`${t.code} — ${t.label}`})) },
+              { value:filters.statusName, onChange:(e)=>setFilter("statusName",e.target.value), placeholder:"Statut", options:ISO_LIFECYCLE.map(s=>({value:s,label:s})) },
             ].map(({ value, onChange, placeholder, options }) => (
               <select key={placeholder} value={value} onChange={onChange} className="px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer" style={inputStyle(!!value)}>
                 <option value="">{placeholder}</option>
                 {options.map(o => <option key={o.value} value={o.value} style={{ background:"#1a2f4a" }}>{o.label}</option>)}
               </select>
             ))}
+
+            <ProcessDropdown
+              folderTree={folderTree}
+              value={filters.processId}
+              onChange={(v) => setFilter("processId", v)}
+            />
             <button onClick={() => setFilter("overdue", !filters.overdue)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold border transition-all"
               style={{
@@ -395,7 +477,7 @@ export default function DocumentList() {
               {filters.responsible && <ActiveTag label={`Responsable: ${filters.responsible}`} onRemove={() => setFilter("responsible","")} />}
               {filters.typeId      && <ActiveTag label={`Type: ${types.find(t=>t.id==filters.typeId)?.code||filters.typeId}`} onRemove={() => setFilter("typeId","")} />}
               {filters.statusName  && <ActiveTag label={`Statut: ${filters.statusName}`}       onRemove={() => setFilter("statusName","")} />}
-              {filters.processId   && <ActiveTag label={`Processus: ${filterOpts.processes.find(p=>p.id==filters.processId)?.name||filters.processId}`} onRemove={() => setFilter("processId","")} />}
+              {filters.processId   && <ActiveTag label={`Processus: ${(folderTree.flatMap(s=>s.children||[]).find(f=>f.id==filters.processId)?.name || filters.processId).replace(/_/g," ")}`} onRemove={() => setFilter("processId","")} />}
               {filters.overdue     && <ActiveTag label="En retard"                             onRemove={() => setFilter("overdue",false)} />}
             </div>
           )}
@@ -582,27 +664,43 @@ export default function DocumentList() {
                       style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)" }}>
                       <LuEye size={14} /> Visualiser
                     </button>
-                    <div className="relative flex-1" ref={exportRef}>
-                      <button onClick={() => setExportOpen(o => !o)}
-                        className="w-full h-full px-4 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 border transition-all"
+                    <div className="relative flex-1" ref={downloadRef}>
+                      <button
+                        onClick={() => versions.length > 1 ? setDownloadOpen(o => !o) : handleDownload(selected.file_name)}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border transition-all"
                         style={{ background:"rgba(255,255,255,0.06)", borderColor:"rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.8)" }}>
-                        <LuUpload size={14} /> Exporter…
+                        <LuDownload size={14} /> Télécharger
                       </button>
-                      {exportOpen && (
-                        <div className="absolute bottom-[calc(100%+4px)] left-0 right-0 rounded-xl overflow-hidden z-10 border" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
-                          {[{label:"PDF",fmt:"pdf"},{label:"Word",fmt:"docx"},{label:"Excel",fmt:"xlsx"},{label:"PowerPoint",fmt:"pptx"}].map(({label,fmt}) => {
-                            const isMatch = fileMatchesFmt(selected.file_name, fmt);
-                            return (
-                              <button key={fmt} onClick={isMatch?handleExport:undefined} disabled={!isMatch}
-                                className="flex justify-between items-center w-full px-3.5 py-2.5 text-sm text-left border-b transition-all"
-                                style={{ borderColor:"rgba(255,255,255,0.06)", color:isMatch?"rgba(255,255,255,0.8)":"rgba(168,191,212,0.3)", cursor:isMatch?"pointer":"default", background:"transparent" }}
-                                onMouseEnter={e => isMatch && (e.currentTarget.style.background="rgba(255,255,255,0.05)")}
-                                onMouseLeave={e => (e.currentTarget.style.background="transparent")}>
-                                <span>{label}</span>
-                                {isMatch && <span className="text-xs flex items-center gap-1" style={{ color:"#4ab83f" }}><LuDownload size={10} /> exporter</span>}
-                              </button>
-                            );
-                          })}
+                      {downloadOpen && versions.length > 1 && (
+                        <div className="absolute bottom-[calc(100%+6px)] left-0 right-0 rounded-xl overflow-hidden z-20 border"
+                          style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.55)" }}>
+                          <p className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider border-b m-0"
+                            style={{ color:"rgba(168,191,212,0.45)", borderColor:"rgba(255,255,255,0.07)" }}>
+                            Choisir une version
+                          </p>
+                          {versions.map(v => (
+                            <button key={v.id}
+                              onClick={() => { handleDownload(v.file_name); setDownloadOpen(false); }}
+                              className="flex items-center justify-between w-full px-3.5 py-2.5 text-sm text-left border-b transition-all"
+                              style={{ borderColor:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.8)", background:"transparent", cursor:"pointer" }}
+                              onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.06)"}
+                              onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                              <span className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded" style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f" }}>
+                                  v{v.version_letter}
+                                </span>
+                                <span style={{ color:"rgba(168,191,212,0.55)" }}>
+                                  {v.created_at ? new Date(v.created_at).toLocaleDateString("fr-FR") : "—"}
+                                </span>
+                                {v.change_summary && (
+                                  <span className="text-xs truncate max-w-[100px]" style={{ color:"rgba(168,191,212,0.4)" }}>
+                                    — {v.change_summary}
+                                  </span>
+                                )}
+                              </span>
+                              <LuDownload size={12} style={{ color:"#4ab83f", flexShrink:0 }} />
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -626,14 +724,21 @@ export default function DocumentList() {
                   <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>🕐 Historique versions</p></div>
                   {versions.map(v => (
                     <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2">
                         <span className="font-mono font-bold text-sm text-white">v{v.version_letter}</span>
-                        <span className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
-                        <button onClick={() => { setPreviewFile(v.file_name); setPreviewOpen(true); }}
-                          className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
-                          style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
-                          <LuEye size={12} /> Consulter
-                        </button>
+                        <span className="text-sm flex-1" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => { setPreviewFile(v.file_name); setPreviewOpen(true); }}
+                            className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
+                            style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
+                            <LuEye size={12} /> Consulter
+                          </button>
+                          <button onClick={() => handleDownload(v.file_name)}
+                            className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
+                            style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
+                            <LuDownload size={12} /> Télécharger
+                          </button>
+                        </div>
                       </div>
                       {v.change_summary && <p className="m-0 mt-1 text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>{v.change_summary}</p>}
                     </div>

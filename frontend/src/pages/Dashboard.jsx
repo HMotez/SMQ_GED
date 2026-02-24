@@ -4,6 +4,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
+import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
 import {
   LuShieldCheck, LuList, LuSearch, LuUsers,
@@ -90,23 +91,13 @@ function Navbar() {
     >
       <style>{ANIMATION_STYLES}</style>
       <div className="max-w-[1280px] mx-auto px-8 h-16 flex items-center justify-between">
-        <NavLink to="/" className="no-underline flex items-center gap-3">
-          <div className="flex gap-0.5 p-2 rounded-xl border" style={{ background:"rgba(74,184,63,0.12)", borderColor:"rgba(74,184,63,0.25)" }}>
-            {[...Array(3)].map((_,i) => (
-              <div key={i} className="flex flex-col gap-0.5">
-                {[...Array(3)].map((_,j) => (
-                  <div key={j} className="dot-float w-1.5 h-1.5 rounded-sm" style={{ background:"#4ab83f", opacity:(i+j)%2===0?1:0.4, animationDelay:`${(i*3+j)*0.12}s` }} />
-                ))}
-              </div>
-            ))}
-          </div>
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-white font-black text-base tracking-widest uppercase">ACTIA</span>
-              <span className="font-bold text-sm tracking-wider" style={{ color:"#4ab83f" }}>ES</span>
-            </div>
-            <span className="text-xs" style={{ color:"rgba(168,191,212,0.7)" }}>GED · ISO 9001:2015</span>
-          </div>
+        <NavLink to="/" className="no-underline">
+          <img
+            src={logoImg}
+            alt="ACTIA ES"
+            className="h-10 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+            style={{ filter: "drop-shadow(0 2px 10px rgba(74,184,63,0.3))" }}
+          />
         </NavLink>
 
         <div className="flex items-center gap-1">

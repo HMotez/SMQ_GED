@@ -3,6 +3,7 @@
 // All icons verified against installed react-icons/lu version
 // ============================================================
 import { NavLink } from "react-router-dom";
+import logoImg from "../assets/Logo.png";
 import {
   LuHouse,
   LuFilePlus,
@@ -43,30 +44,14 @@ const STATUS_ICONS = {
 /* ── Logo mark ────────────────────────────────────────────── */
 export function LogoMark() {
   return (
-    <>
-      <style>{`
-        @keyframes floatY {
-          0%,100% { transform: translateY(0); }
-          50%     { transform: translateY(-4px); }
-        }
-        .logo-dot-float { animation: floatY 3s ease-in-out infinite; }
-      `}</style>
-      <div className="flex gap-[3px] p-[6px] rounded-lg bg-actia-navy border border-actia-green/20">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex flex-col gap-[3px]">
-            {[...Array(3)].map((_, j) => (
-              <div
-                key={j}
-                className={`logo-dot-float w-[4px] h-[4px] rounded-[1px] ${
-                  (i + j) % 2 === 0 ? "bg-actia-green" : "bg-actia-green/30"
-                }`}
-                style={{ animationDelay: `${(i * 3 + j) * 0.12}s` }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </>
+    <NavLink to="/" className="no-underline">
+      <img
+        src={logoImg}
+        alt="ACTIA ES"
+        className="h-8 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+        style={{ filter: "drop-shadow(0 2px 8px rgba(74,184,63,0.3))" }}
+      />
+    </NavLink>
   );
 }
 
@@ -83,50 +68,14 @@ export function SidebarBrand() {
         boxShadow: "0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
       }}
     >
-      <style>{`
-        @keyframes floatYSmall {
-          0%,100% { transform: translateY(0); }
-          50%     { transform: translateY(-4px); }
-        }
-        .brand-dot-float { animation: floatYSmall 3s ease-in-out infinite; }
-      `}</style>
-      <div className="flex items-center gap-3">
-        <div
-          className="flex gap-0.5 p-2 rounded-lg flex-shrink-0"
-          style={{ background: "rgba(74,184,63,0.12)", border: "1px solid rgba(74,184,63,0.25)" }}
-        >
-          {[0,1,2].map(col => (
-            <div key={col} className="flex flex-col gap-0.5">
-              {[0,1,2].map(row => (
-                <div
-                  key={row}
-                  className="brand-dot-float rounded-sm"
-                  style={{
-                    width: 4, height: 4,
-                    background: "#4ab83f",
-                    opacity: (col + row) % 2 === 0 ? 1 : 0.4,
-                    animationDelay: `${(col * 3 + row) * 0.12}s`,
-                  }}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-white font-black text-[13px] tracking-[2px]">ACTIA</span>
-            <span 
-              className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-[3px] flex-shrink-0"
-              style={{ color:"#4ab83f", background:"rgba(74,184,63,0.15)", border:"1px solid rgba(74,184,63,0.25)" }}
-            >
-              ES
-            </span>
-          </div>
-          <p className="text-[#a8bfd4]/45 text-[9px] m-0 mt-0.5 tracking-wide leading-none">
-            Engineering Services · GED
-          </p>
-        </div>
-      </div>
+      <NavLink to="/" className="no-underline flex items-center justify-center">
+        <img
+          src={logoImg}
+          alt="ACTIA ES"
+          className="h-9 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+          style={{ filter: "drop-shadow(0 2px 10px rgba(74,184,63,0.3))" }}
+        />
+      </NavLink>
     </div>
   );
 }
