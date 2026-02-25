@@ -4,6 +4,7 @@
 // ============================================================
 import { NavLink } from "react-router-dom";
 import logoImg from "../assets/Logo.png";
+import UserSelector from "./UserSelector";
 import {
   LuHouse,
   LuFilePlus,
@@ -18,18 +19,18 @@ import {
   LuPackageOpen,
   LuFolderOpen,
   LuChartBar,
-  LuCircleUser,
-  LuLogOut,
   LuUsers,
+  LuBell,
 } from "react-icons/lu";
 
 export const NAV_ITEMS = [
-  { icon: LuHouse,           label: "Accueil",          href: "/",            end: true  },
-  { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",   end: false },
-  { icon: LuFilePlus,        label: "Nouveau document", href: "/create",      end: false },
-  { icon: LuFileText,        label: "Liste documents",  href: "/list",        end: false },
-  { icon: LuClipboardCheck,  label: "Validations",      href: "/validations", end: false },
-  { icon: LuArchive,         label: "Archivage",        href: "/archive",     end: false },
+  { icon: LuHouse,           label: "Accueil",          href: "/",               end: true  },
+  { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",      end: false },
+  { icon: LuFilePlus,        label: "Nouveau document", href: "/create",         end: false },
+  { icon: LuFileText,        label: "Liste documents",  href: "/list",           end: false },
+  { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",    end: false },
+  { icon: LuArchive,         label: "Archivage",        href: "/archive",        end: false },
+  { icon: LuBell,            label: "Notifications",    href: "/notifications",  end: false },
 ];
 
 const STATUS_ICONS = {
@@ -49,8 +50,8 @@ export function LogoMark() {
       <img
         src={logoImg}
         alt="ACTIA ES"
-        className="h-8 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-        style={{ filter: "drop-shadow(0 2px 8px rgba(74,184,63,0.3))" }}
+        className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+        style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
       />
     </NavLink>
   );
@@ -73,8 +74,8 @@ export function SidebarBrand() {
         <img
           src={logoImg}
           alt="ACTIA ES"
-          className="h-9 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-          style={{ filter: "drop-shadow(0 2px 10px rgba(74,184,63,0.3))" }}
+          className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+          style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
         />
       </NavLink>
     </div>
@@ -196,7 +197,6 @@ export default function AppSidebar({
   statusCounts = [],
   totalDocuments,
   user,
-  onLogout,
 }) {
   return (
     <aside className="w-[230px] bg-[#0b1929] border-r border-white/[0.06] flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
@@ -263,48 +263,7 @@ export default function AppSidebar({
       {/* Bottom */}
       <div className="mt-auto p-2 border-t border-white/[0.06] flex flex-col gap-2">
         {bottomContent}
-
-        {user && (
-          <div 
-            className="p-3.5 rounded-xl border"
-            style={{
-              background: "rgba(74,184,63,0.06)",
-              border: "1.5px solid rgba(74,184,63,0.15)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)",
-            }}
-          >
-            <div className="flex items-center gap-2.5 mb-3">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
-                style={{ background: "rgba(74,184,63,0.12)", border: "1.5px solid rgba(74,184,63,0.3)" }}
-              >
-                <LuCircleUser size={15} className="text-actia-green" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[12.5px] font-semibold text-white/85 truncate">{user.name}</div>
-                <div className="text-[10.5px] text-[#a8bfd4]/40 truncate">{user.email}</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span 
-                className="text-[10px] font-bold tracking-[0.5px] px-2 py-0.5 rounded-[4px] border"
-                style={{ color: "#4ab83f", background: "rgba(74,184,63,0.12)", border: "1.5px solid rgba(74,184,63,0.25)" }}
-              >
-                {user.role}
-              </span>
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-1 text-[11px] text-[#a8bfd4]/40 hover:text-red-400 px-1.5 py-1 rounded-md hover:bg-red-500/[0.08] transition-all duration-150 bg-transparent border-none cursor-pointer font-[inherit]"
-                  style={{ transition: "all 0.2s ease" }}
-                >
-                  <LuLogOut size={12} />
-                  <span>Déco.</span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        {!bottomContent && <UserSelector />}
       </div>
     </aside>
   );

@@ -146,7 +146,8 @@ app.use("/api/documents",     require("./routes/documentRoutes"));
 app.use("/api/processes",     require("./routes/processRoutes"));
 app.use("/api/validations", require("./routes/validationRoutes")); // Sprint 2 EF05
 app.use("/api/roles",       require("./routes/roleRoutes"));       // Sprint 2 EF06
-app.use("/api/dashboard",   require("./routes/dashboardRoutes"));  // Sprint 4 — Tableau de bord
+app.use("/api/dashboard",       require("./routes/dashboardRoutes"));  // Sprint 4 — Tableau de bord
+app.use("/api/notifications",   require("./routes/notificationRoutes")); // Sprint 5 — Notifications
 
 // ── Error handler ────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
@@ -180,6 +181,20 @@ await ensureValidationsTable();
   };
 
   await scheduleAutoArchive();
-  // Répéter toutes les 24 heures
   setInterval(scheduleAutoArchive, 24 * 60 * 60 * 1000);
+
+  // ── Notifications intelligentes Sprint 5 ───────────────────
+  const {
+    ensureNotificationsTable,
+    runExpirationNotificationsJob,
+  } = require("./controllers/notificationController");
+
+  await ensureNotificationsTable();
+
+  // CRON expirations + inactivité — au démarrage puis toutes les 24h
+  const scheduleNotifJob = async () => {
+    await runExpirationNotificationsJob();
+  };
+  await scheduleNotifJob();
+  setInterval(scheduleNotifJob, 24 * 60 * 60 * 1000);
 });

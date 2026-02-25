@@ -15,6 +15,7 @@ import {
   LuInbox, LuX, LuLock, LuPlus, LuFile, LuDownload,
   LuFolder, LuArrowRight, LuArchive, LuFileText, LuClipboardCheck, LuChevronDown,
 } from "react-icons/lu";
+import { toast } from "sonner";
 
 const API = "http://localhost:4000/api";
 
@@ -296,8 +297,8 @@ export default function DocumentList() {
       const updated = await axios.get(`${API}/documents/${selected.id}`);
       setSelected(updated.data);
       setDocuments(prev => prev.map(d => d.id===selected.id ? { ...d, status_name:nextStatus } : d));
-      await refreshStats(); alert(res.data.message);
-    } catch (err) { alert(err.response?.data?.error || "Erreur lors du changement de statut."); }
+      await refreshStats(); toast.success(res.data.message);
+    } catch (err) { toast.error(err.response?.data?.error || "Erreur lors du changement de statut."); }
     finally { setStatusChanging(false); }
   };
 
@@ -308,13 +309,13 @@ export default function DocumentList() {
       const blob = await response.blob(); const url = URL.createObjectURL(blob);
       const link = document.createElement("a"); link.href=url; link.download=filename;
       document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-    } catch { alert("Impossible de télécharger le fichier."); }
+    } catch { toast.error("Impossible de télécharger le fichier."); }
   };
 
   const handleNewVersion = async (e) => {
     e.preventDefault();
-    if (!newFile) return alert("Veuillez sélectionner un fichier.");
-    if (!summary.trim()) return alert("Le résumé des changements est obligatoire.");
+    if (!newFile) return void toast.warning("Veuillez sélectionner un fichier.");
+    if (!summary.trim()) return void toast.warning("Le résumé des changements est obligatoire.");
     setSubmitting(true);
     try {
       const form = new FormData(); form.append("file", newFile); form.append("change_summary", summary.trim());
@@ -322,8 +323,8 @@ export default function DocumentList() {
       const [docRes, verRes] = await Promise.all([axios.get(`${API}/documents/${selected.id}`), axios.get(`${API}/documents/${selected.id}/versions`)]);
       setSelected(docRes.data); setVersions(verRes.data);
       setDocuments(prev => prev.map(d => d.id===selected.id ? { ...d, current_version:res.data.version } : d));
-      setNewVerOpen(false); setSummary(""); setNewFile(null); alert(res.data.message);
-    } catch (err) { alert(err.response?.data?.error || "Erreur lors de la création de la version."); }
+      setNewVerOpen(false); setSummary(""); setNewFile(null); toast.success(res.data.message);
+    } catch (err) { toast.error(err.response?.data?.error || "Erreur lors de la création de la version."); }
     finally { setSubmitting(false); }
   };
 

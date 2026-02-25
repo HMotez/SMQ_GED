@@ -3,17 +3,19 @@
 // ============================================================
 
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useMatch } from "react-router-dom";
 import axios from "axios";
 import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
 import UserSelector from "../components/UserSelector";
+import NotificationBell from "../components/NotificationBell";
 import {
   LuFileText, LuFilePlus, LuList, LuClipboardCheck, LuArchive,
   LuClock, LuCircleCheck, LuCircleAlert, LuShare2, LuTriangleAlert,
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig,
   LuRefreshCw, LuShieldCheck, LuSearch, LuUsers,
   LuPlus, LuArrowRight, LuLogOut, LuInbox, LuUser, LuZap, LuAward,
+  LuHouse, LuLayoutDashboard, LuBell,
 } from "react-icons/lu";
 
 const API = "http://localhost:4000/api";
@@ -39,11 +41,11 @@ const ROLE_COLOR = {
 };
 
 const NAV_ITEMS = [
-  { to: "/",            label: "Accueil",         end: true },
-  { to: "/dashboard",   label: "Tableau de bord"           },
-  { to: "/list",        label: "Documents"                 },
-  { to: "/validations", label: "Validations"               },
-  { to: "/archive",     label: "Archivage"                 },
+  { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+  { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
+  { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+  { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+  { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
 ];
 
 /* ── Animation styles ─────────────────────────────────── */
@@ -54,6 +56,60 @@ const ANIMATION_STYLES = `
   }
   .dot-float { animation: floatY 3s ease-in-out infinite; }
 `;
+
+/* ── NavItem ─────────────────────────────────────────────── */
+function NavItem({ to, label, end, icon }) {
+  const ItemIcon = icon;
+  const match    = useMatch({ path: to, end: end === true });
+  const isActive = !!match;
+  return (
+    <NavLink to={to} end={end} className="no-underline flex-shrink-0">
+      <div
+        className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+        style={{ background: isActive ? "rgba(74,184,63,0.1)" : "transparent" }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+      >
+        <ItemIcon size={13} style={{ color: isActive ? "#4ab83f" : "rgba(168,191,212,0.5)", flexShrink: 0 }} />
+        <span className="text-[13px] font-medium whitespace-nowrap"
+          style={{ color: isActive ? "#ffffff" : "rgba(168,191,212,0.75)" }}>
+          {label}
+        </span>
+        {isActive && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+            style={{ background: "linear-gradient(90deg,#4ab83f,#3da333)" }} />
+        )}
+      </div>
+    </NavLink>
+  );
+}
+
+/* ── AdminNavItem (red accent for Admin GED) ─────────────── */
+function AdminNavItem({ to, label, icon }) {
+  const ItemIcon = icon;
+  const match    = useMatch({ path: to, end: false });
+  const isActive = !!match;
+  return (
+    <NavLink to={to} className="no-underline flex-shrink-0">
+      <div
+        className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+        style={{ background: isActive ? "rgba(239,68,68,0.1)" : "transparent" }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(239,68,68,0.07)"; }}
+        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+      >
+        <ItemIcon size={13} style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.5)", flexShrink: 0 }} />
+        <span className="text-[13px] font-medium whitespace-nowrap"
+          style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.75)" }}>
+          {label}
+        </span>
+        {isActive && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+            style={{ background: "linear-gradient(90deg,#f87171,#ef4444)" }} />
+        )}
+      </div>
+    </NavLink>
+  );
+}
 
 /* ── Navbar ─────────────────────────────────────────────── */
 function Navbar() {
@@ -69,118 +125,130 @@ function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Initials avatar
+  const initials = currentUser?.name
+    ? currentUser.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
+
   return (
-    <nav
-      className="sticky top-0 z-50 border-b transition-all duration-300"
-      style={{
-        background: scrolled
-          ? "rgba(10,20,32,0.92)"
-          : "rgba(15,30,48,0.75)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderColor: "rgba(255,255,255,0.08)",
-        boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.4)" : "none",
-      }}
-    >
+    <nav className="sticky top-0 z-50 transition-all duration-300">
       <style>{ANIMATION_STYLES}</style>
-      <div className="max-w-[1280px] mx-auto px-8 h-16 flex items-center justify-between">
 
-        {/* Logo */}
-        <NavLink to="/" className="no-underline">
-          <img
-            src={logoImg}
-            alt="ACTIA ES"
-            className="h-10 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-            style={{ filter: "drop-shadow(0 2px 10px rgba(74,184,63,0.3))" }}
-          />
-        </NavLink>
+      {/* Green accent line at top */}
+      <div style={{
+        height: 2,
+        background: "linear-gradient(90deg, transparent 0%, #4ab83f 40%, #3da333 60%, transparent 100%)",
+        opacity: scrolled ? 1 : 0.5,
+        transition: "opacity 0.3s",
+      }} />
 
-        {/* Nav links */}
-        <div className="flex items-center gap-1">
-          {NAV_ITEMS.map(({ to, label, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `px-3.5 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? "text-white"
-                    : "text-[#a8bfd4] hover:text-white"
-                }`
-              }
-              style={({ isActive }) => isActive ? {
-                background: "rgba(255,255,255,0.1)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1)",
-              } : {}}
-            >
-              {label}
+      <div
+        className="border-b transition-all duration-300"
+        style={{
+          background: scrolled ? "rgba(8,15,26,0.97)" : "rgba(10,20,32,0.82)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+          borderColor: "rgba(255,255,255,0.07)",
+          boxShadow: scrolled
+            ? "0 8px 40px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.04)"
+            : "none",
+        }}
+      >
+        <div className="max-w-[1400px] mx-auto px-6 h-[68px] grid items-center"
+          style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+
+          {/* ── Left: Logo + Divider ── */}
+          <div className="flex items-center gap-3">
+            <NavLink to="/" className="no-underline flex items-center flex-shrink-0">
+              <img
+                src={logoImg}
+                alt="ACTIA ES"
+                className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+                style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+              />
             </NavLink>
-          ))}
+            <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)", flexShrink: 0 }} />
+          </div>
 
-          {/* Lien admin uniquement visible pour Admin GED */}
-          {userRole === "Admin GED" && (
+          {/* ── Center: Nav links (grid auto column = exactly as wide as needed) ── */}
+          <div className="flex items-center gap-0.5">
+            {NAV_ITEMS.map((item) => (
+              <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
+            ))}
+            {userRole === "Admin GED" && (
+              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} />
+            )}
+          </div>
+
+          {/* ── Right: Actions ── */}
+          <div className="flex items-center gap-2 justify-end mr-3">
+
+            {/* + Nouveau button */}
             <NavLink
-              to="/admin/users"
-              className={({ isActive }) =>
-                `px-3.5 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
-                  isActive ? "text-red-400" : "text-[#a8bfd4] hover:text-red-400"
-                }`
-              }
-              style={({ isActive }) => isActive ? {
-                background: "rgba(239,68,68,0.1)",
-                boxShadow: "inset 0 1px 0 rgba(239,68,68,0.1)",
-              } : {}}
+              to="/create"
+              className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-xl"
+              style={{
+                background: "linear-gradient(135deg,#4ab83f,#3da333)",
+                boxShadow: "0 4px 18px rgba(74,184,63,0.35)",
+              }}
             >
-              <LuUsers size={14} />
-              Utilisateurs
+              <LuPlus size={14} /> Nouveau
             </NavLink>
-          )}
 
-          <NavLink
-            to="/create"
-            className="ml-2 px-4 py-2 rounded-xl no-underline text-sm font-semibold flex items-center gap-1.5 text-white transition-all duration-200 hover:-translate-y-px"
-            style={{
-              background: "linear-gradient(135deg, #4ab83f, #3da333)",
-              boxShadow: "0 4px 16px rgba(74,184,63,0.35)",
-            }}
-          >
-            <LuPlus size={14} /> Nouveau
-          </NavLink>
+            {/* Divider */}
+            <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)" }} />
 
-          {currentUser && (
-            <div
-              className="flex items-center gap-2.5 ml-3 pl-3.5"
-              style={{ borderLeft: "1px solid rgba(255,255,255,0.1)" }}
-            >
-              <div className="text-right">
-                <p className="text-white text-sm font-semibold m-0">{currentUser.name}</p>
-                <p className="text-xs font-semibold m-0" style={{ color: ROLE_COLOR[userRole] || "#94a3b8" }}>{userRole}</p>
+            {/* Bell */}
+            <NotificationBell />
+
+            {/* User profile */}
+            {currentUser && (
+              <div className="flex items-center gap-2.5 pl-1">
+                {/* Initials avatar */}
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: "rgba(74,184,63,0.15)",
+                    border: "1.5px solid rgba(74,184,63,0.35)",
+                    color: "#4ab83f",
+                  }}>
+                  <LuUser size={17} />
+                </div>
+
+                {/* Name + Role */}
+                <div className="leading-none">
+                  <p className="text-[13px] font-semibold text-white m-0 leading-tight">{currentUser.name}</p>
+                  <p className="text-[11px] font-semibold m-0 mt-0.5 leading-tight"
+                    style={{ color: ROLE_COLOR[userRole] || "#94a3b8" }}>
+                    {userRole}
+                  </p>
+                </div>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  title="Déconnexion"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border transition-all duration-200 cursor-pointer ml-0.5"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    borderColor: "rgba(255,255,255,0.1)",
+                    color: "rgba(168,191,212,0.5)",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(239,68,68,0.12)";
+                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
+                    e.currentTarget.style.color = "#f87171";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                    e.currentTarget.style.color = "rgba(168,191,212,0.5)";
+                  }}
+                >
+                  <LuLogOut size={14} />
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                title="Déconnexion"
-                className="flex items-center justify-center w-9 h-9 rounded-xl border transition-all duration-200 cursor-pointer"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  borderColor: "rgba(255,255,255,0.1)",
-                  color: "#94a3b8",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(239,68,68,0.15)";
-                  e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
-                  e.currentTarget.style.color = "#f87171";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                  e.currentTarget.style.color = "#94a3b8";
-                }}
-              >
-                <LuLogOut size={15} />
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>
@@ -207,7 +275,8 @@ function GlassCard({ children, className = "", style = {} }) {
 }
 
 /* ── Stat Card (dark glass) ──────────────────────────────── */
-function StatCard({ Icon, label, value, sub, accent = "#60a5fa", onClick }) {
+function StatCard({ icon, label, value, sub, accent = "#60a5fa", onClick }) {
+  const StatIcon = icon;
   return (
     <div
       onClick={onClick}
@@ -234,7 +303,7 @@ function StatCard({ Icon, label, value, sub, accent = "#60a5fa", onClick }) {
           className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
         >
-          <Icon size={17} style={{ color: accent }} />
+          <StatIcon size={17} style={{ color: accent }} />
         </div>
         <p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color: "rgba(168,191,212,0.6)" }}>{label}</p>
       </div>
@@ -269,7 +338,8 @@ function SectionLabel({ children }) {
 }
 
 /* ── Feature Card (dark glass) ───────────────────────────── */
-function FeatureCard({ Icon, title, desc, accent = "#60a5fa" }) {
+function FeatureCard({ icon, title, desc, accent = "#60a5fa" }) {
+  const FeatIcon = icon;
   return (
     <div
       className="flex-1 min-w-[200px] rounded-2xl border p-5 transition-all duration-200"
@@ -294,7 +364,7 @@ function FeatureCard({ Icon, title, desc, accent = "#60a5fa" }) {
         className="w-11 h-11 rounded-xl flex items-center justify-center mb-3.5"
         style={{ background: `${accent}15`, border: `1px solid ${accent}25` }}
       >
-        <Icon size={20} style={{ color: accent }} />
+        <FeatIcon size={20} style={{ color: accent }} />
       </div>
       <p className="text-white font-semibold text-sm m-0 mb-1.5" style={{ letterSpacing: -0.2 }}>{title}</p>
       <p className="text-sm m-0 leading-relaxed" style={{ color: "rgba(168,191,212,0.6)" }}>{desc}</p>
@@ -451,11 +521,11 @@ export default function Home() {
         {/* ── STATS ROW ─────────────────────────────── */}
         <div className="max-w-[1280px] mx-auto px-8 -mt-14 mb-8">
           <div className="flex gap-3.5 flex-wrap">
-            <StatCard Icon={LuFileText}    label="Total documents" value={loadingStats ? "…" : totalDocs} sub="dans le système"     accent="#60a5fa" onClick={() => navigate("/list")}        />
-            <StatCard Icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate("/validations")} />
-            <StatCard Icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list")}        />
-            <StatCard Icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate("/list")} />
-            <StatCard Icon={LuArchive}     label="Archivés"        value={loadingStats ? "…" : archived}   sub="archivage définitif" accent="#94a3b8" onClick={() => navigate("/archive")}    />
+            <StatCard icon={LuFileText}    label="Total documents" value={loadingStats ? "…" : totalDocs} sub="dans le système"     accent="#60a5fa" onClick={() => navigate("/list")}        />
+            <StatCard icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate("/validations")} />
+            <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list")}        />
+            <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate("/list")} />
+            <StatCard icon={LuArchive}     label="Archivés"        value={loadingStats ? "…" : archived}   sub="archivage définitif" accent="#94a3b8" onClick={() => navigate("/archive")}    />
           </div>
         </div>
 
@@ -513,11 +583,14 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2">
                 {[
-                  { to:"/create",      Icon:LuFilePlus,       label:"Nouveau document",    desc:"Créer et soumettre un document",     accent:"#4ab83f"  },
-                  { to:"/list",        Icon:LuList,           label:"Liste des documents",  desc:"Rechercher, filtrer, gérer",         accent:"#60a5fa"  },
-                  { to:"/validations", Icon:LuClipboardCheck, label:"Workflow validation",   desc:"Approuver ou rejeter des documents",  accent:"#a5b4fc"  },
-                  { to:"/archive",     Icon:LuArchive,        label:"Archivage ISO",        desc:"Gestion du cycle de vie EF11",       accent:"#94a3b8"  },
-                ].map(({ to, Icon, label, desc, accent }) => (
+                  { to:"/create",      icon:LuFilePlus,       label:"Nouveau document",    desc:"Créer et soumettre un document",     accent:"#4ab83f"  },
+                  { to:"/list",        icon:LuList,           label:"Liste des documents",  desc:"Rechercher, filtrer, gérer",         accent:"#60a5fa"  },
+                  { to:"/validations", icon:LuClipboardCheck, label:"Workflow validation",   desc:"Approuver ou rejeter des documents",  accent:"#a5b4fc"  },
+                  { to:"/archive",     icon:LuArchive,        label:"Archivage ISO",        desc:"Gestion du cycle de vie EF11",       accent:"#94a3b8"  },
+                ].map(({ to, icon, label, desc, accent }) => {
+                  const ActionIcon = icon;
+                  const iconEl = <ActionIcon size={16} style={{ color: accent }} />;
+                  return (
                   <NavLink key={to} to={to} className="no-underline">
                     {({ isActive }) => (
                       <div
@@ -543,7 +616,7 @@ export default function Home() {
                           className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
                         >
-                          <Icon size={16} style={{ color: accent }} />
+                          {iconEl}
                         </div>
                         <div>
                           <p className="m-0 font-semibold text-sm text-white" style={{ letterSpacing: -0.2 }}>{label}</p>
@@ -557,7 +630,8 @@ export default function Home() {
                       </div>
                     )}
                   </NavLink>
-                ))}
+                  );
+                })}
               </div>
             </GlassCard>
 
@@ -647,12 +721,12 @@ export default function Home() {
               <p className="text-sm m-0 mt-2" style={{ color: "rgba(168,191,212,0.6)" }}>Système de gestion documentaire certifié — Traçabilité, sécurité et archivage normalisés</p>
             </div>
             <div className="flex gap-4 flex-wrap">
-              <FeatureCard Icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
-              <FeatureCard Icon={LuCircleCheckBig} accent="#4ade80" title="Validation EF05/EF06"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
-              <FeatureCard Icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité EF14"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
-              <FeatureCard Icon={LuArchive}        accent="#fbbf24" title="Archivage EF11"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
-              <FeatureCard Icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
-              <FeatureCard Icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="5 rôles ISO : Admin GED, Responsable Qualité, Rédacteur, Validateur, Lecteur. Contrôle d'accès granulaire." />
+              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation EF05/EF06"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité EF14"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage EF11"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
+              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
+              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="5 rôles ISO : Admin GED, Responsable Qualité, Rédacteur, Validateur, Lecteur. Contrôle d'accès granulaire." />
             </div>
           </div>
 

@@ -13,6 +13,10 @@ const path = require("path");
 const fs   = require("fs");
 const { canTransition } = require("../middleware/roleMiddleware");
 const { canTransitionToValidated } = require("./validationController");
+const {
+  triggerStatusNotification,
+  triggerNewVersionNotification,
+} = require("./notificationController");
 
 // ─────────────────────────────────────────────────────────────
 // Machine à états ISO — Carte 4
@@ -473,6 +477,13 @@ const updateDocument = async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    // Déclencher les notifications (fire-and-forget)
+    triggerNewVersionNotification(
+      docId, doc.doc_code, doc.title, next, cur,
+      change_summary.trim(), req.currentUser?.name, req.currentUser?.role
+    ).catch(err => console.error("[Notif] newVersion error:", err.message));
+
     return res.status(200).json({ message: `Version ${next} créée avec succès`, version: next });
   } catch (err) {
     await client.query("ROLLBACK");
@@ -502,7 +513,7 @@ const changeStatus = async (req, res) => {
 
     // 1. Récupérer le document + statut actuel
     const docResult = await client.query(
-      `SELECT d.id, d.doc_code, s.name AS status_name
+      `SELECT d.id, d.doc_code, d.title, s.name AS status_name
        FROM documents d
        JOIN status s ON s.id = d.status_id
        WHERE d.id = $1`,
@@ -592,6 +603,13 @@ const changeStatus = async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    // Déclencher les notifications (fire-and-forget)
+    triggerStatusNotification(
+      docId, doc.doc_code, doc.title, currentStatus, newStatus,
+      req.currentUser?.name, req.currentUser?.role
+    ).catch(err => console.error("[Notif] changeStatus error:", err.message));
+
     return res.json({
       message: `✓ Statut mis à jour : "${currentStatus}" → "${newStatus}"`,
       previousStatus: currentStatus,

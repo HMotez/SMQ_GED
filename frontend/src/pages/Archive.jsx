@@ -10,6 +10,7 @@ import {
   LuRefreshCw, LuZap, LuShare2, LuTriangleAlert, LuCircleCheckBig,
   LuFolder, LuInbox, LuLock, LuArrowLeftRight, LuFileText, LuArchive,
 } from "react-icons/lu";
+import { toast } from "sonner";
 
 const API = "http://localhost:4000/api";
 
@@ -130,10 +131,24 @@ export default function Archive() {
   };
   useEffect(() => { load(); }, []);
 
-  const handleManualArchive = async (doc) => {
-    if (!window.confirm(`Archiver définitivement "${doc.doc_code} — ${doc.title}" ?\nCette action est irréversible.`)) return;
-    try { await axios.patch(`${API}/documents/${doc.id}/status`, { newStatus:"Archivé" }); await load(); }
-    catch (err) { alert(err.response?.data?.error||"Erreur lors de l'archivage."); }
+  const handleManualArchive = (doc) => {
+    toast.warning(`Archiver "${doc.doc_code} — ${doc.title}" ?`, {
+      description: "Cette action est irréversible.",
+      duration: 8000,
+      action: {
+        label: "Confirmer",
+        onClick: async () => {
+          try {
+            await axios.patch(`${API}/documents/${doc.id}/status`, { newStatus: "Archivé" });
+            await load();
+            toast.success("Document archivé avec succès.");
+          } catch (err) {
+            toast.error(err.response?.data?.error || "Erreur lors de l'archivage.");
+          }
+        },
+      },
+      cancel: { label: "Annuler", onClick: () => {} },
+    });
   };
 
   const expiredDiffuse = candidates.filter(d => d.status_name==="Diffusé");

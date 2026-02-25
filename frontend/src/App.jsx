@@ -1,4 +1,5 @@
 import { Navigate, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 import { UserProvider, useUser } from "./context/UserContext";
 import Home           from "./pages/Home";
 import Login          from "./pages/Login";
@@ -9,6 +10,7 @@ import Archive        from "./pages/Archive";
 import Validations    from "./pages/Validations";
 import Dashboard        from "./pages/Dashboard";
 import UserManagement  from "./pages/UserManagement";
+import Notifications   from "./pages/Notifications";
 
 // ── Garde toutes les routes protégées ────────────────────────
 function ProtectedRoute({ children }) {
@@ -74,6 +76,9 @@ function AppRoutes() {
       <Route path="/admin/users" element={
         <ProtectedRoute><UserManagement /></ProtectedRoute>
       } />
+      <Route path="/notifications" element={
+        <ProtectedRoute><Notifications /></ProtectedRoute>
+      } />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -84,6 +89,12 @@ function AppRoutes() {
 export default function App() {
   return (
     <UserProvider>
+      <Toaster
+        position="bottom-right"
+        theme="dark"
+        richColors
+        toastOptions={{ duration: 4000 }}
+      />
       <AppRoutes />
     </UserProvider>
   );

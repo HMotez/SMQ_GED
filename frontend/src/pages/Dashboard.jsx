@@ -2,15 +2,17 @@
 // pages/Dashboard.jsx — ACTIA ES GED — Login-Style Dark Design
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useMatch } from "react-router-dom";
 import axios from "axios";
 import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
+import NotificationBell from "../components/NotificationBell";
 import {
   LuShieldCheck, LuList, LuSearch, LuUsers,
   LuClipboardCheck, LuClock, LuCircleAlert, LuCircleCheck,
   LuTriangleAlert, LuRefreshCw, LuArrowRight,
-  LuLogOut, LuPlus,
+  LuLogOut, LuPlus, LuUser,
+  LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuBell,
 } from "react-icons/lu";
 
 const API = "http://localhost:4000/api";
@@ -58,18 +60,73 @@ const ROLE_COLOR = {
 };
 
 const NAV_ITEMS = [
-  { to: "/",            label: "Accueil",         end: true },
-  { to: "/dashboard",   label: "Tableau de bord"            },
-  { to: "/list",        label: "Documents"                  },
-  { to: "/validations", label: "Validations"                },
-  { to: "/archive",     label: "Archivage"                  },
+  { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+  { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
+  { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+  { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+  { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
 ];
+
+/* ── NavItem ─────────────────────────────────────────────── */
+function NavItem({ to, label, end, icon }) {
+  const ItemIcon = icon;
+  const match    = useMatch({ path: to, end: end === true });
+  const isActive = !!match;
+  return (
+    <NavLink to={to} end={end} className="no-underline flex-shrink-0">
+      <div
+        className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+        style={{ background: isActive ? "rgba(74,184,63,0.1)" : "transparent" }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+      >
+        <ItemIcon size={13} style={{ color: isActive ? "#4ab83f" : "rgba(168,191,212,0.5)", flexShrink: 0 }} />
+        <span className="text-[13px] font-medium whitespace-nowrap"
+          style={{ color: isActive ? "#ffffff" : "rgba(168,191,212,0.75)" }}>
+          {label}
+        </span>
+        {isActive && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+            style={{ background: "linear-gradient(90deg,#4ab83f,#3da333)" }} />
+        )}
+      </div>
+    </NavLink>
+  );
+}
+
+/* ── AdminNavItem ────────────────────────────────────────── */
+function AdminNavItem({ to, label, icon }) {
+  const ItemIcon = icon;
+  const match    = useMatch({ path: to, end: false });
+  const isActive = !!match;
+  return (
+    <NavLink to={to} className="no-underline flex-shrink-0">
+      <div
+        className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+        style={{ background: isActive ? "rgba(239,68,68,0.1)" : "transparent" }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(239,68,68,0.07)"; }}
+        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+      >
+        <ItemIcon size={13} style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.5)", flexShrink: 0 }} />
+        <span className="text-[13px] font-medium whitespace-nowrap"
+          style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.75)" }}>
+          {label}
+        </span>
+        {isActive && (
+          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+            style={{ background: "linear-gradient(90deg,#f87171,#ef4444)" }} />
+        )}
+      </div>
+    </NavLink>
+  );
+}
 
 /* ── Navbar ───────────────────────────────────────────────── */
 function Navbar() {
   const { currentUser, userRole, logout } = useUser();
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+
   const handleLogout = async () => { await logout(); navigate("/login", { replace: true }); };
 
   useEffect(() => {
@@ -78,53 +135,129 @@ function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  return (
-    <nav
-      className="sticky top-0 z-50 border-b transition-all duration-300"
-      style={{
-        background: scrolled ? "rgba(10,20,32,0.92)" : "rgba(15,30,48,0.75)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderColor: "rgba(255,255,255,0.08)",
-        boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.4)" : "none",
-      }}
-    >
-      <style>{ANIMATION_STYLES}</style>
-      <div className="max-w-[1280px] mx-auto px-8 h-16 flex items-center justify-between">
-        <NavLink to="/" className="no-underline">
-          <img
-            src={logoImg}
-            alt="ACTIA ES"
-            className="h-10 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-            style={{ filter: "drop-shadow(0 2px 10px rgba(74,184,63,0.3))" }}
-          />
-        </NavLink>
+  const initials = currentUser?.name
+    ? currentUser.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
 
-        <div className="flex items-center gap-1">
-          {NAV_ITEMS.map(({ to, label, end }) => (
-            <NavLink key={to} to={to} end={end}
-              className={({ isActive }) => `px-3.5 py-2 rounded-lg no-underline text-sm font-medium transition-all duration-200 ${isActive ? "text-white" : "text-[#a8bfd4] hover:text-white"}`}
-              style={({ isActive }) => isActive ? { background:"rgba(255,255,255,0.1)", boxShadow:"inset 0 1px 0 rgba(255,255,255,0.1)" } : {}}
-            >{label}</NavLink>
-          ))}
-          <NavLink to="/create" className="ml-2 px-4 py-2 rounded-xl no-underline text-sm font-semibold flex items-center gap-1.5 text-white transition-all hover:-translate-y-px"
-            style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)" }}>
-            <LuPlus size={14} /> Nouveau
-          </NavLink>
-          {currentUser && (
-            <div className="flex items-center gap-2.5 ml-3 pl-3.5" style={{ borderLeft:"1px solid rgba(255,255,255,0.1)" }}>
-              <div className="text-right">
-                <p className="text-white text-sm font-semibold m-0">{currentUser.name}</p>
-                <p className="text-xs font-semibold m-0" style={{ color: ROLE_COLOR[userRole]||"#94a3b8" }}>{userRole}</p>
+  return (
+    <nav className="sticky top-0 z-50 transition-all duration-300">
+      <style>{ANIMATION_STYLES}</style>
+
+      {/* Green accent line at top */}
+      <div style={{
+        height: 2,
+        background: "linear-gradient(90deg, transparent 0%, #4ab83f 40%, #3da333 60%, transparent 100%)",
+        opacity: scrolled ? 1 : 0.5,
+        transition: "opacity 0.3s",
+      }} />
+
+      <div
+        className="border-b transition-all duration-300"
+        style={{
+          background: scrolled ? "rgba(8,15,26,0.97)" : "rgba(10,20,32,0.82)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+          borderColor: "rgba(255,255,255,0.07)",
+          boxShadow: scrolled
+            ? "0 8px 40px rgba(0,0,0,0.5), inset 0 -1px 0 rgba(255,255,255,0.04)"
+            : "none",
+        }}
+      >
+        <div className="max-w-[1400px] mx-auto px-6 h-[68px] grid items-center"
+          style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+
+          {/* ── Left: Logo + Divider ── */}
+          <div className="flex items-center gap-3">
+            <NavLink to="/" className="no-underline flex items-center flex-shrink-0">
+              <img
+                src={logoImg}
+                alt="ACTIA ES"
+                className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+                style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+              />
+            </NavLink>
+            <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)", flexShrink: 0 }} />
+          </div>
+
+          {/* ── Center: Nav links (grid auto = exactly as wide as needed) ── */}
+          <div className="flex items-center gap-0.5">
+            {NAV_ITEMS.map((item) => (
+              <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
+            ))}
+            {userRole === "Admin GED" && (
+              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} />
+            )}
+          </div>
+
+          {/* ── Right: Actions ── */}
+          <div className="flex items-center gap-2 justify-end mr-3">
+
+            {/* + Nouveau button */}
+            <NavLink
+              to="/create"
+              className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-xl"
+              style={{
+                background: "linear-gradient(135deg,#4ab83f,#3da333)",
+                boxShadow: "0 4px 18px rgba(74,184,63,0.35)",
+              }}
+            >
+              <LuPlus size={14} /> Nouveau
+            </NavLink>
+
+            {/* Divider */}
+            <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)" }} />
+
+            {/* Bell */}
+            <NotificationBell />
+
+            {/* User profile */}
+            {currentUser && (
+              <div className="flex items-center gap-2.5 pl-1">
+                {/* Initials avatar */}
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: "rgba(74,184,63,0.15)",
+                    border: "1.5px solid rgba(74,184,63,0.35)",
+                    color: "#4ab83f",
+                  }}>
+                  <LuUser size={17} />
+                </div>
+
+                {/* Name + Role */}
+                <div className="leading-none">
+                  <p className="text-[13px] font-semibold text-white m-0 leading-tight">{currentUser.name}</p>
+                  <p className="text-[11px] font-semibold m-0 mt-0.5 leading-tight"
+                    style={{ color: ROLE_COLOR[userRole] || "#94a3b8" }}>
+                    {userRole}
+                  </p>
+                </div>
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  title="Déconnexion"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border transition-all duration-200 cursor-pointer ml-0.5"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    borderColor: "rgba(255,255,255,0.1)",
+                    color: "rgba(168,191,212,0.5)",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(239,68,68,0.12)";
+                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
+                    e.currentTarget.style.color = "#f87171";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                    e.currentTarget.style.color = "rgba(168,191,212,0.5)";
+                  }}
+                >
+                  <LuLogOut size={14} />
+                </button>
               </div>
-              <button onClick={handleLogout} title="Déconnexion"
-                className="flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer"
-                style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"#94a3b8" }}
-                onMouseEnter={e => { e.currentTarget.style.background="rgba(239,68,68,0.15)"; e.currentTarget.style.borderColor="rgba(239,68,68,0.3)"; e.currentTarget.style.color="#f87171"; }}
-                onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="#94a3b8"; }}
-              ><LuLogOut size={15} /></button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>
@@ -268,12 +401,10 @@ function DonutChart({ data, total, colors }) {
     </div>
   );
   const R = 58, CX = 80, CY = 80, CIRC = 2 * Math.PI * R;
-  let cumLen = 0;
   const segments = data.map((item, i) => {
-    const len = (item.count / total) * CIRC;
-    const offset = CIRC - cumLen;
-    cumLen += len;
-    return { ...item, len, offset, color: colors?.[i % colors.length] || "#60a5fa" };
+    const len    = (item.count / total) * CIRC;
+    const prevLen = data.slice(0, i).reduce((s, d) => s + (d.count / total) * CIRC, 0);
+    return { ...item, len, offset: CIRC - prevLen, color: colors?.[i % colors.length] || "#60a5fa" };
   });
   return (
     <svg width="160" height="160" viewBox="0 0 160 160" style={{ overflow:"visible" }}>
@@ -319,13 +450,16 @@ export default function Dashboard() {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
   const fetchData = useCallback(() => {
-    setLoadingOv(true); setLoadingSt(true);
     axios.get(`${API}/dashboard/overview`).then(r => setOverview(r.data)).catch(console.error).finally(() => setLoadingOv(false));
     axios.get(`${API}/dashboard/stats`).then(r => setStats(r.data)).catch(console.error).finally(() => setLoadingSt(false));
     setLastRefreshed(new Date());
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    setLoadingOv(true);
+    setLoadingSt(true);
+    fetchData();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const expired      = overview?.expired      || { count:0, list:[] };
   const inValidation = overview?.in_validation || { count:0, list:[] };
@@ -360,7 +494,7 @@ export default function Dashboard() {
               <h1 className="m-0 text-3xl font-black text-white" style={{ letterSpacing:-1 }}>Supervision Documentaire</h1>
               <p className="m-0 mt-2 text-base" style={{ color:"rgba(168,191,212,0.7)" }}>Vue temps réel · Conformité ISO 9001:2015</p>
             </div>
-            <button onClick={fetchData} disabled={loadingOv||loadingSt}
+            <button onClick={() => { setLoadingOv(true); setLoadingSt(true); fetchData(); }} disabled={loadingOv||loadingSt}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:bg-white/20"
               style={{ background:"rgba(255,255,255,0.08)", borderColor:"rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.85)" }}>
               <LuRefreshCw size={13} style={{ animation:(loadingOv||loadingSt)?"spin 1s linear infinite":"none" }} />
