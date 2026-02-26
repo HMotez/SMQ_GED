@@ -5,8 +5,7 @@
 // ============================================================
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import axios from "axios";
-
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 // ── Permissions par rôle (miroir backend) ─────────────────────
 export const ROLE_PERMISSIONS = {

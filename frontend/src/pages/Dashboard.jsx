@@ -15,7 +15,7 @@ import {
   LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuBell,
 } from "react-icons/lu";
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 /* ── Animation styles ──────────────────────────────────── */
 const ANIMATION_STYLES = `

@@ -12,7 +12,7 @@ import {
   LuUser, LuInbox, LuLock, LuClipboardCheck, LuArchive, LuFileText,
 } from "react-icons/lu";
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 const STATUS_CFG = {
   "Brouillon":     { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil         },

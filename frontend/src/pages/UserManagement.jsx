@@ -10,7 +10,7 @@ import {
   LuCircleCheckBig, LuCircleAlert, LuClock, LuCheck, LuX,
 } from "react-icons/lu";
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 const ROLE_COLORS = {
   "Admin GED":           "#f87171",

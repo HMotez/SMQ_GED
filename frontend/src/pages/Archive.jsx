@@ -12,7 +12,7 @@ import {
 } from "react-icons/lu";
 import { toast } from "sonner";
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 const STATUS_CFG = {
   "Diffusé":  { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2        },

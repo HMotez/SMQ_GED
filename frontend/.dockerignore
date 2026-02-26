@@ -1,0 +1,21 @@
+# Dependencies — reinstalled inside builder stage
+node_modules
+
+# Previous build output — rebuilt inside the image
+dist
+
+# Environment files (not needed; build args used instead)
+.env
+.env.*
+
+# Git metadata
+.git
+.gitignore
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db

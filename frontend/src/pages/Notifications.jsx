@@ -13,7 +13,7 @@ import {
   LuFileText, LuLayers, LuHistory, LuShieldCheck,
 } from "react-icons/lu";
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 /* ── Config par type ─────────────────────────────────────── */
 const TYPE_CFG = {

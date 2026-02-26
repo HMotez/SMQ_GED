@@ -158,18 +158,18 @@ app.use((err, _req, res, _next) => {
 app.listen(process.env.PORT || 4000, async () => {
   console.log("✅ Server running on port " + (process.env.PORT || 4000));
 
-  // ── Table validations EF05 ─────────────────────────────────
-  const { ensureValidationsTable } = require("./controllers/validationController");
-    // ── Auth JWT Sprint 3 — colonnes + seed utilisateurs ───────
+  // ── Rôles ISO EF06 — doit tourner EN PREMIER (seedDefaultUsers en dépend) ──
+  const { ensureRoles } = require("./controllers/roleController");
+  await ensureRoles();
+
+  // ── Auth JWT Sprint 3 — colonnes + seed utilisateurs ───────
   const { ensureAuthColumns, seedDefaultUsers } = require("./controllers/authController");
   await ensureAuthColumns();
   await seedDefaultUsers();
 
-await ensureValidationsTable();
-
-  // ── Rôles ISO EF06 ─────────────────────────────────────────
-  const { ensureRoles } = require("./controllers/roleController");
-  await ensureRoles();
+  // ── Table validations EF05 ─────────────────────────────────
+  const { ensureValidationsTable } = require("./controllers/validationController");
+  await ensureValidationsTable();
 
   // ── Archivage automatique EF11 ─────────────────────────────
   // Exécuté au démarrage puis toutes les 24h

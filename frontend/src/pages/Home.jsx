@@ -17,8 +17,7 @@ import {
   LuPlus, LuArrowRight, LuLogOut, LuInbox, LuUser, LuZap, LuAward,
   LuHouse, LuLayoutDashboard, LuBell,
 } from "react-icons/lu";
-
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
@@ -85,7 +84,7 @@ function NavItem({ to, label, end, icon }) {
 }
 
 /* ── AdminNavItem (red accent for Admin GED) ─────────────── */
-function AdminNavItem({ to, label, icon }) {
+function AdminNavItem({ to, label, icon, badge = 0 }) {
   const ItemIcon = icon;
   const match    = useMatch({ path: to, end: false });
   const isActive = !!match;
@@ -102,6 +101,20 @@ function AdminNavItem({ to, label, icon }) {
           style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.75)" }}>
           {label}
         </span>
+        {badge > 0 && (
+          <span
+            className="flex items-center justify-center rounded-full text-white font-bold"
+            style={{
+              minWidth: 17, height: 17,
+              fontSize: 10,
+              background: "linear-gradient(135deg,#ef4444,#dc2626)",
+              boxShadow: "0 0 8px rgba(239,68,68,0.6)",
+              padding: "0 4px",
+            }}
+          >
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
         {isActive && (
           <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
             style={{ background: "linear-gradient(90deg,#f87171,#ef4444)" }} />
@@ -115,9 +128,23 @@ function AdminNavItem({ to, label, icon }) {
 function Navbar() {
   const { currentUser, userRole, logout } = useUser();
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled,      setScrolled]      = useState(false);
+  const [pendingCount,  setPendingCount]  = useState(0);
 
   const handleLogout = async () => { await logout(); navigate("/login", { replace: true }); };
+
+  // Fetch pending user requests count (Admin GED only)
+  useEffect(() => {
+    if (userRole !== "Admin GED") return;
+    const fetchPending = () => {
+      axios.get(`${API}/users/pending-count`)
+        .then(r => setPendingCount(r.data.count))
+        .catch(() => {});
+    };
+    fetchPending();
+    const interval = setInterval(fetchPending, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, [userRole]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -176,7 +203,7 @@ function Navbar() {
               <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
             ))}
             {userRole === "Admin GED" && (
-              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} />
+              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} badge={pendingCount} />
             )}
           </div>
 

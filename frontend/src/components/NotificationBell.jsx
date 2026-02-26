@@ -10,7 +10,7 @@ import {
   LuClipboardCheck, LuFileWarning, LuFilePlus, LuArchive,
 } from "react-icons/lu";
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 /* ── Config par type de notification ─────────────────────── */
 const TYPE_CFG = {

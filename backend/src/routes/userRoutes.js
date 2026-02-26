@@ -6,7 +6,8 @@ const express = require("express");
 const router  = express.Router();
 const ctrl    = require("../controllers/userController");
 
-router.get("/", ctrl.getUsers);
+router.get("/pending-count", ctrl.getPendingCount);
+router.get("/",              ctrl.getUsers);
 
 module.exports = router;
 
