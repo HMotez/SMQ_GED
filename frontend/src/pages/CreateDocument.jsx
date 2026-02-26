@@ -11,8 +11,7 @@ import {
   LuFileText, LuHash, LuTag, LuArrowRight, LuArrowLeft,
   LuPlus, LuChevronDown, LuCheck, LuFolder,
 } from "react-icons/lu";
-
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 /* ════════════════════════════════════════════════════════════
    CUSTOM DARK DROPDOWN

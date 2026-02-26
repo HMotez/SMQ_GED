@@ -1,0 +1,20 @@
+# Dependencies — reinstalled inside the image
+node_modules
+
+# Environment secrets — injected at runtime by docker-compose
+.env
+
+# Git metadata
+.git
+.gitignore
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md

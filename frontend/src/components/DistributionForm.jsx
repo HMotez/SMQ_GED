@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { AccessDeniedMessage } from './RoleBasedAccess';
 
-const API = "http://localhost:4000/api";
+import { API } from "../config";
 
 export function DistributionForm({ document, onSuccess, onClose }) {
   const [recipients, setRecipients] = useState('');

@@ -17,7 +17,7 @@ import {
 } from "react-icons/lu";
 import { toast } from "sonner";
 
-const API = "http://localhost:4000/api";
+import { API, BACKEND } from "../config";
 
 const ISO_LIFECYCLE   = ["Brouillon","En rédaction","En relecture","En validation","Validé","Diffusé","Obsolète","Archivé"];
 const LOCKED_STATUSES = ["Validé","Diffusé","Obsolète","Archivé"];
@@ -304,7 +304,7 @@ export default function DocumentList() {
 
   const handleDownload = async (filename) => {
     try {
-      const response = await fetch(`http://localhost:4000/download/${encodeURIComponent(filename)}`);
+      const response = await fetch(`${BACKEND}/download/${encodeURIComponent(filename)}`);
       if (!response.ok) throw new Error("Erreur serveur");
       const blob = await response.blob(); const url = URL.createObjectURL(blob);
       const link = document.createElement("a"); link.href=url; link.download=filename;
@@ -768,7 +768,7 @@ export default function DocumentList() {
                 <LuX size={18} />
               </button>
             </div>
-            <iframe src={`http://localhost:4000/preview/${encodeURIComponent(previewFile||"")}`} title="preview" className="flex-1 border-none w-full" />
+            <iframe src={`${BACKEND}/preview/${encodeURIComponent(previewFile||"")}`} title="preview" className="flex-1 border-none w-full" />
           </div>
         </div>
       )}

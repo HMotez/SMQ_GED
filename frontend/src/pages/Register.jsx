@@ -11,6 +11,7 @@ import {
   LuCheck, LuX, LuUserCog, LuKeyRound, LuUserCheck,
   LuCrown, LuChartBar, LuWrench, LuPenLine, LuBadgeCheck, LuBookOpen,
 } from "react-icons/lu";
+import { API } from "../config";
 
 /* ── All roles (based on ISO matrix) ─────────────────────── */
 const ROLES = [
@@ -151,7 +152,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:4000/api/auth/register", {
+      const res = await fetch(`${API}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
