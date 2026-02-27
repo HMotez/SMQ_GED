@@ -5,12 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { LuLogOut, LuShield, LuUser } from "react-icons/lu";
 import { useUser } from "../context/UserContext";
 
+/* Role colors aligned with the rest of the application */
 const ROLE_STYLE = {
-  "Admin GED":           { color: "#f78166", bg: "rgba(247,129,102,0.1)",  border: "rgba(247,129,102,0.25)" },
-  "Responsable Qualité": { color: "#d29922", bg: "rgba(210,153,34,0.1)",   border: "rgba(210,153,34,0.25)"  },
-  "Rédacteur":           { color: "#79c0ff", bg: "rgba(121,192,255,0.1)",  border: "rgba(121,192,255,0.25)" },
-  "Validateur":          { color: "#4ab83f", bg: "rgba(74,184,63,0.1)",    border: "rgba(74,184,63,0.25)"   },
-  "Lecteur":             { color: "#8b949e", bg: "rgba(139,148,158,0.1)",  border: "rgba(139,148,158,0.2)"  },
+  "Admin GED":           { color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
+  "Responsable Qualité": { color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.28)"  },
+  "Ing. Qualité":        { color: "#2dd4bf", bg: "rgba(45,212,191,0.1)",   border: "rgba(45,212,191,0.25)"  },
+  "Rédacteur":           { color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.28)"  },
+  "Validateur":          { color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.28)"  },
+  "Lecteur":             { color: "#94a3b8", bg: "rgba(148,163,184,0.1)",  border: "rgba(148,163,184,0.22)" },
 };
 
 export default function UserSelector() {
@@ -27,25 +29,34 @@ export default function UserSelector() {
   };
 
   return (
-    <div className="rounded-2xl p-4 border"
-      style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
+    <div className="rounded-2xl p-3.5 border"
+      style={{
+        background: "rgba(255,255,255,0.032)",
+        borderColor: "rgba(255,255,255,0.08)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}>
 
       {/* ── Header status ── */}
       <div className="flex items-center gap-1.5 mb-3">
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#4ab83f", boxShadow: "0 0 6px rgba(74,184,63,0.7)" }} />
-        <p className="m-0 text-[10px] font-bold uppercase tracking-[1.2px]"
-          style={{ color: "rgba(168,191,212,0.4)" }}>Connecté</p>
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse-glow" style={{ background: "#4ab83f" }} />
+        <p className="m-0 text-[9.5px] font-bold uppercase tracking-[1.4px]"
+          style={{ color: "rgba(168,191,212,0.38)" }}>Session active</p>
       </div>
 
       {/* ── Avatar + info ── */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: s.bg, border: `1.5px solid ${s.border}`, color: s.color }}>
-          <LuUser size={18} />
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{
+            background: s.bg,
+            border: `1.5px solid ${s.border}`,
+            color: s.color,
+            boxShadow: `0 4px 14px ${s.bg}`,
+          }}>
+          <LuUser size={16} />
         </div>
-        <div className="overflow-hidden flex-1">
-          <p className="m-0 text-sm font-semibold text-white truncate leading-tight">{currentUser.name}</p>
-          <p className="m-0 mt-0.5 text-[11px] truncate" style={{ color: "rgba(168,191,212,0.45)" }}>
+        <div className="overflow-hidden flex-1 min-w-0">
+          <p className="m-0 text-[13px] font-semibold text-white truncate leading-tight">{currentUser.name}</p>
+          <p className="m-0 mt-0.5 text-[11px] truncate leading-tight" style={{ color: "rgba(168,191,212,0.42)" }}>
             {currentUser.email}
           </p>
         </div>
@@ -53,7 +64,7 @@ export default function UserSelector() {
 
       {/* ── Role badge ── */}
       <div className="mb-3">
-        <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold border"
+        <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-[5px] text-[11px] font-bold border"
           style={{ background: s.bg, color: s.color, borderColor: s.border }}>
           <LuShield size={10} />
           {userRole || "Sans rôle"}
@@ -62,17 +73,17 @@ export default function UserSelector() {
 
       {/* ── Logout button ── */}
       <button onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all"
-        style={{ background: "transparent", borderColor: "rgba(255,255,255,0.08)", color: "rgba(168,191,212,0.55)", cursor: "pointer" }}
+        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold border transition-all duration-200"
+        style={{ background: "transparent", borderColor: "rgba(255,255,255,0.08)", color: "rgba(168,191,212,0.5)", cursor: "pointer" }}
         onMouseEnter={e => {
-          e.currentTarget.style.background = "rgba(239,68,68,0.08)";
-          e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)";
+          e.currentTarget.style.background = "rgba(248,113,113,0.08)";
+          e.currentTarget.style.borderColor = "rgba(248,113,113,0.28)";
           e.currentTarget.style.color = "#f87171";
         }}
         onMouseLeave={e => {
           e.currentTarget.style.background = "transparent";
           e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-          e.currentTarget.style.color = "rgba(168,191,212,0.55)";
+          e.currentTarget.style.color = "rgba(168,191,212,0.5)";
         }}>
         <LuLogOut size={12} /> Déconnexion
       </button>

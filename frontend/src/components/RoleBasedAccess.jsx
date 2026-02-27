@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { LuCheck, LuX } from 'react-icons/lu';
-import { useUser } from '../context/UserContext';
+import { useUser, ROLE_PERMISSIONS } from '../context/UserContext';
 import useRoleCheck from '../hooks/useRoleCheck';
 
 /**
@@ -140,6 +140,168 @@ export function DocumentAccessStatus({ document }) {
             </span>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * DocumentRolePermissionsMatrix
+ * Shows what EACH ROLE can do with this document
+ */
+export function DocumentRolePermissionsMatrix({ document }) {
+  const ROLES = [
+    'Admin GED',
+    'Responsable Qualité',
+    'Ing. Qualité',
+    'Rédacteur',
+    'Validateur',
+    'Lecteur',
+  ];
+
+  // Map UI actions to permission strings in ROLE_PERMISSIONS
+  const ACTIONS = [
+    { label: 'Lire', permission: 'document:read' },
+    { label: 'Modifier', permission: 'document:update' },
+    { label: 'Valider', permission: 'validation:create' },
+    { label: 'Changer statut', permission: 'document:status' },
+    { label: 'Archiver', permission: 'archive:manage' },
+    { label: 'Gérer utilisateurs', permission: 'user:manage' },
+  ];
+
+  // Check if role has permission
+  const canRolePerformAction = (role, permissionString) => {
+    return (ROLE_PERMISSIONS[role] || []).includes(permissionString);
+  };
+
+  const getRoleColor = (role) => {
+    const colors = {
+      'Admin GED': '#f78166',
+      'Responsable Qualité': '#d29922',
+      'Ing. Qualité': '#79c0ff',
+      'Rédacteur': '#79c0ff',
+      'Validateur': '#3fb950',
+      'Lecteur': '#8b949e',
+    };
+    return colors[role] || '#8b949e';
+  };
+
+  return (
+    <div style={{
+      background: '#0d1117',
+      border: '1px solid #21262d',
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 16,
+      overflowX: 'auto',
+    }}>
+      <p style={{ color: '#8b949e', fontSize: 12, margin: '0 0 12px', textTransform: 'uppercase', fontWeight: 600 }}>
+        📋 Matrice de permissions par rôle
+      </p>
+
+      <div style={{ display: 'block', overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: 12,
+        }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid #21262d' }}>
+              <th style={{
+                padding: '8px',
+                textAlign: 'left',
+                color: '#8b949e',
+                fontWeight: 600,
+                borderRight: '1px solid #21262d',
+              }}>
+                Rôle
+              </th>
+              {ACTIONS.map(({ label }) => (
+                <th
+                  key={label}
+                  style={{
+                    padding: '8px',
+                    textAlign: 'center',
+                    color: '#8b949e',
+                    fontWeight: 600,
+                    borderRight: '1px solid #21262d',
+                    minWidth: 80,
+                  }}
+                >
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ROLES.map((role) => (
+              <tr key={role} style={{ borderBottom: '1px solid #21262d' }}>
+                <td style={{
+                  padding: '8px',
+                  color: getRoleColor(role),
+                  fontWeight: 600,
+                  borderRight: '1px solid #21262d',
+                }}>
+                  {role}
+                </td>
+                {ACTIONS.map(({ label, permission }) => {
+                  const allowed = canRolePerformAction(role, permission);
+                  return (
+                    <td
+                      key={permission}
+                      style={{
+                        padding: '8px',
+                        textAlign: 'center',
+                        borderRight: '1px solid #21262d',
+                      }}
+                    >
+                      {allowed ? (
+                        <div style={{
+                          background: '#03803d',
+                          border: '1px solid #196c2e',
+                          borderRadius: 4,
+                          padding: '4px 6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#3fb950',
+                        }}>
+                          <LuCheck size={14} />
+                        </div>
+                      ) : (
+                        <div style={{
+                          background: '#3d1a1a',
+                          border: '1px solid #6e2020',
+                          borderRadius: 4,
+                          padding: '4px 6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ff7b72',
+                        }}>
+                          <LuX size={14} />
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{
+        marginTop: 12,
+        padding: 8,
+        background: '#161b22',
+        borderRadius: 4,
+        fontSize: 11,
+        color: '#8b949e',
+      }}>
+        <p style={{ margin: 0 }}>
+          📌 <strong>Légende :</strong> Permissions définies selon le rôle. Admin GED et Responsable Qualité ont accès aux archivages; Validateur peut valider; Lecteur a accès en lecture seule.
+        </p>
       </div>
     </div>
   );
@@ -311,6 +473,7 @@ export default {
   AccessDeniedMessage,
   RoleInfoBadge,
   DocumentAccessStatus,
+  DocumentRolePermissionsMatrix,
   ConditionalAccess,
   ActionButton,
   RolePermissionTag,

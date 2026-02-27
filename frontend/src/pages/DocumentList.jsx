@@ -7,7 +7,7 @@ import { NavLink } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import UserSelector from "../components/UserSelector";
 import useRoleCheck from "../hooks/useRoleCheck";
-import { AccessDeniedMessage, DocumentAccessStatus, RoleInfoBadge } from "../components/RoleBasedAccess";
+import { AccessDeniedMessage, DocumentAccessStatus, DocumentRolePermissionsMatrix, RoleInfoBadge } from "../components/RoleBasedAccess";
 import AppSidebar from "../components/AppSidebar";
 import {
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2,
@@ -399,20 +399,23 @@ export default function DocumentList() {
 
         {/* ── Header ────────────────────────────────────────── */}
         <header className="flex items-center justify-between px-8 py-4 border-b"
-          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)" }}>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <div className="w-0.5 h-4 rounded-full" style={{ background:"#4ab83f" }} />
-              <h1 className="m-0 text-xl font-bold text-white">Documents</h1>
+          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.18),rgba(74,184,63,0.08))", border:"1.5px solid rgba(74,184,63,0.3)", boxShadow:"0 4px 14px rgba(74,184,63,0.15)" }}>
+              <LuFileText size={19} style={{ color:"#4ab83f" }} />
             </div>
-            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-              {pagination.total} document{pagination.total>1?"s":""}
-              {filters.overdue    && <span style={{ color:"#fb923c" }}> · En retard</span>}
-              {filters.statusName && <span style={{ color:"rgba(168,191,212,0.7)" }}> · {filters.statusName}</span>}
-            </p>
+            <div>
+              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Documents</h1>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+                {pagination.total} document{pagination.total>1?"s":""}
+                {filters.overdue    && <span style={{ color:"#fb923c" }}> · En retard</span>}
+                {filters.statusName && <span style={{ color:"rgba(168,191,212,0.7)" }}> · {filters.statusName}</span>}
+              </p>
+            </div>
           </div>
           {can("document:create") && (
-            <NavLink to="/create" className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            <NavLink to="/create" className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white"
               style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)" }}>
               <LuPlus size={14} /> Nouveau
             </NavLink>
@@ -581,6 +584,7 @@ export default function DocumentList() {
 
               <RoleInfoBadge />
               <DocumentAccessStatus document={selected} />
+              <DocumentRolePermissionsMatrix document={selected} />
               <LifecycleBar currentStatus={selected.status_name} />
 
               {/* Status transition */}

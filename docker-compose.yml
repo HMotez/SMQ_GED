@@ -1,19 +1,37 @@
 # =============================================================
 # SMQ_GED — Docker Compose
 # Sprint 7 — Dockerisation & Déploiement Containerisé
+# Sprint 6 — Module IA (chatbot NLP, classification, extraction dates,
+#             amélioration continue) — aucun service additionnel requis,
+#             l'IA est intégrée dans le backend Express + PostgreSQL.
 # =============================================================
 #
 # Services:
 #   postgres  — PostgreSQL 16 (internal only, not exposed)
 #   backend   — Node.js Express API on port 4000
+#               + Module IA Sprint 6 (/api/ai/*)
+#               + LibreOffice pour conversion de documents
 #   frontend  — React SPA served by Nginx on port 80
+#               + Page /ai — Assistant IA (chatbot, classification, etc.)
 #
-# Usage:
-#   docker-compose up --build        (first run / after code changes)
-#   docker-compose up -d             (detached mode)
-#   docker-compose down              (stop and remove containers)
-#   docker-compose down -v           (also remove volumes — fresh DB)
-#   docker-compose logs -f backend   (follow backend logs)
+# Sprint 6 — Tables DB créées automatiquement au démarrage :
+#   ai_query_logs — journalisation des requêtes chatbot IA
+#   (voir aussi db/init.sql table 13 et migration 003)
+#
+# Usage (connexion Docker Hub disponible) :
+#   docker-compose up --build        (premier lancement / après modifs)
+#   docker-compose up -d             (mode détaché)
+#   docker-compose down              (arrêt + suppression containers)
+#   docker-compose down -v           (+ suppression volumes — BDD neuve)
+#   docker-compose logs -f backend   (suivre les logs backend)
+#   docker-compose logs -f frontend  (suivre les logs nginx)
+#
+# Usage hors-ligne (Docker Hub inaccessible — TLS timeout) :
+#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build -d
+#   .\scripts\build-offline.ps1      (raccourci PowerShell)
+#
+# Fix permanent (réseau d'entreprise) :
+#   .\scripts\configure-docker-mirror.ps1   (configure mirror.gcr.io)
 # =============================================================
 
 services:
@@ -47,6 +65,8 @@ services:
     build:
       context:    ./backend
       dockerfile: Dockerfile
+    # Tag explicite → permet le rebuild offline via Dockerfile.offline
+    image: smq_ged-backend:latest
     container_name: smq_backend
     restart: unless-stopped
     # All variables come from the root .env file (docker-compose default)
@@ -58,6 +78,7 @@ services:
       # Ensure DB_HOST always points to the postgres service name,
       # regardless of what is in .env
       DB_HOST: postgres
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     volumes:
       # Named volume shared with host for uploaded files persistence
       - storage:/app/storage
@@ -81,6 +102,8 @@ services:
         # proxied by Nginx to backend:4000
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
+    # Tag explicite → permet le rebuild offline via Dockerfile.offline
+    image: smq_ged-frontend:latest
     container_name: smq_frontend
     restart: unless-stopped
     ports:

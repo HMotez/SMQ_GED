@@ -152,6 +152,21 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notif_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notif_unread  ON notifications(user_id, is_read);
 
+-- ── 13. AI Query Logs (Sprint 6 — Module IA) ─────────────────
+-- Journalise toutes les requêtes soumises au chatbot qualité.
+-- Permet l'audit et l'analyse des usages de l'assistant IA.
+CREATE TABLE IF NOT EXISTS ai_query_logs (
+  id           SERIAL PRIMARY KEY,
+  user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  query_text   TEXT    NOT NULL,
+  intent       VARCHAR(80),
+  result_count INTEGER DEFAULT 0,
+  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_logs_user    ON ai_query_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_logs_created ON ai_query_logs(created_at DESC);
+
 
 -- =============================================================
 -- SEED DATA — Données de référence obligatoires

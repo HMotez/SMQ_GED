@@ -175,14 +175,15 @@ export default function Archive() {
     <button key={id} onClick={() => setActiveTab(id)}
       className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border transition-all"
       style={{
-        background:activeTab===id?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.04)",
-        borderColor:activeTab===id?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)",
-        color:activeTab===id?"white":"rgba(168,191,212,0.6)",
+        background:  activeTab===id ? "rgba(74,184,63,0.12)"  : "rgba(255,255,255,0.04)",
+        borderColor: activeTab===id ? "rgba(74,184,63,0.28)"  : "rgba(255,255,255,0.08)",
+        color:       activeTab===id ? "#4ab83f"               : "rgba(168,191,212,0.6)",
+        cursor: "pointer",
       }}>
       <TabIcon size={14} />
       {label}
       {count > 0 && (
-        <span className="rounded-full px-2 py-px text-xs font-bold" style={{ background:activeTab===id?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.08)", color:activeTab===id?"white":"rgba(168,191,212,0.6)" }}>
+        <span className="rounded-full px-2 py-px text-xs font-bold" style={{ background:activeTab===id?"rgba(74,184,63,0.18)":"rgba(255,255,255,0.08)", color:activeTab===id?"#4ab83f":"rgba(168,191,212,0.6)" }}>
           {count}
         </span>
       )}
@@ -196,14 +197,17 @@ export default function Archive() {
       <main className="flex-1 flex flex-col min-w-0">
 
         {/* ── Header ────────────────────────────────────────── */}
-        <header className="px-9 py-3.5 border-b flex items-center justify-between"
-          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)" }}>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <div className="w-0.5 h-4 rounded-full" style={{ background:"#4ab83f" }} />
-              <h1 className="m-0 text-xl font-bold text-white">Archivage</h1>
+        <header className="px-9 py-4 border-b flex items-center justify-between"
+          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background:"linear-gradient(135deg,rgba(148,163,184,0.18),rgba(148,163,184,0.08))", border:"1.5px solid rgba(148,163,184,0.3)", boxShadow:"0 4px 14px rgba(0,0,0,0.2)" }}>
+              <LuArchive size={19} style={{ color:"#94a3b8" }} />
             </div>
-            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>EF11 — Gestion des documents obsolètes · Aucune suppression définitive</p>
+            <div>
+              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Archivage</h1>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>EF11 — Documents obsolètes · Aucune suppression définitive</p>
+            </div>
           </div>
         </header>
 

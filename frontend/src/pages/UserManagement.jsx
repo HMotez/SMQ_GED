@@ -236,17 +236,17 @@ export default function UserManagement() {
 
         {/* ── Header ─────────────────────────────────────── */}
         <div className="anim-in mb-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center border flex-shrink-0"
-              style={{ background:"rgba(74,184,63,0.12)", border:"1.5px solid rgba(74,184,63,0.3)" }}>
-              <LuUsers size={17} style={{ color:"#4ab83f" }} />
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background:"linear-gradient(135deg,rgba(248,113,113,0.18),rgba(248,113,113,0.08))", border:"1.5px solid rgba(248,113,113,0.3)", boxShadow:"0 4px 14px rgba(248,113,113,0.12)" }}>
+              <LuUsers size={19} style={{ color:"#f87171" }} />
             </div>
             <div>
-              <h1 className="text-white text-[20px] font-black m-0" style={{ letterSpacing:-0.5 }}>
+              <h1 className="text-white m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>
                 Gestion des utilisateurs
               </h1>
-              <p className="m-0 text-[12px]" style={{ color:"rgba(168,191,212,0.5)" }}>
-                Activation des comptes et attribution des rôles — Admin GED
+              <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+                Activation des comptes · Attribution des rôles — Admin GED
               </p>
             </div>
           </div>

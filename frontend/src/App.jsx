@@ -11,6 +11,7 @@ import Validations    from "./pages/Validations";
 import Dashboard        from "./pages/Dashboard";
 import UserManagement  from "./pages/UserManagement";
 import Notifications   from "./pages/Notifications";
+import AIAssistant     from "./pages/AIAssistant";
 
 // ── Garde toutes les routes protégées ────────────────────────
 function ProtectedRoute({ children }) {
@@ -78,6 +79,9 @@ function AppRoutes() {
       } />
       <Route path="/notifications" element={
         <ProtectedRoute><Notifications /></ProtectedRoute>
+      } />
+      <Route path="/ai" element={
+        <ProtectedRoute><AIAssistant /></ProtectedRoute>
       } />
 
       {/* Fallback */}
