@@ -148,6 +148,7 @@ app.use("/api/validations", require("./routes/validationRoutes")); // Sprint 2 E
 app.use("/api/roles",       require("./routes/roleRoutes"));       // Sprint 2 EF06
 app.use("/api/dashboard",       require("./routes/dashboardRoutes"));  // Sprint 4 — Tableau de bord
 app.use("/api/notifications",   require("./routes/notificationRoutes")); // Sprint 5 — Notifications
+app.use("/api/ai",              require("./routes/aiRoutes"));             // Sprint 6 — Module IA
 
 // ── Error handler ────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
@@ -197,4 +198,8 @@ app.listen(process.env.PORT || 4000, async () => {
   };
   await scheduleNotifJob();
   setInterval(scheduleNotifJob, 24 * 60 * 60 * 1000);
+
+  // ── Module IA Sprint 6 — tables IA ─────────────────────────
+  const { ensureAITables } = require("./controllers/aiController");
+  await ensureAITables();
 });

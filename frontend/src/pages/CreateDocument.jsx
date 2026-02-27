@@ -9,7 +9,7 @@ import AppSidebar from "../components/AppSidebar";
 import {
   LuCircleAlert, LuCircleCheckBig, LuLock, LuUpload,
   LuFileText, LuHash, LuTag, LuArrowRight, LuArrowLeft,
-  LuPlus, LuChevronDown, LuCheck, LuFolder,
+  LuPlus, LuChevronDown, LuCheck, LuFolder, LuFilePlus,
 } from "react-icons/lu";
 import { API } from "../config";
 
@@ -361,16 +361,20 @@ export default function CreateDocument() {
 
         {/* Header */}
         <header className="flex items-center justify-between px-8 py-4 border-b"
-          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)" }}>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-1 h-5 rounded-full" style={{ background:"#4ab83f" }} />
-              <h1 className="m-0 text-2xl font-bold text-white">Nouveau Document</h1>
+          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.18),rgba(74,184,63,0.08))", border:"1.5px solid rgba(74,184,63,0.3)", boxShadow:"0 4px 14px rgba(74,184,63,0.15)" }}>
+              <LuFilePlus size={19} style={{ color:"#4ab83f" }} />
             </div>
-            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.55)" }}>
-              Création · EF01 · EF02 · EF03 · EF04
-            </p>
+            <div>
+              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Nouveau Document</h1>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+                Création · EF01 · EF02 · EF03 · EF04
+              </p>
+            </div>
           </div>
+          {/* Step progress dots */}
           <div className="flex gap-2 items-center">
             {[1,2,3].map(n => (
               <button key={n} type="button" onClick={() => setStep(n)}

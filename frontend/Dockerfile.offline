@@ -1,0 +1,78 @@
+# =============================================================
+# SMQ_GED — Frontend Dockerfile.offline
+# Pour reconstruire SANS connexion à Docker Hub.
+#
+# Stage 1 (builder) : utilise smq_ged-backend:latest comme runtime
+#   Node.js — pas de pull requis, Node 20 déjà présent.
+# Stage 2 (serve)   : utilise smq_ged-frontend:latest comme base
+#   nginx — pas de pull requis, nginx déjà présent.
+#
+# Usage :
+#   docker build -f Dockerfile.offline -t smq_ged-frontend:latest .
+# Ou via docker-compose :
+#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build
+# =============================================================
+
+# ── Stage 1 : Build React (Node.js depuis l'image backend locale) ─
+# smq_ged-backend:latest contient Node.js 20 et npm.
+# On l'utilise comme environnement de build — zéro pull Docker Hub.
+FROM smq_ged-backend:latest AS builder
+
+# IMPORTANT : smq_ged-backend définit NODE_ENV=production, ce qui
+# ferait ignorer les devDependencies (dont vite) par npm ci.
+# On force NODE_ENV=development pour le stage de build uniquement.
+ENV NODE_ENV=development
+
+# Répertoire isolé pour ne pas interférer avec /app (code backend)
+WORKDIR /frontend-build
+
+# Copier package*.json en premier pour profiter du cache Docker
+COPY package*.json ./
+
+# npm utilise registry.npmjs.org (distinct de Docker Hub — généralement
+# accessible sur les réseaux d'entreprise même quand Docker Hub est bloqué).
+# Si npm est aussi bloqué, voir les commentaires en bas de ce fichier.
+RUN npm ci
+
+# Copier tout le code source frontend
+COPY . .
+
+# Variables injectées à la compilation Vite (baked in the bundle)
+ARG VITE_API_URL=/api
+ARG VITE_BACKEND_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
+# Compilation du bundle React → /frontend-build/dist
+RUN npm run build
+
+# ── Stage 2 : Serveur Nginx (depuis l'image frontend locale) ─────
+# smq_ged-frontend:latest est déjà une image nginx:stable-alpine
+# avec le contenu précédent. On remplace uniquement les fichiers
+# statiques et la config nginx.
+FROM smq_ged-frontend:latest AS production
+
+# Supprimer l'ancien bundle React
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copier le nouveau bundle compilé
+COPY --from=builder /frontend-build/dist /usr/share/nginx/html
+
+# Mettre à jour la configuration nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+# =============================================================
+# Si npm registry est aussi inaccessible (réseau très restreint) :
+#
+# Option A — Copier node_modules depuis le poste local :
+#   Décommentez les lignes suivantes et commentez le RUN npm ci
+#
+#   COPY node_modules/ ./node_modules/
+#
+# Option B — Utiliser un proxy npm :
+#   RUN npm config set registry http://votre-nexus-ou-mirror:8081/repository/npm-proxy/
+#   RUN npm ci
+# =============================================================

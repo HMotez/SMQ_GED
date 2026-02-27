@@ -1,0 +1,40 @@
+# =============================================================
+# SMQ_GED — docker-compose.offline.yml
+# Surcharge pour reconstruire les images quand Docker Hub est
+# inaccessible (timeout TLS, réseau d'entreprise, proxy bloquant).
+#
+# Utilise uniquement des images déjà présentes localement :
+#   smq_ged-backend:latest  → base Node.js + LibreOffice
+#   smq_ged-frontend:latest → base nginx
+#   postgres:16-alpine      → base PostgreSQL (inchangée)
+#
+# Usage :
+#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build
+#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build -d
+#
+# PRÉ-REQUIS :
+#   smq_ged-backend:latest  doit exister dans docker image ls
+#   smq_ged-frontend:latest doit exister dans docker image ls
+#   (un premier build en ligne a déjà été effectué précédemment)
+# =============================================================
+
+services:
+
+  # ── Backend — rebuild sans Docker Hub ─────────────────────────
+  backend:
+    build:
+      context:    ./backend
+      dockerfile: Dockerfile.offline
+    # Remplace le backend existant sur le même port
+    image: smq_ged-backend:latest
+
+  # ── Frontend — rebuild sans Docker Hub ────────────────────────
+  frontend:
+    build:
+      context:    ./frontend
+      dockerfile: Dockerfile.offline
+      args:
+        VITE_API_URL:     /api
+        VITE_BACKEND_URL: ""
+    # Remplace le frontend existant sur le même port
+    image: smq_ged-frontend:latest

@@ -408,15 +408,15 @@ export default function Notifications() {
         {/* ── Header ─────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center border flex-shrink-0"
-              style={{ background: "rgba(74,184,63,0.12)", border: "1.5px solid rgba(74,184,63,0.3)" }}>
-              <LuBell size={17} style={{ color: "#4ab83f" }} />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.18),rgba(74,184,63,0.08))", border:"1.5px solid rgba(74,184,63,0.3)", boxShadow:"0 4px 14px rgba(74,184,63,0.15)" }}>
+              <LuBell size={19} style={{ color: "#4ab83f" }} />
             </div>
             <div>
-              <h1 className="text-white text-[20px] font-black m-0" style={{ letterSpacing: -0.5 }}>
+              <h1 className="text-white m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>
                 Notifications
               </h1>
-              <p className="m-0 text-[12px]" style={{ color: "rgba(168,191,212,0.5)" }}>
+              <p className="m-0 text-[12px] mt-0.5" style={{ color: "rgba(168,191,212,0.48)" }}>
                 Alertes automatiques du système documentaire
               </p>
             </div>

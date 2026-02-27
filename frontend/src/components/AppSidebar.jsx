@@ -21,6 +21,7 @@ import {
   LuChartBar,
   LuUsers,
   LuBell,
+  LuCpu,
 } from "react-icons/lu";
 
 export const NAV_ITEMS = [
@@ -31,6 +32,7 @@ export const NAV_ITEMS = [
   { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",    end: false },
   { icon: LuArchive,         label: "Archivage",        href: "/archive",        end: false },
   { icon: LuBell,            label: "Notifications",    href: "/notifications",  end: false },
+  { icon: LuCpu,             label: "Assistant IA",     href: "/ai",             end: false },
 ];
 
 const STATUS_ICONS = {
@@ -110,16 +112,29 @@ export function SidebarNav({ badges = {}, user }) {
             to={href}
             end={end}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 border border-transparent ${
+              `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
                 isActive
-                  ? "bg-actia-green/15 text-actia-green font-semibold border-actia-green/30 shadow-lg shadow-actia-green/10"
-                  : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.05] hover:text-white/90 hover:border-white/[0.08]"
+                  ? "text-actia-green font-semibold"
+                  : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
               }`
             }
+            style={({ isActive }) => isActive ? {
+              background: "rgba(74,184,63,0.12)",
+              border: "1.5px solid rgba(74,184,63,0.22)",
+              boxShadow: "0 2px 12px rgba(74,184,63,0.08)",
+            } : {
+              background: "transparent",
+              border: "1.5px solid transparent",
+            }}
           >
             {({ isActive }) => (
               <>
-                <Icon size={14} className={`flex-shrink-0 ${isActive ? "text-actia-green" : "text-[#a8bfd4]/50"}`} />
+                {/* Left accent bar */}
+                {isActive && (
+                  <span className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-r-full"
+                    style={{ background: "linear-gradient(to bottom, #4ab83f, #3a9a31)" }} />
+                )}
+                <Icon size={14} className={`flex-shrink-0 ${isActive ? "text-actia-green" : "text-[#a8bfd4]/45"}`} />
                 <span className="flex-1 leading-none">{label}</span>
                 {badges[href] > 0 && (
                   <span className="bg-red-500 text-white rounded-full px-1.5 py-px text-[10px] font-bold min-w-[18px] text-center leading-none shadow-lg shadow-red-500/30">
@@ -138,16 +153,27 @@ export function SidebarNav({ badges = {}, user }) {
             <NavLink
               to="/admin/users"
               className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 border border-transparent ${
+                `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
                   isActive
-                    ? "bg-red-500/10 text-red-400 font-semibold border-red-500/25"
-                    : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.05] hover:text-white/90 hover:border-white/[0.08]"
+                    ? "text-red-400 font-semibold"
+                    : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
                 }`
               }
+              style={({ isActive }) => isActive ? {
+                background: "rgba(248,113,113,0.1)",
+                border: "1.5px solid rgba(248,113,113,0.22)",
+              } : {
+                background: "transparent",
+                border: "1.5px solid transparent",
+              }}
             >
               {({ isActive }) => (
                 <>
-                  <LuUsers size={14} className={`flex-shrink-0 ${isActive ? "text-red-400" : "text-[#a8bfd4]/50"}`} />
+                  {isActive && (
+                    <span className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-r-full"
+                      style={{ background: "linear-gradient(to bottom, #f87171, #ef4444)" }} />
+                  )}
+                  <LuUsers size={14} className={`flex-shrink-0 ${isActive ? "text-red-400" : "text-[#a8bfd4]/45"}`} />
                   <span className="flex-1 leading-none">Utilisateurs</span>
                   {badges["/admin/users"] > 0 && (
                     <span className="bg-red-500 text-white rounded-full px-1.5 py-px text-[10px] font-bold min-w-[18px] text-center leading-none shadow-lg shadow-red-500/30">

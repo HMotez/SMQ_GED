@@ -12,7 +12,7 @@ import {
   LuClipboardCheck, LuClock, LuCircleAlert, LuCircleCheck,
   LuTriangleAlert, LuRefreshCw, LuArrowRight,
   LuLogOut, LuPlus, LuUser,
-  LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuBell,
+  LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuBell, LuCpu,
 } from "react-icons/lu";
 
 import { API } from "../config";
@@ -65,6 +65,7 @@ const NAV_ITEMS = [
   { to: "/list",        label: "Documents",                  Icon: LuFileText        },
   { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
   { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+  { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
 ];
 
 /* ── NavItem ─────────────────────────────────────────────── */

@@ -1,9 +1,13 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile
 # Sprint 7 — Dockerisation & Déploiement Containerisé
+# Sprint 6 — Module IA embarqué (NLP, classification, extraction
+#             dates, amélioration continue) — aucune dépendance
+#             système supplémentaire requise.
 # =============================================================
 # Stage 1: Install production dependencies only
 # Stage 2: Final image with LibreOffice for document conversion
+#          + Module IA Sprint 6 (pur Node.js + PostgreSQL)
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────

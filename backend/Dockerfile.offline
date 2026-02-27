@@ -1,0 +1,31 @@
+# =============================================================
+# SMQ_GED — Backend Dockerfile.offline
+# Pour reconstruire SANS connexion à Docker Hub.
+# Utilise smq_ged-backend:latest (déjà présente localement)
+# comme base — contient Node 20 + LibreOffice + anciens fichiers.
+#
+# Usage :
+#   docker build -f Dockerfile.offline -t smq_ged-backend:latest .
+# Ou via docker-compose :
+#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build
+# =============================================================
+
+# ── Base locale (aucun pull Docker Hub requis) ────────────────
+# smq_ged-backend:latest contient :
+#   - Node.js 20 + npm
+#   - LibreOffice (conversion documents)
+#   - Ancienne version du code source
+#   - node_modules de production (inchangés dans Sprint 6)
+FROM smq_ged-backend:latest
+
+WORKDIR /app
+
+# Remplacement du code source uniquement.
+# Les node_modules de la base sont réutilisés tels quels
+# car package.json n'a pas changé dans Sprint 6.
+COPY src/ ./src/
+
+EXPOSE 4000
+ENV NODE_ENV=production
+
+CMD ["node", "src/server.js"]
