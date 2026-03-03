@@ -9,22 +9,19 @@ import { API } from "../config";
 
 // ── Permissions par rôle (miroir backend) ─────────────────────
 export const ROLE_PERMISSIONS = {
-  "Admin GED":           ["document:read","document:create","document:update","document:status","validation:create","archive:manage","user:manage"],
-  "Responsable Qualité": ["document:read","document:create","document:update","document:status","validation:create","archive:manage"],
-  "Ing. Qualité":        ["document:read","document:create","document:update","document:status","validation:create"],
-  "Rédacteur":           ["document:read","document:create","document:update","document:status"],
-  "Validateur":          ["document:read","validation:create"],
-  "Lecteur":             ["document:read"],
+  "Admin":        ["document:read","document:create","document:update","document:status","validation:create","archive:manage","user:manage"],
+  "Ing. Qualité": ["document:read","document:create","document:update","document:status"],
+  "Reviewer":     ["document:read","validation:create"],
 };
 
 export const TRANSITION_ROLE_MAP = {
-  "Brouillon→En rédaction":     ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
-  "En rédaction→En relecture":  ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
-  "En relecture→En validation": ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
-  "En validation→Validé":       ["Admin GED","Responsable Qualité","Ing. Qualité","Validateur"],
-  "Validé→Diffusé":             ["Admin GED","Responsable Qualité"],
-  "Diffusé→Obsolète":           ["Admin GED","Responsable Qualité"],
-  "Obsolète→Archivé":           ["Admin GED","Responsable Qualité"],
+  "Brouillon→En rédaction":     ["Admin","Ing. Qualité"],
+  "En rédaction→En relecture":  ["Admin","Ing. Qualité"],
+  "En relecture→En validation": ["Admin","Ing. Qualité"],
+  "En validation→Validé":       ["Admin","Reviewer"],
+  "Validé→Diffusé":             ["Admin"],
+  "Diffusé→Obsolète":           ["Admin"],
+  "Obsolète→Archivé":           ["Admin"],
 };
 
 const UserContext = createContext(null);
@@ -45,14 +42,27 @@ export function UserProvider({ children }) {
   const [token,        setTokenState]        = useState(null);
   const [authLoading,  setAuthLoading]       = useState(true); // checking stored token
 
+  // ── Auto-login helper (used for startup & role switching) ───
+  const autoLogin = useCallback(async (email, password) => {
+    const res = await axios.post(`${API}/auth/login`, { email, password });
+    const { token: newToken, user } = res.data;
+    localStorage.setItem("ged_token", newToken);
+    setTokenState(newToken);
+    setCurrentUserState(user);
+    setAuthHeader(newToken);
+    axios.defaults.headers.common["x-user-id"] = user.id;
+    return user;
+  }, []);
+
   // ── Restore token from localStorage on mount ────────────────
   useEffect(() => {
     const stored = localStorage.getItem("ged_token");
     if (!stored) {
+      // No stored session — visitor mode (not authenticated)
       setAuthLoading(false);
       return;
     }
-    // Verify with server
+    // Verify stored token with server
     axios.get(`${API}/auth/me`, {
       headers: { Authorization: `Bearer ${stored}` },
     })
@@ -64,9 +74,11 @@ export function UserProvider({ children }) {
         axios.defaults.headers.common["x-user-id"] = user.id;
       })
       .catch(() => {
+        // Token expired — clear session, visitor mode
         localStorage.removeItem("ged_token");
       })
       .finally(() => setAuthLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── login ────────────────────────────────────────────────────
@@ -119,6 +131,7 @@ export function UserProvider({ children }) {
       userRole,
       login,
       logout,
+      autoLogin,
       can,
       canTransition,
       isRole,

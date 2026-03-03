@@ -86,14 +86,14 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
   try {
     if (toStatus === "En validation") {
       await createNotificationsForRoles(
-        ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Validateur"],
+        ["Admin", "Ing. Qualité", "Reviewer"],
         docId,
         `[${docCode}] "${docTitle}" soumis en validation par ${actor}. Statut précédent : ${fromStatus}. Votre approbation est requise.`,
         "validation"
       );
     } else if (toStatus === "Validé") {
       await createNotificationsForRoles(
-        ["Admin GED", "Responsable Qualité"],
+        ["Admin"],
         docId,
         `[${docCode}] "${docTitle}" approuvé et validé par ${actor}. Le document est prêt pour diffusion.`,
         "validation"
@@ -118,7 +118,7 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
       }
     } else if (toStatus === "Obsolète") {
       await createNotificationsForRoles(
-        ["Admin GED", "Responsable Qualité"],
+        ["Admin"],
         docId,
         `[${docCode}] "${docTitle}" marqué Obsolète par ${actor}. Ce document ne doit plus être utilisé.`,
         "expiration"
@@ -145,7 +145,7 @@ async function triggerNewVersionNotification(docId, docCode, docTitle, version, 
 
   try {
     await createNotificationsForRoles(
-      ["Admin GED", "Responsable Qualité", "Ing. Qualité"],
+      ["Admin", "Ing. Qualité"],
       docId,
       `[${docCode}] "${docTitle}" — nouvelle version${fromTo} créée par ${actor}.${summary}`,
       "version"
@@ -185,7 +185,7 @@ async function runExpirationNotificationsJob() {
         (Date.now() - new Date(doc.next_review_date).getTime()) / 86400000
       );
       await createNotificationsForRoles(
-        ["Admin GED", "Responsable Qualité"],
+        ["Admin"],
         doc.id,
         `[${doc.doc_code}] "${doc.title}" — date de révision dépassée depuis ${daysOverdue} jour(s) (prévue le ${fmtDate(doc.next_review_date)}). Une révision est requise.`,
         "expiration"
@@ -206,7 +206,7 @@ async function runExpirationNotificationsJob() {
 
     for (const doc of inactive.rows) {
       await createNotificationsForRoles(
-        ["Admin GED", "Responsable Qualité"],
+        ["Admin"],
         doc.id,
         `[${doc.doc_code}] "${doc.title}" (${doc.status_name}) — aucune modification depuis plus de 6 mois (dernière activité : ${fmtDate(doc.updated_at)}). Archivage recommandé.`,
         "inactivite"

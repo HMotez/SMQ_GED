@@ -52,11 +52,9 @@ const STATUS_CFG = {
 };
 
 const ROLE_COLOR = {
-  "Admin GED":           "#f87171",
-  "Responsable Qualité": "#fbbf24",
-  "Rédacteur":           "#60a5fa",
-  "Validateur":          "#4ade80",
-  "Lecteur":             "#94a3b8",
+  "Admin":        "#f87171",
+  "Ing. Qualité": "#2dd4bf",
+  "Reviewer":     "#4ade80",
 };
 
 const NAV_ITEMS = [
@@ -128,7 +126,7 @@ function Navbar() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
 
-  const handleLogout = async () => { await logout(); navigate("/login", { replace: true }); };
+  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -185,7 +183,7 @@ function Navbar() {
             {NAV_ITEMS.map((item) => (
               <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
             ))}
-            {userRole === "Admin GED" && (
+            {userRole === "Admin" && (
               <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} />
             )}
           </div>

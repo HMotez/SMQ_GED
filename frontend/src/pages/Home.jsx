@@ -16,8 +16,10 @@ import {
   LuRefreshCw, LuShieldCheck, LuSearch, LuUsers,
   LuPlus, LuArrowRight, LuLogOut, LuInbox, LuUser, LuZap, LuAward,
   LuHouse, LuLayoutDashboard, LuBell, LuCpu,
+  LuCrown, LuWrench, LuChevronDown, LuShield, LuLock,
 } from "react-icons/lu";
 import { API } from "../config";
+import LoginModal from "../components/LoginModal";
 
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
@@ -32,24 +34,47 @@ const STATUS_CFG = {
 };
 
 const ROLE_COLOR = {
-  "Admin GED":           "#f87171",
-  "Responsable Qualité": "#fbbf24",
-  "Rédacteur":           "#60a5fa",
-  "Validateur":          "#4ade80",
-  "Lecteur":             "#94a3b8",
+  "Admin":        "#f87171",
+  "Ing. Qualité": "#2dd4bf",
+  "Reviewer":     "#4ade80",
 };
 
-const NAV_ITEMS = [
-  { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
-  { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
-  { to: "/list",        label: "Documents",                  Icon: LuFileText        },
-  { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
-  { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
-  { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
+/* ── Nav items per role ───────────────────────────────────── */
+const NAV_ITEMS_BY_ROLE = {
+  "Admin": [
+    { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+    { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
+    { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+    { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+    { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
+  ],
+  "Ing. Qualité": [
+    { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+    { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
+    { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+    { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
+  ],
+  "Reviewer": [
+    { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+    { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+    { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+    { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
+  ],
+};
+// Fallback for unknown/old roles — show full Admin nav
+const NAV_ITEMS_DEFAULT = NAV_ITEMS_BY_ROLE["Admin"];
+
+/* ── Quick-access roles (for switcher) ───────────────────── */
+const QUICK_ROLES = [
+  { name:"Admin",        email:"admin@actia.com",    password:"Admin123!", color:"#f87171", Icon: LuCrown         },
+  { name:"Ing. Qualité", email:"ing@actia.com",      password:"Ing123!",   color:"#2dd4bf", Icon: LuWrench        },
+  { name:"Reviewer",     email:"reviewer@actia.com", password:"Rev123!",   color:"#4ade80", Icon: LuClipboardCheck },
 ];
 
 /* ── Animation styles ─────────────────────────────────── */
 const ANIMATION_STYLES = `
+  @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes floatY {
     0%,100% { transform: translateY(0); }
     50%     { transform: translateY(-6px); }
@@ -125,25 +150,174 @@ function AdminNavItem({ to, label, icon, badge = 0 }) {
   );
 }
 
+/* ── NavRoleSwitcher — dropdown for user/role in top nav ──── */
+function NavRoleSwitcher() {
+  const { currentUser, userRole, logout, autoLogin } = useUser();
+  const navigate  = useNavigate();
+  const [open,     setOpen]     = useState(false);
+  const [switching,setSwitching]= useState(null);
+
+  const roleColor = ROLE_COLOR[userRole] || "#94a3b8";
+  const RoleIcon  = QUICK_ROLES.find(r => r.name === userRole)?.Icon || LuUser;
+
+  const handleSwitch = async (role) => {
+    if (switching || role.name === userRole) { setOpen(false); return; }
+    setSwitching(role.name);
+    try {
+      await autoLogin(role.email, role.password);
+      setOpen(false);
+      navigate("/", { replace: true });
+    } catch { /* ignore */ }
+    finally { setSwitching(null); }
+  };
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await logout();
+    navigate("/", { replace: true });
+  };
+
+  /* ── Not logged in: Connexion + S'inscrire buttons ── */
+  if (!currentUser) {
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate("/login")}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold border transition-all duration-200"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            borderColor: "rgba(255,255,255,0.12)",
+            color: "rgba(220,235,248,0.85)",
+            cursor: "pointer",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.1)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; }}
+        >
+          <LuUser size={13} /> Connexion
+        </button>
+        <button
+          onClick={() => navigate("/register")}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold border transition-all duration-200"
+          style={{
+            background: "linear-gradient(135deg,#4ab83f,#3da333)",
+            borderColor: "transparent",
+            color: "#ffffff",
+            cursor: "pointer",
+            boxShadow: "0 4px 14px rgba(74,184,63,0.3)",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 6px 20px rgba(74,184,63,0.4)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 4px 14px rgba(74,184,63,0.3)"; }}
+        >
+          S'inscrire
+        </button>
+      </div>
+    );
+  }
+
+  /* ── Logged in: avatar + role + switcher dropdown ── */
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200"
+        style={{
+          background: open ? `${roleColor}12` : "rgba(255,255,255,0.05)",
+          borderColor: open ? `${roleColor}40` : "rgba(255,255,255,0.1)",
+          cursor: "pointer",
+        }}
+        onMouseEnter={e => { if(!open){ e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.18)"; }}}
+        onMouseLeave={e => { if(!open){ e.currentTarget.style.background="rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; }}}
+      >
+        {/* Role icon */}
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background:`${roleColor}18`, border:`1.5px solid ${roleColor}35`, color:roleColor }}>
+          <RoleIcon size={14} />
+        </div>
+        {/* Name + role */}
+        <div className="leading-none text-left">
+          <p className="text-[12.5px] font-semibold text-white m-0 leading-tight truncate max-w-[100px]">{currentUser.name}</p>
+          <p className="text-[10.5px] font-bold m-0 mt-0.5 leading-tight" style={{ color:roleColor }}>{userRole}</p>
+        </div>
+        <LuChevronDown size={12} style={{ color:"rgba(168,191,212,0.45)", transform:open?"rotate(180deg)":"rotate(0)", transition:"transform 0.2s", flexShrink:0 }} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-60 rounded-2xl border overflow-hidden"
+          style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 24px 60px rgba(0,0,0,0.6)", zIndex:100 }}>
+
+          {/* Current user header */}
+          <div className="px-4 pt-3.5 pb-3 border-b" style={{ borderColor:"rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background:`${roleColor}18`, border:`1.5px solid ${roleColor}35` }}>
+                <RoleIcon size={17} style={{ color:roleColor }} />
+              </div>
+              <div className="overflow-hidden">
+                <p className="m-0 text-[13px] font-semibold text-white truncate">{currentUser.name}</p>
+                <p className="m-0 text-[10.5px] truncate" style={{ color:"rgba(168,191,212,0.45)", fontFamily:"monospace" }}>{currentUser.email}</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 mt-2.5 rounded-lg px-2 py-[4px] text-[11px] font-bold border"
+              style={{ background:`${roleColor}15`, color:roleColor, borderColor:`${roleColor}35` }}>
+              <LuShield size={10} /> {userRole}
+            </span>
+          </div>
+
+          {/* Roles — informational only */}
+          <p className="text-[10px] uppercase tracking-[1.5px] font-bold px-4 pt-3 pb-1.5 m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Rôles disponibles</p>
+          {QUICK_ROLES.map(role => {
+            const RI       = role.Icon;
+            const isActive = role.name === userRole;
+            return (
+              <div key={role.name}
+                className="w-full flex items-center gap-3 px-4 py-2.5"
+                style={{ background: isActive ? `${role.color}10` : "transparent" }}>
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background:`${role.color}18`, border:`1px solid ${role.color}35` }}>
+                  <RI size={12} style={{ color:role.color }} />
+                </div>
+                <p className="m-0 flex-1 text-[12.5px] font-semibold" style={{ color:isActive?role.color:"rgba(220,235,248,0.8)" }}>{role.name}</p>
+                {isActive && <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background:`${role.color}18`, color:role.color, border:`1px solid ${role.color}30` }}>Actif</span>}
+              </div>
+            );
+          })}
+
+          {/* Logout */}
+          <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", margin:"4px 0 0" }}>
+            <button onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-3 text-[12.5px] font-semibold border-none transition-all"
+              style={{ background:"transparent", color:"rgba(168,191,212,0.5)", cursor:"pointer" }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.08)"; e.currentTarget.style.color="#f87171"; }}
+              onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(168,191,212,0.5)"; }}>
+              <LuLogOut size={13} /> Déconnexion
+            </button>
+          </div>
+        </div>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Close on outside click */}
+      {open && <div className="fixed inset-0 z-[99]" onClick={() => setOpen(false)} />}
+      {open && <div className="relative z-[100]" />}
+    </div>
+  );
+}
+
 /* ── Navbar ─────────────────────────────────────────────── */
-function Navbar() {
-  const { currentUser, userRole, logout } = useUser();
-  const navigate = useNavigate();
-  const [scrolled,      setScrolled]      = useState(false);
-  const [pendingCount,  setPendingCount]  = useState(0);
+function Navbar({ onOpenLogin = () => {} }) {
+  const { userRole, can, currentUser } = useUser();
+  const [scrolled,     setScrolled]     = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
-  const handleLogout = async () => { await logout(); navigate("/login", { replace: true }); };
-
-  // Fetch pending user requests count (Admin GED only)
+  // Fetch pending user requests count (Admin only)
   useEffect(() => {
-    if (userRole !== "Admin GED") return;
+    if (userRole !== "Admin") return;
     const fetchPending = () => {
       axios.get(`${API}/users/pending-count`)
         .then(r => setPendingCount(r.data.count))
         .catch(() => {});
     };
     fetchPending();
-    const interval = setInterval(fetchPending, 30000); // refresh every 30s
+    const interval = setInterval(fetchPending, 30000);
     return () => clearInterval(interval);
   }, [userRole]);
 
@@ -153,10 +327,7 @@ function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Initials avatar
-  const initials = currentUser?.name
-    ? currentUser.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
-    : "?";
+  const navItems = NAV_ITEMS_BY_ROLE[userRole] || NAV_ITEMS_DEFAULT;
 
   return (
     <nav className="sticky top-0 z-50 transition-all duration-300">
@@ -182,100 +353,62 @@ function Navbar() {
             : "none",
         }}
       >
-        <div className="max-w-[1400px] mx-auto px-6 h-[68px] grid items-center"
-          style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+        <div className="max-w-[1400px] mx-auto px-6 h-[68px] flex items-center justify-between gap-4">
 
-          {/* ── Left: Logo + Divider ── */}
-          <div className="flex items-center gap-3">
-            <NavLink to="/" className="no-underline flex items-center flex-shrink-0">
-              <img
-                src={logoImg}
-                alt="ACTIA ES"
-                className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-                style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
-              />
-            </NavLink>
-            <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)", flexShrink: 0 }} />
-          </div>
+          {/* ── Left: Logo ── */}
+          <NavLink to="/" className="no-underline flex items-center flex-shrink-0">
+            <img
+              src={logoImg}
+              alt="ACTIA ES"
+              className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
+              style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+            />
+          </NavLink>
 
-          {/* ── Center: Nav links (grid auto column = exactly as wide as needed) ── */}
-          <div className="flex items-center gap-0.5">
-            {NAV_ITEMS.map((item) => (
-              <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
-            ))}
-            {userRole === "Admin GED" && (
-              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} badge={pendingCount} />
+          {/* ── Center: Role-based nav links ── */}
+          <div className="flex items-center gap-0.5 flex-1 justify-center">
+            {currentUser ? (
+              <>
+                {navItems.map((item) => (
+                  <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
+                ))}
+                {userRole === "Admin" && (
+                  <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} badge={pendingCount} />
+                )}
+              </>
+            ) : (
+              /* Visitor — Lecteur-level nav (read-only access) */
+              <>
+                <NavItem to="/"            label="Accueil"       end={true} icon={LuHouse}          />
+                <NavItem to="/list"        label="Documents"              icon={LuFileText}        />
+                <NavItem to="/validations" label="Validations"            icon={LuClipboardCheck}  />
+                <NavItem to="/archive"     label="Archivage"              icon={LuArchive}         />
+                <NavItem to="/ai"          label="Assistant IA"           icon={LuCpu}             />
+              </>
             )}
           </div>
 
-          {/* ── Right: Actions ── */}
-          <div className="flex items-center gap-2 justify-end mr-3">
+          {/* ── Right: Actions + Role switcher ── */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* + Nouveau (only if can create) */}
+            {can("document:create") && (
+              <NavLink
+                to="/create"
+                className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-xl"
+                style={{
+                  background: "linear-gradient(135deg,#4ab83f,#3da333)",
+                  boxShadow: "0 4px 18px rgba(74,184,63,0.35)",
+                }}
+              >
+                <LuPlus size={14} /> Nouveau
+              </NavLink>
+            )}
 
-            {/* + Nouveau button */}
-            <NavLink
-              to="/create"
-              className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-xl"
-              style={{
-                background: "linear-gradient(135deg,#4ab83f,#3da333)",
-                boxShadow: "0 4px 18px rgba(74,184,63,0.35)",
-              }}
-            >
-              <LuPlus size={14} /> Nouveau
-            </NavLink>
-
-            {/* Divider */}
             <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)" }} />
-
-            {/* Bell */}
             <NotificationBell />
 
-            {/* User profile */}
-            {currentUser && (
-              <div className="flex items-center gap-2.5 pl-1">
-                {/* Initials avatar */}
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: "rgba(74,184,63,0.15)",
-                    border: "1.5px solid rgba(74,184,63,0.35)",
-                    color: "#4ab83f",
-                  }}>
-                  <LuUser size={17} />
-                </div>
-
-                {/* Name + Role */}
-                <div className="leading-none">
-                  <p className="text-[13px] font-semibold text-white m-0 leading-tight">{currentUser.name}</p>
-                  <p className="text-[11px] font-semibold m-0 mt-0.5 leading-tight"
-                    style={{ color: ROLE_COLOR[userRole] || "#94a3b8" }}>
-                    {userRole}
-                  </p>
-                </div>
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  title="Déconnexion"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border transition-all duration-200 cursor-pointer ml-0.5"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    borderColor: "rgba(255,255,255,0.1)",
-                    color: "rgba(168,191,212,0.5)",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = "rgba(239,68,68,0.12)";
-                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
-                    e.currentTarget.style.color = "#f87171";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                    e.currentTarget.style.color = "rgba(168,191,212,0.5)";
-                  }}
-                >
-                  <LuLogOut size={14} />
-                </button>
-              </div>
-            )}
+            {/* Role switcher dropdown */}
+            <NavRoleSwitcher />
           </div>
         </div>
       </div>
@@ -403,14 +536,28 @@ function FeatureCard({ icon, title, desc, accent = "#60a5fa" }) {
 /* ══════════════════════════════════════════════════════════ */
 export default function Home() {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
+  const { currentUser, login } = useUser();
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [demoLoading,    setDemoLoading]    = useState(null);
 
   const [stats, setStats]               = useState(null);
   const [recentDocs, setRecentDocs]     = useState([]);
   const [pending, setPending]           = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
 
+  /* Quick-login from the public demo section */
+  const handleDemoLogin = async (role) => {
+    setDemoLoading(role.name);
+    try {
+      await login(role.email, role.password);
+      navigate("/", { replace: true });
+    } catch { /* silently ignore */ }
+    finally { setDemoLoading(null); }
+  };
+
   useEffect(() => {
+    if (!currentUser) { setLoadingStats(false); return; }
     Promise.all([
       axios.get(`${API}/documents/stats`),
       axios.get(`${API}/documents?page=1&limit=5`),
@@ -423,7 +570,7 @@ export default function Home() {
       })
       .catch(console.error)
       .finally(() => setLoadingStats(false));
-  }, []);
+  }, [currentUser]);
 
   const byStatus  = stats?.byStatus || {};
   const totalDocs = stats?.total    || 0;
@@ -463,7 +610,7 @@ export default function Home() {
       </div>
 
       <div className="relative" style={{ zIndex: 1 }}>
-        <Navbar />
+        <Navbar onOpenLogin={() => setShowLoginModal(true)} />
 
         {/* ── HERO ──────────────────────────────────── */}
         <section className="px-8 pt-20 pb-28 text-center">
@@ -519,18 +666,21 @@ export default function Home() {
 
             <div className="flex justify-center gap-3 flex-wrap">
               <button
-                onClick={() => navigate("/create")}
+                onClick={() => currentUser ? navigate("/create") : setShowLoginModal(true)}
                 className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
                 style={{
                   background: "linear-gradient(135deg, #4ab83f, #3da333)",
                   boxShadow: "0 8px 30px rgba(74,184,63,0.4)",
                   fontSize: 15,
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
                 }}
               >
                 <LuFilePlus size={16} /> Nouveau document
               </button>
               <button
-                onClick={() => navigate("/list")}
+                onClick={() => currentUser ? navigate("/list") : setShowLoginModal(true)}
                 className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 hover:-translate-y-0.5"
                 style={{
                   background: "rgba(255,255,255,0.06)",
@@ -538,6 +688,8 @@ export default function Home() {
                   color: "rgba(255,255,255,0.85)",
                   backdropFilter: "blur(10px)",
                   fontSize: 15,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
                 }}
               >
                 Voir les documents <LuArrowRight size={14} />
@@ -546,6 +698,8 @@ export default function Home() {
           </div>
         </section>
 
+        {currentUser ? (
+        <>
         {/* ── STATS ROW ─────────────────────────────── */}
         <div className="max-w-[1280px] mx-auto px-8 -mt-14 mb-8">
           <div className="flex gap-3.5 flex-wrap">
@@ -754,39 +908,210 @@ export default function Home() {
               <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité EF14"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
               <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage EF11"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
               <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
-              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="5 rôles ISO : Admin GED, Responsable Qualité, Rédacteur, Validateur, Lecteur. Contrôle d'accès granulaire." />
+              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="3 rôles : Admin, Ing. Qualité, Reviewer. Contrôle d'accès granulaire par rôle et permission." />
             </div>
           </div>
 
-          {/* User profile */}
+          {/* User profile — Admin only, informational */}
+          {currentUser?.role === "Admin" && (
           <GlassCard className="p-6">
-            <div className="grid grid-cols-[1fr_auto] gap-6 items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:"rgba(248,113,113,0.12)", border:"1.5px solid rgba(248,113,113,0.25)" }}>
+                <LuCrown size={22} style={{ color:"#f87171" }} />
+              </div>
               <div>
-                <div className="flex items-center gap-2 mb-5">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-0.5 h-4 rounded-full" style={{ background: "#4ab83f" }} />
-                  <LuUser size={14} style={{ color: "rgba(168,191,212,0.7)" }} />
                   <p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color: "rgba(168,191,212,0.7)" }}>Profil utilisateur</p>
                 </div>
-                {currentUser ? (
-                  <>
-                    <p className="m-0 text-white font-bold text-xl" style={{ letterSpacing: -0.3 }}>{currentUser.name}</p>
-                    <p className="m-0 mt-1 text-sm flex items-center gap-1.5" style={{ color: "rgba(168,191,212,0.6)" }}>
-                      <LuUser size={12} />
-                      <span className="font-semibold" style={{ color: ROLE_COLOR[currentUser.role] || "#60a5fa" }}>{currentUser.role}</span>
-                      <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
-                      {currentUser.email || "—"}
-                    </p>
-                  </>
-                ) : (
-                  <p className="m-0 text-sm" style={{ color: "rgba(168,191,212,0.5)" }}>Aucun utilisateur sélectionné.</p>
-                )}
-              </div>
-              <div className="min-w-[200px]">
-                <UserSelector />
+                <p className="m-0 text-white font-bold text-xl" style={{ letterSpacing: -0.3 }}>{currentUser.name}</p>
+                <p className="m-0 mt-1 text-sm flex items-center gap-1.5" style={{ color: "rgba(168,191,212,0.6)" }}>
+                  <span className="font-bold" style={{ color: "#f87171" }}>{currentUser.role}</span>
+                  <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
+                  {currentUser.email || "—"}
+                </p>
               </div>
             </div>
           </GlassCard>
+          )}
         </div>
+        </>
+        ) : (
+        /* ════════════════════════════════════════════
+           PUBLIC VIEW — not authenticated
+        ════════════════════════════════════════════ */
+        <>
+          {/* ── Features ───────────────────────────── */}
+          <div className="max-w-[1280px] mx-auto px-8 pb-10">
+            <div className="text-center mb-7">
+              <p className="text-xs uppercase tracking-widest font-semibold mb-3 flex items-center justify-center gap-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>
+                <LuAward size={12} style={{ color:"#4ab83f" }} /> Fonctionnalités clés
+              </p>
+              <div className="flex items-center justify-center gap-3 mb-1">
+                <div className="w-1 h-8 rounded-full" style={{ background:"linear-gradient(to bottom,#4ab83f,rgba(74,184,63,0.2))" }} />
+                <h2 className="m-0 text-3xl font-black text-white" style={{ letterSpacing:-1, textShadow:"0 4px 20px rgba(74,184,63,0.3)" }}>
+                  Conformité ISO 9001:2015
+                </h2>
+                <div className="w-1 h-8 rounded-full" style={{ background:"linear-gradient(to bottom,rgba(74,184,63,0.2),#4ab83f)" }} />
+              </div>
+              <p className="text-sm m-0 mt-2" style={{ color:"rgba(168,191,212,0.6)" }}>
+                Système de gestion documentaire certifié — Traçabilité, sécurité et archivage normalisés
+              </p>
+            </div>
+            <div className="flex gap-4 flex-wrap">
+              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation EF05/EF06"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité EF14"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage EF11"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
+              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
+              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="3 rôles : Admin, Ing. Qualité, Reviewer. Contrôle d'accès granulaire par rôle et permission." />
+            </div>
+          </div>
+
+          {/* ── Module links for visitors (Lecteur access) ─── */}
+          <div className="max-w-[1280px] mx-auto px-8 pb-10">
+            <div className="text-center mb-7">
+              <p className="text-xs uppercase tracking-widest font-semibold mb-3 flex items-center justify-center gap-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>
+                <LuList size={12} style={{ color:"#4ab83f" }} /> Accès direct
+              </p>
+              <h2 className="m-0 text-2xl font-black text-white" style={{ letterSpacing:-0.7 }}>Modules disponibles</h2>
+              <p className="text-sm m-0 mt-2" style={{ color:"rgba(168,191,212,0.6)" }}>
+                Consultez les documents, validations et archives en mode lecture
+              </p>
+            </div>
+            <div className="grid gap-5" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(500px,1fr))" }}>
+
+              {/* Documents */}
+              <NavLink to="/list" className="no-underline rounded-2xl border flex items-center gap-4 px-6 py-5 transition-all duration-200"
+                style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(96,165,250,0.15)" }}
+                onMouseEnter={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.3)"; e.currentTarget.style.transform="translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.15)"; e.currentTarget.style.transform="translateY(0)"; }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:"rgba(96,165,250,0.12)", border:"1px solid rgba(96,165,250,0.2)" }}>
+                  <LuFileText size={22} style={{ color:"#60a5fa" }} />
+                </div>
+                <div className="flex-1">
+                  <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Liste des Documents</p>
+                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Consulter les documents qualité ISO — lecture seule</p>
+                </div>
+                <LuArrowRight size={16} style={{ color:"rgba(96,165,250,0.5)", flexShrink:0 }} />
+              </NavLink>
+
+              {/* Validations */}
+              <NavLink to="/validations" className="no-underline rounded-2xl border flex items-center gap-4 px-6 py-5 transition-all duration-200"
+                style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(165,180,252,0.15)" }}
+                onMouseEnter={e => { e.currentTarget.style.background="rgba(165,180,252,0.06)"; e.currentTarget.style.borderColor="rgba(165,180,252,0.3)"; e.currentTarget.style.transform="translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor="rgba(165,180,252,0.15)"; e.currentTarget.style.transform="translateY(0)"; }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:"rgba(165,180,252,0.12)", border:"1px solid rgba(165,180,252,0.2)" }}>
+                  <LuClipboardCheck size={22} style={{ color:"#a5b4fc" }} />
+                </div>
+                <div className="flex-1">
+                  <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Workflow de Validation</p>
+                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Suivre les cycles de validation EF05/EF06 — lecture seule</p>
+                </div>
+                <LuArrowRight size={16} style={{ color:"rgba(165,180,252,0.5)", flexShrink:0 }} />
+              </NavLink>
+
+              {/* Archivage */}
+              <NavLink to="/archive" className="no-underline rounded-2xl border flex items-center gap-4 px-6 py-5 transition-all duration-200"
+                style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(251,191,36,0.15)" }}
+                onMouseEnter={e => { e.currentTarget.style.background="rgba(251,191,36,0.06)"; e.currentTarget.style.borderColor="rgba(251,191,36,0.3)"; e.currentTarget.style.transform="translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor="rgba(251,191,36,0.15)"; e.currentTarget.style.transform="translateY(0)"; }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:"rgba(251,191,36,0.12)", border:"1px solid rgba(251,191,36,0.2)" }}>
+                  <LuArchive size={22} style={{ color:"#fbbf24" }} />
+                </div>
+                <div className="flex-1">
+                  <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Archivage EF11</p>
+                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Consulter les documents archivés — lecture seule</p>
+                </div>
+                <LuArrowRight size={16} style={{ color:"rgba(251,191,36,0.5)", flexShrink:0 }} />
+              </NavLink>
+
+              {/* Assistant IA */}
+              <NavLink to="/ai" className="no-underline rounded-2xl border flex items-center gap-4 px-6 py-5 transition-all duration-200"
+                style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(74,184,63,0.15)" }}
+                onMouseEnter={e => { e.currentTarget.style.background="rgba(74,184,63,0.06)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.3)"; e.currentTarget.style.transform="translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.15)"; e.currentTarget.style.transform="translateY(0)"; }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:"rgba(74,184,63,0.12)", border:"1px solid rgba(74,184,63,0.2)" }}>
+                  <LuCpu size={22} style={{ color:"#4ab83f" }} />
+                </div>
+                <div className="flex-1">
+                  <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Assistant IA</p>
+                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Interroger la base documentaire en langage naturel</p>
+                </div>
+                <LuArrowRight size={16} style={{ color:"rgba(74,184,63,0.5)", flexShrink:0 }} />
+              </NavLink>
+
+            </div>
+          </div>
+
+          {/* ── Demo role cards ─────────────────────── */}
+          <div className="max-w-[960px] mx-auto px-8 pb-20">
+            <div
+              className="rounded-3xl p-8"
+              style={{
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                boxShadow: "0 32px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07)",
+              }}
+            >
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{ background:"rgba(74,184,63,0.08)", border:"1.5px solid rgba(74,184,63,0.2)" }}>
+                  <LuShield size={12} style={{ color:"#4ab83f" }} />
+                  <span className="text-[10px] font-bold uppercase tracking-[1.5px]" style={{ color:"#4ab83f" }}>Rôles disponibles</span>
+                </div>
+                <h2 className="m-0 mb-2 text-[24px] font-black text-white" style={{ letterSpacing:-0.7 }}>Accès par profil</h2>
+                <p className="m-0 text-[13px]" style={{ color:"rgba(168,191,212,0.55)" }}>
+                  Connectez-vous avec votre compte pour accéder aux fonctionnalités de votre rôle
+                </p>
+              </div>
+
+              {/* Role cards — informational only */}
+              <div className="grid gap-4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))" }}>
+                {QUICK_ROLES.map(role => {
+                  const RI   = role.Icon;
+                  const desc = role.name === "Admin"
+                    ? "Accès administrateur complet — gestion des documents, utilisateurs et archivage."
+                    : role.name === "Ing. Qualité"
+                    ? "Rédaction et soumission de documents qualité dans le workflow ISO."
+                    : "Relecture et validation des documents soumis pour approbation.";
+                  return (
+                    <div
+                      key={role.name}
+                      className="rounded-2xl p-5"
+                      style={{
+                        background: `${role.color}0a`,
+                        border: `1.5px solid ${role.color}25`,
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background:`${role.color}15`, border:`1.5px solid ${role.color}30` }}>
+                        <RI size={22} style={{ color:role.color }} />
+                      </div>
+                      <p className="m-0 mb-1 font-black text-[18px]" style={{ color:role.color, letterSpacing:-0.4 }}>{role.name}</p>
+                      <p className="m-0 text-[12px] leading-relaxed" style={{ color:"rgba(168,191,212,0.55)" }}>{desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Footer links */}
+              <p className="text-center m-0 mt-7 text-[12.5px]" style={{ color:"rgba(168,191,212,0.4)" }}>
+                Vous avez un compte ?{" "}
+                <NavLink to="/login" style={{ color:"#4ab83f", fontWeight:700, textDecoration:"none" }}>
+                  Se connecter →
+                </NavLink>
+                {"  ·  "}
+                <NavLink to="/register" style={{ color:"rgba(168,191,212,0.65)", fontWeight:600, textDecoration:"none" }}>
+                  Créer un compte
+                </NavLink>
+              </p>
+            </div>
+          </div>
+        </>
+        )}
 
         {/* ── FOOTER ────────────────────────────────── */}
         <footer
@@ -820,6 +1145,14 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      {/* ── Login Modal ─────────────────────────────── */}
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          message="Connectez-vous pour accéder à cette fonctionnalité."
+        />
+      )}
     </div>
   );
 }

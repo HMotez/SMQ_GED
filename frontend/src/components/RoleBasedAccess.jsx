@@ -50,11 +50,9 @@ export function RoleInfoBadge() {
   const { currentUser, userRole } = useUser();
 
   const ROLE_STYLES = {
-    "Admin GED": { bg: "#3d1a1a", color: "#f78166", border: "#6e2020" },
-    "Responsable Qualité": { bg: "#1c1a00", color: "#d29922", border: "#6e5c1e" },
-    "Rédacteur": { bg: "#1a2238", color: "#79c0ff", border: "#388bfd" },
-    "Validateur": { bg: "#04260f", color: "#3fb950", border: "#196c2e" },
-    "Lecteur": { bg: "#1c2128", color: "#8b949e", border: "#30363d" },
+    "Admin":        { bg: "#3d1a1a", color: "#f87171", border: "#6e2020" },
+    "Ing. Qualité": { bg: "#0d2b2b", color: "#2dd4bf", border: "#1d5c5c" },
+    "Reviewer":     { bg: "#04260f", color: "#4ade80", border: "#196c2e" },
   };
 
   const style = ROLE_STYLES[userRole] || {
@@ -151,12 +149,9 @@ export function DocumentAccessStatus({ document }) {
  */
 export function DocumentRolePermissionsMatrix({ document }) {
   const ROLES = [
-    'Admin GED',
-    'Responsable Qualité',
+    'Admin',
     'Ing. Qualité',
-    'Rédacteur',
-    'Validateur',
-    'Lecteur',
+    'Reviewer',
   ];
 
   // Map UI actions to permission strings in ROLE_PERMISSIONS
@@ -176,12 +171,9 @@ export function DocumentRolePermissionsMatrix({ document }) {
 
   const getRoleColor = (role) => {
     const colors = {
-      'Admin GED': '#f78166',
-      'Responsable Qualité': '#d29922',
-      'Ing. Qualité': '#79c0ff',
-      'Rédacteur': '#79c0ff',
-      'Validateur': '#3fb950',
-      'Lecteur': '#8b949e',
+      'Admin':        '#f87171',
+      'Ing. Qualité': '#2dd4bf',
+      'Reviewer':     '#4ade80',
     };
     return colors[role] || '#8b949e';
   };
@@ -300,7 +292,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
         color: '#8b949e',
       }}>
         <p style={{ margin: 0 }}>
-          📌 <strong>Légende :</strong> Permissions définies selon le rôle. Admin GED et Responsable Qualité ont accès aux archivages; Validateur peut valider; Lecteur a accès en lecture seule.
+          📌 <strong>Légende :</strong> Permissions définies selon le rôle. Admin a accès complet; Ing. Qualité peut créer et soumettre; Reviewer peut valider les documents.
         </p>
       </div>
     </div>
@@ -407,24 +399,24 @@ export function RolePermissionTag({ action }) {
   const ROLE_REQUIREMENTS = {
     create: {
       label: 'Créer document',
-      roles: ['Admin GED', 'Responsable Qualité', 'Rédacteur'],
+      roles: ['Admin', 'Ing. Qualité'],
     },
     update: {
       label: 'Modifier document',
-      roles: ['Admin GED', 'Responsable Qualité', 'Rédacteur'],
+      roles: ['Admin', 'Ing. Qualité'],
     },
     validate: {
       label: 'Valider document',
-      roles: ['Admin GED', 'Responsable Qualité', 'Validateur'],
-      note: '⚠️ Validateur ≠ Responsable (ISO EF05)',
+      roles: ['Admin', 'Reviewer'],
+      note: '⚠️ Reviewer ≠ Rédacteur (ISO EF05)',
     },
     change_status: {
       label: 'Changer le statut',
-      roles: ['Admin GED', 'Responsable Qualité', 'Rédacteur', 'Validateur'],
+      roles: ['Admin', 'Ing. Qualité', 'Reviewer'],
     },
     delete: {
       label: 'Supprimer',
-      roles: ['Admin GED'],
+      roles: ['Admin'],
       note: '⚠️ Brouillons uniquement',
     },
   };

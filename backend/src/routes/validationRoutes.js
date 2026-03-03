@@ -18,11 +18,11 @@ router.get(  "/document/:docId",        ctrl.getDocumentValidations);
 router.get(  "/",                       ctrl.getAllValidations);
 
 // ── Enregistrer une validation (EF05 + EF06) ────────────────────────
-// Seuls Validateur, Responsable Qualité et Admin GED peuvent valider
+// Seuls Reviewer et Admin peuvent valider
 // ISO Constraint: validator_id est OBLIGATOIRE et ≠ document responsible
 router.post( "/document/:docId",
   loadUser,
-  requireRole("Admin GED", "Responsable Qualité", "Validateur"),
+  requireRole("Admin", "Reviewer"),
   ctrl.createValidation
 );
 

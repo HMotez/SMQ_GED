@@ -144,7 +144,7 @@ function ValidationModal({ doc, users, canValidate=false, onClose, onValidationA
                 <LuLock size={14} style={{ color:"#f87171" }} className="flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="m-0 mb-0.5 text-xs font-semibold" style={{ color:"#f87171" }}>Accès refusé</p>
-                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.55)" }}>Seuls Validateur, Responsable Qualité et Admin GED peuvent enregistrer une validation.</p>
+                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.55)" }}>Seuls Reviewer et Admin peuvent enregistrer une validation.</p>
                 </div>
               </div>
             )}
@@ -241,7 +241,7 @@ function ValidationModal({ doc, users, canValidate=false, onClose, onValidationA
 
 /* ══════════════════════════════════════════════════════════ */
 export default function Validations() {
-  const { can } = useUser();
+  const { can, currentUser } = useUser();
   const [pendingDocs, setPendingDocs] = useState([]);
   const [allHistory,  setAllHistory]  = useState([]);
   const [stats,       setStats]       = useState(null);
@@ -301,7 +301,7 @@ export default function Validations() {
 
   return (
     <div className="min-h-screen flex" style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
-      <AppSidebar badges={{ "/validations": pendingDocs.length }} bottomContent={sidebarBottom} />
+      <AppSidebar user={currentUser} badges={{ "/validations": pendingDocs.length }} bottomContent={sidebarBottom} />
 
       <main className="flex-1 flex flex-col min-w-0">
 

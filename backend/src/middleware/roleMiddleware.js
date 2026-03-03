@@ -1,14 +1,11 @@
 // ============================================================
 // middleware/roleMiddleware.js
-// ACTIA ES — GED Sprint 2, Carte 2 : Séparation des rôles (EF06)
+// ACTIA ES — GED · Séparation des rôles (EF06)
 //
-// Rôles définis :
-//   Admin GED           — accès total
-//   Responsable Qualité — gestion workflow complet
-//   Ing. Qualité        — créer, modifier, soumettre, valider
-//   Rédacteur           — création / édition / premières étapes
-//   Validateur          — validation uniquement (En validation → Validé)
-//   Lecteur             — lecture seule
+// Trois rôles :
+//   Admin        — accès total + gestion utilisateurs
+//   Ing. Qualité — créer, modifier, soumettre documents
+//   Reviewer     — relecture et validation des documents
 // ============================================================
 
 const pool = require("../db");
@@ -18,40 +15,29 @@ const { verifyToken } = require("../controllers/authController");
 // Permissions par rôle
 // ─────────────────────────────────────────────────────────────
 const ROLE_PERMISSIONS = {
-  "Admin GED": [
+  "Admin": [
     "document:read", "document:create", "document:update",
     "document:status", "validation:create",
     "archive:manage", "user:manage",
   ],
-  "Responsable Qualité": [
-    "document:read", "document:create", "document:update",
-    "document:status", "validation:create", "archive:manage",
-  ],
   "Ing. Qualité": [
-    "document:read", "document:create", "document:update",
-    "document:status", "validation:create",
-  ],
-  "Rédacteur": [
     "document:read", "document:create", "document:update",
     "document:status",
   ],
-  "Validateur": [
+  "Reviewer": [
     "document:read", "validation:create",
-  ],
-  "Lecteur": [
-    "document:read",
   ],
 };
 
-// Transitions autorisées par rôle (EF06 — Rédacteur ≠ Validateur)
+// Transitions autorisées par rôle (EF06 — Ing. Qualité ≠ Reviewer)
 const TRANSITION_ROLE_MAP = {
-  "Brouillon→En rédaction":     ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur"],
-  "En rédaction→En relecture":  ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur"],
-  "En relecture→En validation": ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur"],
-  "En validation→Validé":       ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Validateur"],
-  "Validé→Diffusé":             ["Admin GED", "Responsable Qualité"],
-  "Diffusé→Obsolète":           ["Admin GED", "Responsable Qualité"],
-  "Obsolète→Archivé":           ["Admin GED", "Responsable Qualité"],
+  "Brouillon→En rédaction":     ["Admin", "Ing. Qualité"],
+  "En rédaction→En relecture":  ["Admin", "Ing. Qualité"],
+  "En relecture→En validation": ["Admin", "Ing. Qualité"],
+  "En validation→Validé":       ["Admin", "Reviewer"],
+  "Validé→Diffusé":             ["Admin"],
+  "Diffusé→Obsolète":           ["Admin"],
+  "Obsolète→Archivé":           ["Admin"],
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -100,7 +86,7 @@ const loadUser = async (req, _res, next) => {
 
 // ─────────────────────────────────────────────────────────────
 // requireRole — bloque si user absent ou rôle insuffisant
-// Usage : router.post("/", loadUser, requireRole("Rédacteur","Admin GED"), ctrl.fn)
+// Usage : router.post("/", loadUser, requireRole("Ing. Qualité","Admin"), ctrl.fn)
 // ─────────────────────────────────────────────────────────────
 const requireRole = (...allowedRoles) => (req, res, next) => {
   if (!req.currentUser) {

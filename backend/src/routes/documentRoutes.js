@@ -17,18 +17,18 @@ router.get(  "/archive-candidates", ctrl.getArchiveCandidates);
 router.get(  "/archive-history",    ctrl.getArchiveHistory);
 router.get(  "/archived",           ctrl.getArchivedDocuments);
 
-// Carte 6 — Archivage automatique (Admin GED + Responsable Qualité)
+// Carte 6 — Archivage automatique (Admin uniquement)
 router.post( "/archive-expired",
   loadUser,
-  requireRole("Admin GED", "Responsable Qualité"),
+  requireRole("Admin"),
   ctrl.archiveExpired
 );
 
 // ── CRUD documents ───────────────────────────────────────────
-// Création : Rédacteur, Responsable Qualité, Admin GED
+// Création : Ing. Qualité, Admin
 router.post( "/",
   loadUser,
-  requireRole("Admin GED", "Responsable Qualité", "Rédacteur"),
+  requireRole("Admin", "Ing. Qualité"),
   upload.single("file"),
   ctrl.createDocument
 );
@@ -39,10 +39,10 @@ router.get(  "/:id",        ctrl.getDocumentById);
 router.get(  "/:id/versions",     ctrl.getDocumentVersions);
 router.get(  "/:id/audit-trail",  ctrl.getAuditTrail);  // EF14 — Traçabilité ISO
 
-// Modification : Rédacteur, Responsable Qualité, Admin GED
+// Modification : Ing. Qualité, Admin
 router.put(  "/:id",
   loadUser,
-  requireRole("Admin GED", "Responsable Qualité", "Rédacteur"),
+  requireRole("Admin", "Ing. Qualité"),
   upload.single("file"),
   ctrl.updateDocument
 );
@@ -51,7 +51,7 @@ router.put(  "/:id",
 // Role check granulaire fait DANS changeStatus via canTransition()
 router.patch("/:id/status",
   loadUser,
-  requireRole("Admin GED", "Responsable Qualité", "Rédacteur", "Validateur"),
+  requireRole("Admin", "Ing. Qualité", "Reviewer"),
   ctrl.changeStatus
 );
 

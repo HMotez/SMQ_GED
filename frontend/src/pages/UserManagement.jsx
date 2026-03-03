@@ -13,12 +13,9 @@ import {
 import { API } from "../config";
 
 const ROLE_COLORS = {
-  "Admin GED":           "#f87171",
-  "Responsable Qualité": "#fbbf24",
-  "Ing. Qualité":        "#2dd4bf",
-  "Rédacteur":           "#60a5fa",
-  "Validateur":          "#4ade80",
-  "Lecteur":             "#a78bfa",
+  "Admin":        "#f87171",
+  "Ing. Qualité": "#2dd4bf",
+  "Reviewer":     "#4ade80",
 };
 
 const STYLES = `
@@ -246,7 +243,7 @@ export default function UserManagement() {
                 Gestion des utilisateurs
               </h1>
               <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
-                Activation des comptes · Attribution des rôles — Admin GED
+                Activation des comptes · Attribution des rôles — Admin
               </p>
             </div>
           </div>

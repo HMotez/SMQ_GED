@@ -19,11 +19,11 @@ function ProtectedRoute({ children }) {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0a1420" }}>
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-gray-200 border-t-pink-500 rounded-full animate-spin mx-auto mb-4"
-            style={{ borderWidth: 3, borderStyle: "solid", borderColor: "#e5e7eb", borderTopColor: "#ec4899" }} />
-          <p className="text-gray-400 text-sm">Vérification de la session…</p>
+          <div className="mx-auto mb-4 rounded-full" style={{ width:36,height:36,border:"2.5px solid rgba(74,184,63,0.2)",borderTopColor:"#4ab83f",animation:"spin 0.7s linear infinite" }} />
+          <p className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Vérification de la session…</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
@@ -33,6 +33,15 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
+  return children;
+}
+
+// ── Garde Admin uniquement ────────────────────────────────────
+function AdminRoute({ children }) {
+  const { isAuthenticated, authLoading, userRole } = useUser();
+  if (authLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (userRole !== "Admin") return <Navigate to="/" replace />;
   return children;
 }
 
@@ -55,33 +64,26 @@ function AppRoutes() {
         <PublicRoute><Register /></PublicRoute>
       } />
 
-      {/* Protected */}
-      <Route path="/" element={
-        <ProtectedRoute><Home /></ProtectedRoute>
-      } />
+      {/* Home — public, shows landing when not authenticated */}
+      <Route path="/" element={<Home />} />
       <Route path="/create" element={
         <ProtectedRoute><CreateDocument /></ProtectedRoute>
       } />
-      <Route path="/list" element={
-        <ProtectedRoute><DocumentList /></ProtectedRoute>
-      } />
-      <Route path="/archive" element={
-        <ProtectedRoute><Archive /></ProtectedRoute>
-      } />
-      <Route path="/validations" element={
-        <ProtectedRoute><Validations /></ProtectedRoute>
-      } />
+      {/* Lecteur-accessible — read-only for unauthenticated visitors */}
+      <Route path="/list" element={<DocumentList />} />
+      <Route path="/archive" element={<Archive />} />
+      <Route path="/validations" element={<Validations />} />
+      <Route path="/ai" element={<AIAssistant />} />
+
+      {/* Auth-required routes */}
       <Route path="/dashboard" element={
         <ProtectedRoute><Dashboard /></ProtectedRoute>
       } />
       <Route path="/admin/users" element={
-        <ProtectedRoute><UserManagement /></ProtectedRoute>
+        <AdminRoute><UserManagement /></AdminRoute>
       } />
       <Route path="/notifications" element={
         <ProtectedRoute><Notifications /></ProtectedRoute>
-      } />
-      <Route path="/ai" element={
-        <ProtectedRoute><AIAssistant /></ProtectedRoute>
       } />
 
       {/* Fallback */}

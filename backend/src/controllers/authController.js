@@ -16,11 +16,9 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || "8h";
 // Default users — seeded at startup
 // ─────────────────────────────────────────────────────────────
 const DEFAULT_USERS = [
-  { name:"Admin GED",           email:"admin@actia.com",       password:"Admin123!",     role:"Admin GED"           },
-  { name:"Responsable Qualité", email:"rq@actia.com",          password:"RQ123!",        role:"Responsable Qualité" },
-  { name:"Rédacteur Doc",       email:"redacteur@actia.com",   password:"Red123!",       role:"Rédacteur"           },
-  { name:"Validateur ISO",      email:"validateur@actia.com",  password:"Val123!",       role:"Validateur"          },
-  { name:"Lecteur",             email:"lecteur@actia.com",     password:"Lec123!",       role:"Lecteur"             },
+  { name:"Admin",        email:"admin@actia.com",      password:"Admin123!", role:"Admin"        },
+  { name:"Ing Qualité",  email:"ing@actia.com",        password:"Ing123!",   role:"Ing. Qualité" },
+  { name:"Reviewer",     email:"reviewer@actia.com",   password:"Rev123!",   role:"Reviewer"     },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -227,7 +225,7 @@ async function me(req, res) {
 // Body: { name, email, password, confirmPassword }
 // Crée un compte inactif — l'admin attribue le rôle lors de l'activation
 // ─────────────────────────────────────────────────────────────
-const VALID_ROLES = ["Admin GED", "Responsable Qualité", "Ing. Qualité", "Rédacteur", "Validateur", "Lecteur"];
+const VALID_ROLES = ["Admin", "Ing. Qualité", "Reviewer"];
 
 async function register(req, res) {
   const { name, email, password, confirmPassword, requestedRole } = req.body;

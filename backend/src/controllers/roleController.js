@@ -7,16 +7,13 @@ const pool = require("../db");
 const { ROLE_PERMISSIONS, TRANSITION_ROLE_MAP } = require("../middleware/roleMiddleware");
 
 // ─────────────────────────────────────────────────────────────
-// ensureRoles — crée les 5 rôles ISO si absents
+// ensureRoles — crée les 3 rôles si absents
 // Appelé au démarrage du serveur
 // ─────────────────────────────────────────────────────────────
 const REQUIRED_ROLES = [
-  { name: "Admin GED",          description: "Accès complet à toutes les fonctionnalités" },
-  { name: "Responsable Qualité",description: "Gestion du workflow documentaire complet" },
-  { name: "Ing. Qualité",       description: "Création, modification, soumission et validation de documents" },
-  { name: "Rédacteur",          description: "Création et édition de documents" },
-  { name: "Validateur",         description: "Validation des documents (En validation → Validé)" },
-  { name: "Lecteur",            description: "Lecture seule — aucune modification" },
+  { name: "Admin",        description: "Accès complet — gestion utilisateurs, archivage, workflow" },
+  { name: "Ing. Qualité", description: "Création, modification et soumission de documents" },
+  { name: "Reviewer",     description: "Relecture et validation des documents" },
 ];
 
 const ensureRoles = async () => {

@@ -111,7 +111,7 @@ function DocTable({ docs, action, showDaysOverdue=false, showArchivedAt=false })
 
 /* ══════════════════════════════════════════════════════════ */
 export default function Archive() {
-  const { can } = useUser();
+  const { can, currentUser } = useUser();
   const [candidates, setCandidates] = useState([]);
   const [archived,   setArchived]   = useState([]);
   const [history,    setHistory]    = useState([]);
@@ -192,7 +192,7 @@ export default function Archive() {
 
   return (
     <div className="min-h-screen flex" style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
-      <AppSidebar bottomContent={sidebarBottom} />
+      <AppSidebar user={currentUser} bottomContent={sidebarBottom} />
 
       <main className="flex-1 flex flex-col min-w-0">
 

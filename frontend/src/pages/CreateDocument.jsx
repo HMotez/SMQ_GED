@@ -176,7 +176,7 @@ function STitle({ num, title }) {
 
 /* ════════════════════════════════════════════════════════════ */
 export default function CreateDocument() {
-  const { can } = useUser();
+  const { can, currentUser } = useUser();
 
   const [types,  setTypes]  = useState([]);
   const [level1, setLevel1] = useState([]);
@@ -355,7 +355,7 @@ export default function CreateDocument() {
     <div className="min-h-screen flex"
       style={{ background:"linear-gradient(145deg, #0a1420 0%, #0f1e30 35%, #1a2f4a 70%, #1e3a55 100%)" }}>
 
-      <AppSidebar middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
+      <AppSidebar user={currentUser} middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
 
       <main className="flex-1 flex flex-col min-w-0">
 
@@ -392,7 +392,7 @@ export default function CreateDocument() {
               <LuLock size={40} className="mx-auto mb-4" style={{ color:"#f87171" }} />
               <p className="text-lg font-bold text-[#f87171] m-0 mb-2">Accès refusé</p>
               <p style={{ color:"rgba(168,191,212,0.7)" }}>
-                Seuls les rôles Rédacteur, Responsable Qualité et Admin GED peuvent créer des documents.
+                Seuls les rôles Ing. Qualité et Admin peuvent créer des documents.
               </p>
             </div>
           )}

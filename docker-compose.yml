@@ -1,37 +1,78 @@
 # =============================================================
-# SMQ_GED — Docker Compose
-# Sprint 7 — Dockerisation & Déploiement Containerisé
-# Sprint 6 — Module IA (chatbot NLP, classification, extraction dates,
-#             amélioration continue) — aucun service additionnel requis,
-#             l'IA est intégrée dans le backend Express + PostgreSQL.
+# SMQ_GED — Docker Compose  (ACTIA Engineering Services)
 # =============================================================
 #
-# Services:
-#   postgres  — PostgreSQL 16 (internal only, not exposed)
-#   backend   — Node.js Express API on port 4000
-#               + Module IA Sprint 6 (/api/ai/*)
-#               + LibreOffice pour conversion de documents
-#   frontend  — React SPA served by Nginx on port 80
-#               + Page /ai — Assistant IA (chatbot, classification, etc.)
+# Sprints embarqués dans cette image :
+#   Sprint 1-2 : CRUD documents, workflow ISO, statuts, types
+#   Sprint 3   : JWT Authentication, gestion utilisateurs
+#   Sprint 4   : Dashboard KPIs & statistiques
+#   Sprint 5   : Notifications intelligentes (expiration, inactivité)
+#   Sprint 6   : Module IA (chatbot Gemini, classification, extraction dates)
+#   Sprint 7   : Dockerisation & déploiement containerisé
+#   Sprint 8   : Système 3 rôles (Admin / Ing. Qualité / Reviewer)
+#               + Role switcher sidebar & navbar
+#   Sprint 9   : Page d'accueil publique (sans authentification)
+#               + LoginModal contextuel (accès démo 3 rôles)
+#               + Inscription limitée à Ing. Qualité & Reviewer
+#               + Tableau de bord accessible depuis le menu public
+#               + Actions protégées → modal de connexion contextuel
+#   Sprint 10  : Mode visiteur par défaut (suppression auto-login Admin)
+#               + Navbar visiteur : boutons Connexion & S'inscrire
+#               + Déconnexion → retour page d'accueil publique (/)
+#               + Session persistante uniquement si token valide
 #
-# Sprint 6 — Tables DB créées automatiquement au démarrage :
-#   ai_query_logs — journalisation des requêtes chatbot IA
-#   (voir aussi db/init.sql table 13 et migration 003)
+# Services :
+#   postgres  — PostgreSQL 16 (réseau interne uniquement)
+#   backend   — Express API :4000 + LibreOffice + Module IA
+#   frontend  — React SPA via Nginx :80 (reverse-proxy → backend)
 #
-# Usage (connexion Docker Hub disponible) :
-#   docker-compose up --build        (premier lancement / après modifs)
-#   docker-compose up -d             (mode détaché)
-#   docker-compose down              (arrêt + suppression containers)
-#   docker-compose down -v           (+ suppression volumes — BDD neuve)
-#   docker-compose logs -f backend   (suivre les logs backend)
-#   docker-compose logs -f frontend  (suivre les logs nginx)
+# Tables DB créées automatiquement au démarrage :
+#   ai_query_logs   — journalisation requêtes chatbot IA
+#   user_requests   — demandes d'inscription en attente
+#   notifications   — système de notifications par rôle
 #
-# Usage hors-ligne (Docker Hub inaccessible — TLS timeout) :
-#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build -d
-#   .\scripts\build-offline.ps1      (raccourci PowerShell)
+# Utilisateurs créés au démarrage (ensureDefaultUsers) :
+#   admin@actia.com    / Admin123!   → rôle Admin        (pré-configuré)
+#   ing@actia.com      / Ing123!     → rôle Ing. Qualité (pré-configuré)
+#   reviewer@actia.com / Rev123!     → rôle Reviewer     (pré-configuré)
 #
-# Fix permanent (réseau d'entreprise) :
-#   .\scripts\configure-docker-mirror.ps1   (configure mirror.gcr.io)
+# Inscription :
+#   Ing. Qualité & Reviewer peuvent s'inscrire → validation Admin requise
+#   Le compte Admin est unique et non-sélectionnable à l'inscription
+#
+# ── Commandes utiles ──────────────────────────────────────────
+#
+#   Premier lancement (build complet) :
+#     docker compose up --build
+#
+#   Lancement en arrière-plan :
+#     docker compose up -d --build
+#
+#   Arrêt :
+#     docker compose down
+#
+#   Arrêt + suppression des données (BDD neuve) :
+#     docker compose down -v
+#
+#   Voir les logs en temps réel :
+#     docker compose logs -f backend
+#     docker compose logs -f frontend
+#
+#   Rebuild après modification du code :
+#     docker compose up --build -d
+#
+#   Ouvrir un shell dans le backend :
+#     docker exec -it smq_backend sh
+#
+#   Ouvrir psql dans la base :
+#     docker exec -it smq_db psql -U postgres -d smq_db
+#
+# ── Hors-ligne (réseau d'entreprise / TLS timeout) ───────────
+#   docker compose -f docker-compose.yml -f docker-compose.offline.yml up --build -d
+#
+# ── Accès ─────────────────────────────────────────────────────
+#   Application : http://localhost
+#   API directe : http://localhost:4000/api
 # =============================================================
 
 services:
@@ -65,8 +106,8 @@ services:
     build:
       context:    ./backend
       dockerfile: Dockerfile
-    # Tag explicite → permet le rebuild offline via Dockerfile.offline
-    image: smq_ged-backend:latest
+    # Tag versionné — incrémentez pour forcer le rebuild sur les nœuds distants
+    image: smq_ged-backend:sprint10
     container_name: smq_backend
     restart: unless-stopped
     # All variables come from the root .env file (docker-compose default)
@@ -102,8 +143,8 @@ services:
         # proxied by Nginx to backend:4000
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
-    # Tag explicite → permet le rebuild offline via Dockerfile.offline
-    image: smq_ged-frontend:latest
+    # Tag versionné — incrémentez pour forcer le rebuild sur les nœuds distants
+    image: smq_ged-frontend:sprint10
     container_name: smq_frontend
     restart: unless-stopped
     ports:

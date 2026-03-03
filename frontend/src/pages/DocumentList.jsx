@@ -393,7 +393,7 @@ export default function DocumentList() {
         .animate-fade-in { animation: fadeIn 0.2s ease; }
       `}</style>
 
-      <AppSidebar middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
+      <AppSidebar user={currentUser} middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
 
       <main className="flex-1 flex flex-col min-w-0">
 

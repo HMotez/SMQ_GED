@@ -8,54 +8,29 @@ import logoImg from "../assets/Logo.png";
 import {
   LuEye, LuEyeOff, LuCircleCheckBig, LuCircleAlert,
   LuShieldCheck, LuArrowRight, LuUser, LuMail, LuLock,
-  LuCheck, LuX, LuUserCog, LuKeyRound, LuUserCheck,
-  LuCrown, LuChartBar, LuWrench, LuPenLine, LuBadgeCheck, LuBookOpen,
+  LuCheck, LuX,
+  LuWrench, LuClipboardCheck,
 } from "react-icons/lu";
 import { API } from "../config";
 
-/* ── All roles (based on ISO matrix) ─────────────────────── */
+/* ── Rôles disponibles à l'inscription ─────────────────────
+   Admin : compte unique, pré-configuré (non sélectionnable)
+   Ing. Qualité / Reviewer : demande → validation par l'Admin
+─────────────────────────────────────────────────────────── */
 const ROLES = [
-  {
-    value: "Admin GED",
-    badge: "Super Admin",
-    color: "#f87171",
-    Icon: LuCrown,
-    perms: ["Accès total", "Gérer utilisateurs", "Toutes transitions", "Archivage"],
-  },
-  {
-    value: "Responsable Qualité",
-    badge: "Manager",
-    color: "#fbbf24",
-    Icon: LuChartBar,
-    perms: ["Créer / modifier docs", "Valider", "Archiver", "Distribuer"],
-  },
   {
     value: "Ing. Qualité",
     badge: "Ingénieur",
     color: "#2dd4bf",
     Icon: LuWrench,
-    perms: ["Créer / modifier docs", "Soumettre", "Valider documents"],
+    perms: ["Créer / modifier docs", "Soumettre workflow", "Assistant IA"],
   },
   {
-    value: "Rédacteur",
-    badge: "Éditeur",
-    color: "#60a5fa",
-    Icon: LuPenLine,
-    perms: ["Créer documents", "Modifier", "Soumettre"],
-  },
-  {
-    value: "Validateur",
-    badge: "Valideur",
+    value: "Reviewer",
+    badge: "Réviseur",
     color: "#4ade80",
-    Icon: LuBadgeCheck,
-    perms: ["Valider documents", "En validation → Validé"],
-  },
-  {
-    value: "Lecteur",
-    badge: "Read-Only",
-    color: "#a78bfa",
-    Icon: LuBookOpen,
-    perms: ["Lecture seule", "Consulter documents"],
+    Icon: LuClipboardCheck,
+    perms: ["Relecture documents", "Valider (En validation → Validé)", "Consulter"],
   },
 ];
 
@@ -215,7 +190,7 @@ export default function Register() {
               <div>
                 <p className="m-0 text-[13.5px] font-bold" style={{ color:"#4ade80" }}>Demande envoyée !</p>
                 <p className="m-0 text-[12px] mt-1" style={{ color:"rgba(74,222,128,0.7)" }}>
-                  Rôle demandé : <strong>{form.requestedRole}</strong>. L'Admin GED examinera votre demande et activera votre compte.
+                  Rôle demandé : <strong>{form.requestedRole}</strong>. L'Admin examinera votre demande et activera votre compte.
                 </p>
                 <NavLink to="/login" className="inline-block mt-2 text-[12px] font-bold no-underline" style={{ color:"#4ab83f" }}>
                   Aller à la connexion →
@@ -340,10 +315,10 @@ export default function Register() {
                 <p className="text-[10px] uppercase tracking-[2px] font-bold m-0" style={{ color:"rgba(168,191,212,0.5)" }}>Rôle souhaité</p>
               </div>
               <p className="text-white text-[14px] font-semibold m-0 mt-1 ml-[13px]">
-                Sélectionnez le rôle que vous souhaitez
+                Sélectionnez le rôle souhaité
               </p>
               <p className="text-[11.5px] m-0 mt-0.5 ml-[13px]" style={{ color:"rgba(168,191,212,0.45)" }}>
-                L'Admin GED peut modifier ce choix lors de l'activation
+                L'Admin validera votre demande et pourra ajuster le rôle attribué
               </p>
             </div>
 
@@ -403,10 +378,10 @@ export default function Register() {
           <div className="rounded-2xl px-5 py-4" style={{ background:"rgba(251,191,36,0.07)", border:"1px solid rgba(251,191,36,0.2)" }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-block w-[3px] h-3.5 rounded-full flex-shrink-0" style={{ background:"#fbbf24" }} />
-              <p className="text-[11px] font-bold m-0" style={{ color:"#fbbf24" }}>Gestion des rôles — Admin GED</p>
+              <p className="text-[11px] font-bold m-0" style={{ color:"#fbbf24" }}>Gestion des rôles — Admin</p>
             </div>
             <p className="text-[11.5px] m-0 leading-relaxed" style={{ color:"rgba(251,191,36,0.75)" }}>
-              Votre rôle souhaité sera visible par l'<strong style={{ color:"#fbbf24" }}>Admin GED</strong> qui peut <strong style={{ color:"#fbbf24" }}>accepter</strong> avec le rôle demandé, <strong style={{ color:"#fbbf24" }}>modifier</strong> le rôle attribué, ou <strong style={{ color:"#f87171" }}>rejeter</strong> la demande.
+              Votre rôle souhaité sera visible par l'<strong style={{ color:"#fbbf24" }}>Admin</strong> qui peut <strong style={{ color:"#fbbf24" }}>accepter</strong> avec le rôle demandé, <strong style={{ color:"#fbbf24" }}>modifier</strong> le rôle attribué, ou <strong style={{ color:"#f87171" }}>rejeter</strong> la demande.
             </p>
           </div>
 

@@ -66,7 +66,7 @@ const ValidationWorkflow = ({ documentId, documentResponsible, userId, userRole 
       const users = await response.json();
       // Filtrer pour avoir que les validateurs et responsables qualité
       const eligibleValidators = users.filter(
-        (u) => ['Validateur', 'Responsable Qualité', 'Admin GED'].includes(u.role)
+        (u) => ['Reviewer', 'Admin'].includes(u.role)
           && u.name !== documentResponsible // ISO Constraint: validator ≠ responsible
       );
       setValidators(eligibleValidators);
@@ -128,7 +128,7 @@ const ValidationWorkflow = ({ documentId, documentResponsible, userId, userRole 
     }
   };
 
-  const canCreateValidation = ['Validateur', 'Responsable Qualité', 'Admin GED'].includes(userRole);
+  const canCreateValidation = ['Reviewer', 'Admin'].includes(userRole);
   const canTransitionToValidated = summary?.can_transition_to_validated;
   const blockReasonEF05 = () => {
     if (!summary) return null;

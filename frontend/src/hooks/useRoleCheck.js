@@ -26,7 +26,7 @@ export function useRoleCheck() {
     if (!document) {
       switch (action) {
         case 'create':
-          return ['Admin GED', 'Responsable Qualité', 'Rédacteur'].includes(userRole);
+          return ['Admin', 'Ing. Qualité'].includes(userRole);
         case 'read':
           return true; // Everyone can read
         default:
@@ -46,21 +46,21 @@ export function useRoleCheck() {
       case 'update':
         // Cannot update locked documents
         if (isDocumentLocked) return false;
-        // Only Rédacteur, Responsable Qualité, Admin GED can update
-        return ['Admin GED', 'Responsable Qualité', 'Rédacteur'].includes(userRole);
+        // Only Ing. Qualité, Admin can update
+        return ['Admin', 'Ing. Qualité'].includes(userRole);
 
       case 'delete':
-        // Only Admin GED can delete (and only drafts)
-        return userRole === 'Admin GED' && docStatus === 'Brouillon';
+        // Only Admin can delete (and only drafts)
+        return userRole === 'Admin' && docStatus === 'Brouillon';
 
       case 'change_status':
         // Most roles can change status (with constraints)
-        return ['Admin GED', 'Responsable Qualité', 'Rédacteur', 'Validateur'].includes(userRole);
+        return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(userRole);
 
       case 'validate':
-        // Only Validateur, Responsable Qualité, Admin GED can validate
+        // Only Reviewer and Admin can validate
         // And they cannot be the document responsible (ISO constraint EF05)
-        if (!['Admin GED', 'Responsable Qualité', 'Validateur'].includes(userRole)) {
+        if (!['Admin', 'Reviewer'].includes(userRole)) {
           return false;
         }
         // CONSTRAINT EF05: Validator ≠ Responsible
@@ -70,12 +70,11 @@ export function useRoleCheck() {
         return true;
 
       case 'comment':
-        // Lecteur and Relecteur can comment
-        return ['Lecteur', 'Relecteur', 'Admin GED', 'Responsable Qualité'].includes(userRole);
+        return true; // All roles can comment
 
       case 'distribute':
-        // Only Admin GED and Responsable Qualité can distribute (ISO EF14)
-        if (!['Admin GED', 'Responsable Qualité'].includes(userRole)) {
+        // Only Admin can distribute (ISO EF14)
+        if (!['Admin'].includes(userRole)) {
           return false;
         }
         // Can only distribute if status is "Validé" (ISO EF14 requirement)
@@ -104,16 +103,16 @@ export function useRoleCheck() {
           return `⛔ Impossible de modifier: le document est en statut "${docStatus}". ` +
                  `Seuls les documents en Brouillon, En rédaction, En relecture ou En validation peuvent être modifiés.`;
         }
-        if (!['Admin GED', 'Responsable Qualité', 'Rédacteur'].includes(userRole)) {
+        if (!['Admin', 'Ing. Qualité'].includes(userRole)) {
           return `⛔ Votre rôle (${userRole}) ne peut pas modifier les documents. ` +
-                 `Seuls: Admin GED, Responsable Qualité, Rédacteur.`;
+                 `Seuls: Admin, Ing. Qualité.`;
         }
         return null;
 
       case 'validate':
-        if (!['Admin GED', 'Responsable Qualité', 'Validateur'].includes(userRole)) {
+        if (!['Admin', 'Reviewer'].includes(userRole)) {
           return `⛔ Votre rôle (${userRole}) ne peut pas valider. ` +
-                 `Seuls: Admin GED, Responsable Qualité, Validateur.`;
+                 `Seuls: Admin, Reviewer.`;
         }
         if (currentUser?.name === docResponsible) {
           return `⛔ ISO Constraint EF05: Vous ne pouvez pas valider votre propre document. ` +
@@ -126,14 +125,14 @@ export function useRoleCheck() {
           return `⛔ Impossible de supprimer un document en statut "${docStatus}". ` +
                  `Seuls les brouillons peuvent être supprimés.`;
         }
-        if (userRole !== 'Admin GED') {
-          return `⛔ Seul Admin GED peut supprimer des documents.`;
+        if (userRole !== 'Admin') {
+          return `⛔ Seul Admin peut supprimer des documents.`;
         }
         return null;
 
       case 'distribute':
-        if (!['Admin GED', 'Responsable Qualité'].includes(userRole)) {
-          return `⛔ ISO EF14: Seuls Admin GED et Responsable Qualité peuvent distribuer. ` +
+        if (!['Admin'].includes(userRole)) {
+          return `⛔ ISO EF14: Seul Admin peut distribuer. ` +
                  `Votre rôle: ${userRole}.`;
         }
         if (docStatus !== 'Validé') {
@@ -171,13 +170,13 @@ export function useRoleCheck() {
     // Check role permissions for this specific transition
     const key = `${fromStatus}→${toStatus}`;
     const TRANSITION_ROLE_MAP = {
-      "Brouillon→En rédaction": ["Admin GED", "Responsable Qualité", "Rédacteur"],
-      "En rédaction→En relecture": ["Admin GED", "Responsable Qualité", "Rédacteur"],
-      "En relecture→En validation": ["Admin GED", "Responsable Qualité", "Rédacteur"],
-      "En validation→Validé": ["Admin GED", "Responsable Qualité", "Validateur"],
-      "Validé→Diffusé": ["Admin GED", "Responsable Qualité"],
-      "Diffusé→Obsolète": ["Admin GED", "Responsable Qualité"],
-      "Obsolète→Archivé": ["Admin GED", "Responsable Qualité"],
+      "Brouillon→En rédaction":     ["Admin", "Ing. Qualité"],
+      "En rédaction→En relecture":  ["Admin", "Ing. Qualité"],
+      "En relecture→En validation": ["Admin", "Ing. Qualité"],
+      "En validation→Validé":       ["Admin", "Reviewer"],
+      "Validé→Diffusé":             ["Admin"],
+      "Diffusé→Obsolète":           ["Admin"],
+      "Obsolète→Archivé":           ["Admin"],
     };
 
     const allowedRoles = TRANSITION_ROLE_MAP[key] || [];
@@ -220,22 +219,16 @@ export function useRoleCheck() {
    * @returns {boolean}
    */
   const canArchive = useCallback((document) => {
-    if (!['Admin GED', 'Responsable Qualité'].includes(userRole)) {
+    if (!['Admin'].includes(userRole)) {
       return false;
     }
     // Can only archive if in Obsolète or Archivé status
     return ['Obsolète', 'Archivé'].includes(document.status_name);
   }, [userRole]);
 
-  /**
-   * Check if user can COMMENT on a document
-   * (All roles can comment, but this is for consistency)
-   * @returns {boolean}
-   */
   const canComment = useCallback(() => {
-    // Relecteur and Lecteur roles are for review/comments
-    return ['Lecteur', 'Relecteur', 'Admin GED', 'Responsable Qualité'].includes(userRole);
-  }, [userRole]);
+    return true; // All authenticated roles can comment
+  }, []);
 
   return {
     canPerformAction,

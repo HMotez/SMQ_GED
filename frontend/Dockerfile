@@ -1,12 +1,9 @@
 # =============================================================
-# SMQ_GED — Frontend Dockerfile
-# Sprint 7 — Dockerisation & Déploiement Containerisé
-# Sprint 6 — Page /ai (AIAssistant) incluse dans le bundle Vite.
-#             Aucun ARG supplémentaire requis — le module IA
-#             appelle uniquement /api/ai/* via le proxy Nginx.
+# SMQ_GED — Frontend Dockerfile  (ACTIA Engineering Services)
+# React 18 + Vite → bundle statique servi par Nginx
 # =============================================================
-# Stage 1: Build React app with Vite
-# Stage 2: Serve static assets via Nginx
+# Stage 1 : Build React (Vite) → /app/dist
+# Stage 2 : Nginx stable-alpine sert le SPA + reverse-proxy API
 # =============================================================
 
 # ── Stage 1: Build ───────────────────────────────────────────

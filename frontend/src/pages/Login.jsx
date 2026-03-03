@@ -8,67 +8,46 @@ import logoImg from "../assets/Logo.png";
 import {
   LuMail, LuLock, LuEye, LuEyeOff,
   LuCircleAlert, LuShieldCheck, LuArrowRight,
-  LuFileText, LuCheck, LuSettings, LuBookOpen, LuWrench,
+  LuFileText, LuCheck, LuSettings, LuWrench,
 } from "react-icons/lu";
 
 /* ── Role definitions ─────────────────────────────────────── */
 const ROLES = [
   {
-    name:  "Admin GED",
-    email: "admin@actia.com",
-    badge: "Super Admin",
-    color: "#f87171",
-    icon:  LuSettings,
-    perms: ["Créer", "Valider", "Archiver", "Gérer utilisateurs"],
+    name:     "Admin",
+    email:    "admin@actia.com",
+    password: "Admin123!",
+    badge:    "Administrateur",
+    color:    "#f87171",
+    icon:     LuSettings,
+    perms:    ["Créer", "Valider", "Archiver", "Gérer utilisateurs"],
   },
   {
-    name:  "Responsable Qualité",
-    email: "rq@actia.com",
-    badge: "Manager",
-    color: "#fbbf24",
-    icon:  LuCheck,
-    perms: ["Créer", "Valider", "Archiver"],
+    name:     "Ing. Qualité",
+    email:    "ing@actia.com",
+    password: "Ing123!",
+    badge:    "Ingénieur",
+    color:    "#2dd4bf",
+    icon:     LuWrench,
+    perms:    ["Créer", "Modifier", "Soumettre"],
   },
   {
-    name:  "Ing. Qualité",
-    email: "via inscription",
-    badge: "Ingénieur",
-    color: "#2dd4bf",
-    icon:  LuWrench,
-    perms: ["Créer", "Modifier", "Soumettre", "Valider"],
-  },
-  {
-    name:  "Rédacteur",
-    email: "redacteur@actia.com",
-    badge: "Éditeur",
-    color: "#60a5fa",
-    icon:  LuFileText,
-    perms: ["Créer", "Modifier", "Soumettre"],
-  },
-  {
-    name:  "Validateur",
-    email: "validateur@actia.com",
-    badge: "Valideur",
-    color: "#4ade80",
-    icon:  LuCheck,
-    perms: ["Consulter", "Valider docs"],
-  },
-  {
-    name:  "Lecteur",
-    email: "lecteur@actia.com",
-    badge: "Read-Only",
-    color: "#a78bfa",
-    icon:  LuBookOpen,
-    perms: ["Consulter documents"],
+    name:     "Reviewer",
+    email:    "reviewer@actia.com",
+    password: "Rev123!",
+    badge:    "Réviseur",
+    color:    "#4ade80",
+    icon:     LuCheck,
+    perms:    ["Consulter", "Valider docs"],
   },
 ];
 
-/* ── ISO permission matrix ────────────────────────────────── */
+/* ── Permission matrix ────────────────────────────────────── */
 const PERMISSIONS = [
-  { label: "Créer document",     roles: ["Admin GED", "Resp. Qualité", "Ing. Qualité", "Rédacteur"],  icon: LuFileText },
-  { label: "Valider document",   roles: ["Admin GED", "Resp. Qualité", "Ing. Qualité", "Validateur"], icon: LuCheck },
-  { label: "Archiver",           roles: ["Admin GED", "Resp. Qualité"],                               icon: LuSettings },
-  { label: "Gérer utilisateurs", roles: ["Admin GED"],                                                icon: LuShieldCheck },
+  { label: "Créer document",     roles: ["Admin", "Ing. Qualité"],  icon: LuFileText },
+  { label: "Valider document",   roles: ["Admin", "Reviewer"],      icon: LuCheck },
+  { label: "Archiver",           roles: ["Admin"],                  icon: LuSettings },
+  { label: "Gérer utilisateurs", roles: ["Admin"],                  icon: LuShieldCheck },
 ];
 
 /* ── Keyframe animations ──────────────────────────────────── */
@@ -105,8 +84,10 @@ const STYLES = `
 
   .role-card {
     transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease, border-color 0.2s, background 0.2s;
+    cursor: pointer;
   }
   .role-card:hover { transform: translateY(-3px) scale(1.012); }
+  .role-card:active { transform: scale(0.98); }
 
   .perm-matrix-card { transition: background 0.2s, border-color 0.2s; }
   .perm-matrix-card:hover {
@@ -153,11 +134,12 @@ export default function Login() {
   const navigate  = useNavigate();
   const { login } = useUser();
 
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
-  const [showPass, setShowPass] = useState(false);
+  const [email,        setEmail]        = useState("");
+  const [password,     setPassword]     = useState("");
+  const [loading,      setLoading]      = useState(false);
+  const [quickLoading, setQuickLoading] = useState(null); // role name being quick-logged
+  const [error,        setError]        = useState("");
+  const [showPass,     setShowPass]     = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -171,6 +153,19 @@ export default function Login() {
       setError(err.response?.data?.error || err.message || "Identifiants incorrects. Veuillez réessayer.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleQuickLogin = async (role) => {
+    setError("");
+    setQuickLoading(role.name);
+    try {
+      await login(role.email, role.password);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || "Connexion rapide échouée.");
+    } finally {
+      setQuickLoading(null);
     }
   };
 
@@ -424,36 +419,51 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Role cards */}
+          {/* Role cards — click to quick-login */}
           <div className="flex flex-col gap-2">
             {ROLES.map((r, idx) => {
               const Icon = r.icon;
+              const isLogging = quickLoading === r.name;
               return (
                 <div
                   key={r.email}
                   className="role-card flex items-center gap-3 rounded-[13px] px-4 py-3"
+                  onClick={() => !quickLoading && !loading && handleQuickLogin(r)}
+                  title={`Se connecter en tant que ${r.name}`}
                   style={{
                     background: `${r.color}0d`,
-                    border: `1px solid ${r.color}28`,
+                    border: `1px solid ${isLogging ? r.color : `${r.color}28`}`,
                     animation: `roleIn 0.4s cubic-bezier(.16,1,.3,1) ${0.08 + idx * 0.07}s both`,
+                    opacity: quickLoading && !isLogging ? 0.5 : 1,
+                    boxShadow: isLogging ? `0 0 0 2px ${r.color}40` : "none",
                   }}
                   onMouseEnter={e => {
+                    if (quickLoading) return;
                     e.currentTarget.style.background  = `${r.color}15`;
                     e.currentTarget.style.borderColor  = `${r.color}45`;
                     e.currentTarget.style.boxShadow    = `0 8px 28px rgba(0,0,0,0.25),0 0 0 1px ${r.color}20`;
                   }}
                   onMouseLeave={e => {
+                    if (isLogging) return;
                     e.currentTarget.style.background  = `${r.color}0d`;
                     e.currentTarget.style.borderColor  = `${r.color}28`;
                     e.currentTarget.style.boxShadow    = "none";
                   }}
                 >
-                  {/* Role icon */}
+                  {/* Role icon / spinner */}
                   <div
                     className="w-[38px] h-[38px] rounded-xl flex-shrink-0 flex items-center justify-center"
                     style={{ background: `${r.color}15`, border: `1px solid ${r.color}30` }}
                   >
-                    <Icon size={17} style={{ color: r.color }} />
+                    {isLogging ? (
+                      <span style={{
+                        width: 17, height: 17, display: "inline-block", borderRadius: "50%",
+                        border: `2px solid ${r.color}30`, borderTopColor: r.color,
+                        animation: "spin 0.7s linear infinite",
+                      }} />
+                    ) : (
+                      <Icon size={17} style={{ color: r.color }} />
+                    )}
                   </div>
 
                   {/* Role info */}
@@ -474,7 +484,7 @@ export default function Login() {
                           animation: `badgePop 0.4s cubic-bezier(.34,1.56,.64,1) ${0.2 + idx * 0.07}s both`,
                         }}
                       >
-                        {r.badge}
+                        {isLogging ? "Connexion…" : r.badge}
                       </span>
                     </div>
 
@@ -496,9 +506,11 @@ export default function Login() {
                     </div>
                   </div>
 
-                  {/* Email */}
+                  {/* Email + click hint */}
                   <div className="text-right flex-shrink-0">
-                    <p className="m-0 text-[10px] mb-0.5" style={{ color: "rgba(168,191,212,0.4)" }}>Email</p>
+                    <p className="m-0 text-[10px] mb-0.5" style={{ color: "rgba(168,191,212,0.4)" }}>
+                      {isLogging ? "Connexion…" : "Cliquer pour accéder"}
+                    </p>
                     <p
                       className="m-0 text-[10.5px] font-medium"
                       style={{
@@ -531,7 +543,7 @@ export default function Login() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              {PERMISSIONS.map(({ label, roles, icon }) => (
+              {PERMISSIONS.map(({ label, roles, icon: PermIcon }) => (
                 <div
                   key={label}
                   className="perm-matrix-card rounded-xl px-3.5 py-3"
@@ -541,7 +553,7 @@ export default function Login() {
                   }}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs">{icon}</span>
+                    <PermIcon size={12} style={{ color: "rgba(168,191,212,0.5)", flexShrink: 0 }} />
                     <p
                       className="text-[10.5px] font-bold m-0"
                       style={{ color: "rgba(255,255,255,0.85)", letterSpacing: -0.1 }}

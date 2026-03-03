@@ -13,38 +13,37 @@ const ctrl    = require("../controllers/aiController");
 const { loadUser, requireRole } = require("../middleware/roleMiddleware");
 
 // ── Carte 1 : Chatbot Qualité ────────────────────────────────
-// Accessible à tous les rôles authentifiés (vérification interne selon intent)
+// Accessible aux visiteurs (Lecteur) et aux rôles authentifiés
 router.post(
   "/query",
   loadUser,
-  requireRole("Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"),
   ctrl.handleChatQuery
 );
 
 // ── Carte 2 : Classification automatique ─────────────────────
-// Accessible aux rédacteurs et au-dessus
+// Ing. Qualité et Admin uniquement
 router.post(
   "/classify",
   loadUser,
-  requireRole("Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"),
+  requireRole("Admin","Ing. Qualité"),
   ctrl.handleClassification
 );
 
 // ── Carte 3 : Extraction automatique des dates ───────────────
-// Accessible aux rédacteurs et au-dessus
+// Ing. Qualité et Admin uniquement
 router.post(
   "/extract-dates",
   loadUser,
-  requireRole("Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"),
+  requireRole("Admin","Ing. Qualité"),
   ctrl.handleDateExtraction
 );
 
 // ── Carte 4 : Analyse amélioration continue ──────────────────
-// Réservé aux rôles de supervision qualité
+// Admin uniquement
 router.get(
   "/improvements",
   loadUser,
-  requireRole("Admin GED","Responsable Qualité","Ing. Qualité"),
+  requireRole("Admin","Ing. Qualité"),
   ctrl.getImprovements
 );
 
@@ -52,7 +51,7 @@ router.get(
 router.get(
   "/logs",
   loadUser,
-  requireRole("Admin GED","Responsable Qualité"),
+  requireRole("Admin"),
   ctrl.getQueryLogs
 );
 
