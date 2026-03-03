@@ -149,9 +149,18 @@ export function DocumentAccessStatus({ document }) {
  */
 export function DocumentRolePermissionsMatrix({ document }) {
   const ROLES = [
+<<<<<<< HEAD
     'Admin',
     'Ing. Qualité',
     'Reviewer',
+=======
+    'Admin GED',
+    'Responsable Qualité',
+    'Ing. Qualité',
+    'Rédacteur',
+    'Validateur',
+    'Lecteur',
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   ];
 
   // Map UI actions to permission strings in ROLE_PERMISSIONS
@@ -171,9 +180,18 @@ export function DocumentRolePermissionsMatrix({ document }) {
 
   const getRoleColor = (role) => {
     const colors = {
+<<<<<<< HEAD
       'Admin':        '#f87171',
       'Ing. Qualité': '#2dd4bf',
       'Reviewer':     '#4ade80',
+=======
+      'Admin GED': '#f78166',
+      'Responsable Qualité': '#d29922',
+      'Ing. Qualité': '#79c0ff',
+      'Rédacteur': '#79c0ff',
+      'Validateur': '#3fb950',
+      'Lecteur': '#8b949e',
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
     };
     return colors[role] || '#8b949e';
   };
@@ -292,7 +310,11 @@ export function DocumentRolePermissionsMatrix({ document }) {
         color: '#8b949e',
       }}>
         <p style={{ margin: 0 }}>
+<<<<<<< HEAD
           📌 <strong>Légende :</strong> Permissions définies selon le rôle. Admin a accès complet; Ing. Qualité peut créer et soumettre; Reviewer peut valider les documents.
+=======
+          📌 <strong>Légende :</strong> Permissions définies selon le rôle. Admin GED et Responsable Qualité ont accès aux archivages; Validateur peut valider; Lecteur a accès en lecture seule.
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
         </p>
       </div>
     </div>

@@ -85,6 +85,9 @@ function AppRoutes() {
       <Route path="/notifications" element={
         <ProtectedRoute><Notifications /></ProtectedRoute>
       } />
+      <Route path="/ai" element={
+        <ProtectedRoute><AIAssistant /></ProtectedRoute>
+      } />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

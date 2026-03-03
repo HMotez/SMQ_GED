@@ -44,70 +44,110 @@ const INTENT_PATTERNS = [
     regex: /expir|périm|dépass|échéan/i,
     intent: "expired_docs",
     label: "Documents expirés",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents en validation
   {
     regex: /en\s+validation|attente.*valid|valid.*attente/i,
     intent: "validation_pending",
     label: "Documents en validation",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Dernière version d'un document spécifique
   {
     regex: /derni[eè]re\s+version|version.*derni[eè]re|version.*actuelle|actuelle.*version/i,
     intent: "latest_version",
     label: "Dernière version",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents obsolètes
   {
     regex: /obsol[eè]te/i,
     intent: "obsolete_docs",
     label: "Documents obsolètes",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents archivés
   {
     regex: /archiv/i,
     intent: "archived_docs",
     label: "Documents archivés",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents en retard
   {
     regex: /retard|en\s+retard|hors\s+d[eé]lai|d[eé]lai.*d[eé]pass/i,
     intent: "overdue_docs",
     label: "Documents en retard",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents diffusés / actifs
   {
     regex: /diffus[eé]|actif|en\s+vigueur/i,
     intent: "published_docs",
     label: "Documents diffusés",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents en relecture (FIX: just "relecture" — catches "en cours de relecture")
   {
     regex: /relecture/i,
     intent: "in_relecture",
     label: "Documents en relecture",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents en brouillon / rédaction (FIX: drop "en " prefix — catches "en cours de rédaction")
   {
     regex: /brouillon|r[eé]daction/i,
     intent: "draft_docs",
     label: "Documents en cours de rédaction",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Révisions à venir dans les 30 jours
   {
     regex: /r[eé]vision.*(30|proch|bient[oô]t|venir|semaine|mois)|proch.*(r[eé]vision|r[eé]vis)|bient[oô]t.*expir|expir.*(bient[oô]t|proch)/i,
     intent: "upcoming_reviews",
     label: "Révisions imminentes",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Comment valider / procédure de validation (AVANT by_type pour éviter conflit)
   {
@@ -128,7 +168,11 @@ const INTENT_PATTERNS = [
     regex: /processus|process|proc\./i,
     intent: "by_process",
     label: "Documents par processus",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Recherche par type documentaire
   // FIX: removed "EN","IN","AU","PL" — they match common French words ("en","in","au","pl")
@@ -137,28 +181,44 @@ const INTENT_PATTERNS = [
     regex: /\b(PR|MN|RA|FM|SP|FO)\b|proc[eé]dure|instruction|manuel|formulaire|rapport|type\s+documentaire|par\s+type/i,
     intent: "by_type",
     label: "Documents par type",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Statistiques / combien (AFTER specific "par X" patterns)
   {
     regex: /combien|nombre|total|statistique|r[eé]partition/i,
     intent: "statistics",
     label: "Statistiques",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Recherche par responsable / auteur
   {
     regex: /responsable|auteur|r[eé]dig[eé]\s+par|cr[eé][eé]\s+par/i,
     intent: "by_responsible",
     label: "Documents par responsable",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents récents
   {
     regex: /r[eé]cent|nouveau|dernier|nouveaux|cr[eé][eé]?\s+r[eé]cemment/i,
     intent: "recent_docs",
     label: "Documents récents",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité","Reviewer"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité","Rédacteur","Validateur","Lecteur"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Documents validés / approuvés
   // FIX: removed \b word boundaries — JS regex \b fails on accented chars like "é"
@@ -180,7 +240,11 @@ const INTENT_PATTERNS = [
     regex: /jamais.*consult[eé]|non\s+consult[eé]|pas\s+consult[eé]|jamais\s+ouvert/i,
     intent: "never_viewed",
     label: "Jamais consultés",
+<<<<<<< HEAD
     roles: ["Admin","Ing. Qualité"],
+=======
+    roles: ["Admin GED","Responsable Qualité","Ing. Qualité"],
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   },
   // Mes documents (créés par l'utilisateur connecté)
   {
@@ -377,7 +441,11 @@ async function buildSQLForIntent(intent, entities, role) {
       };
 
     case "archived_docs":
+<<<<<<< HEAD
       if (!["Admin","Ing. Qualité"].includes(role)) {
+=======
+      if (!["Admin GED","Responsable Qualité","Ing. Qualité"].includes(role)) {
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
         return { error: "Vous n'avez pas les droits pour consulter les documents archivés.", code: 403 };
       }
       return {
@@ -851,7 +919,11 @@ async function handleChatQuery(req, res) {
   const trimmedQuery = query.trim();
   const entities     = await extractEntities(trimmedQuery);
   entities._userId   = user?.id;  // utilisé par l'intent "my_docs"
+<<<<<<< HEAD
   const role         = user?.role || "Reviewer";
+=======
+  const role         = user?.role || "Lecteur";
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 
   let intentPattern = detectIntent(trimmedQuery);
   // Si recherche libre mais qu'un type DB a été identifié → forcer by_type
@@ -1402,9 +1474,15 @@ async function getImprovements(req, res) {
   const user = req.currentUser;
   const role = user?.role;
 
+<<<<<<< HEAD
   if (!["Admin","Ing. Qualité"].includes(role)) {
     return res.status(403).json({
       error: "Réservé aux Ingénieurs Qualité et Admin.",
+=======
+  if (!["Admin GED","Responsable Qualité","Ing. Qualité"].includes(role)) {
+    return res.status(403).json({
+      error: "Réservé aux Responsables Qualité et Admin GED.",
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
     });
   }
 
@@ -1424,7 +1502,11 @@ async function getQueryLogs(req, res) {
   const user = req.currentUser;
   const role = user?.role;
 
+<<<<<<< HEAD
   if (!["Admin"].includes(role)) {
+=======
+  if (!["Admin GED","Responsable Qualité"].includes(role)) {
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
     return res.status(403).json({ error: "Accès réservé à l'administration." });
   }
 

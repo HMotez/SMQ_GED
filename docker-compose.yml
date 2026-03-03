@@ -1,4 +1,5 @@
 # =============================================================
+<<<<<<< HEAD
 # SMQ_GED — Docker Compose  (ACTIA Engineering Services)
 # =============================================================
 #
@@ -73,6 +74,41 @@
 # ── Accès ─────────────────────────────────────────────────────
 #   Application : http://localhost
 #   API directe : http://localhost:4000/api
+=======
+# SMQ_GED — Docker Compose
+# Sprint 7 — Dockerisation & Déploiement Containerisé
+# Sprint 6 — Module IA (chatbot NLP, classification, extraction dates,
+#             amélioration continue) — aucun service additionnel requis,
+#             l'IA est intégrée dans le backend Express + PostgreSQL.
+# =============================================================
+#
+# Services:
+#   postgres  — PostgreSQL 16 (internal only, not exposed)
+#   backend   — Node.js Express API on port 4000
+#               + Module IA Sprint 6 (/api/ai/*)
+#               + LibreOffice pour conversion de documents
+#   frontend  — React SPA served by Nginx on port 80
+#               + Page /ai — Assistant IA (chatbot, classification, etc.)
+#
+# Sprint 6 — Tables DB créées automatiquement au démarrage :
+#   ai_query_logs — journalisation des requêtes chatbot IA
+#   (voir aussi db/init.sql table 13 et migration 003)
+#
+# Usage (connexion Docker Hub disponible) :
+#   docker-compose up --build        (premier lancement / après modifs)
+#   docker-compose up -d             (mode détaché)
+#   docker-compose down              (arrêt + suppression containers)
+#   docker-compose down -v           (+ suppression volumes — BDD neuve)
+#   docker-compose logs -f backend   (suivre les logs backend)
+#   docker-compose logs -f frontend  (suivre les logs nginx)
+#
+# Usage hors-ligne (Docker Hub inaccessible — TLS timeout) :
+#   docker-compose -f docker-compose.yml -f docker-compose.offline.yml up --build -d
+#   .\scripts\build-offline.ps1      (raccourci PowerShell)
+#
+# Fix permanent (réseau d'entreprise) :
+#   .\scripts\configure-docker-mirror.ps1   (configure mirror.gcr.io)
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 # =============================================================
 
 services:
@@ -106,8 +142,13 @@ services:
     build:
       context:    ./backend
       dockerfile: Dockerfile
+<<<<<<< HEAD
     # Tag versionné — incrémentez pour forcer le rebuild sur les nœuds distants
     image: smq_ged-backend:sprint10
+=======
+    # Tag explicite → permet le rebuild offline via Dockerfile.offline
+    image: smq_ged-backend:latest
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
     container_name: smq_backend
     restart: unless-stopped
     # All variables come from the root .env file (docker-compose default)
@@ -143,8 +184,13 @@ services:
         # proxied by Nginx to backend:4000
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
+<<<<<<< HEAD
     # Tag versionné — incrémentez pour forcer le rebuild sur les nœuds distants
     image: smq_ged-frontend:sprint10
+=======
+    # Tag explicite → permet le rebuild offline via Dockerfile.offline
+    image: smq_ged-frontend:latest
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
     container_name: smq_frontend
     restart: unless-stopped
     ports:

@@ -16,10 +16,15 @@ import {
   LuRefreshCw, LuShieldCheck, LuSearch, LuUsers,
   LuPlus, LuArrowRight, LuLogOut, LuInbox, LuUser, LuZap, LuAward,
   LuHouse, LuLayoutDashboard, LuBell, LuCpu,
+<<<<<<< HEAD
   LuCrown, LuWrench, LuChevronDown, LuShield, LuLock,
 } from "react-icons/lu";
 import { API } from "../config";
 import LoginModal from "../components/LoginModal";
+=======
+} from "react-icons/lu";
+import { API } from "../config";
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
@@ -39,6 +44,7 @@ const ROLE_COLOR = {
   "Reviewer":     "#4ade80",
 };
 
+<<<<<<< HEAD
 /* ── Nav items per role ───────────────────────────────────── */
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
@@ -70,6 +76,15 @@ const QUICK_ROLES = [
   { name:"Admin",        email:"admin@actia.com",    password:"Admin123!", color:"#f87171", Icon: LuCrown         },
   { name:"Ing. Qualité", email:"ing@actia.com",      password:"Ing123!",   color:"#2dd4bf", Icon: LuWrench        },
   { name:"Reviewer",     email:"reviewer@actia.com", password:"Rev123!",   color:"#4ade80", Icon: LuClipboardCheck },
+=======
+const NAV_ITEMS = [
+  { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+  { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
+  { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+  { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+  { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+  { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 ];
 
 /* ── Animation styles ─────────────────────────────────── */
@@ -150,12 +165,21 @@ function AdminNavItem({ to, label, icon, badge = 0 }) {
   );
 }
 
+<<<<<<< HEAD
 /* ── NavRoleSwitcher — dropdown for user/role in top nav ──── */
 function NavRoleSwitcher() {
   const { currentUser, userRole, logout, autoLogin } = useUser();
   const navigate  = useNavigate();
   const [open,     setOpen]     = useState(false);
   const [switching,setSwitching]= useState(null);
+=======
+/* ── Navbar ─────────────────────────────────────────────── */
+function Navbar() {
+  const { currentUser, userRole, logout } = useUser();
+  const navigate = useNavigate();
+  const [scrolled,      setScrolled]      = useState(false);
+  const [pendingCount,  setPendingCount]  = useState(0);
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 
   const roleColor = ROLE_COLOR[userRole] || "#94a3b8";
   const RoleIcon  = QUICK_ROLES.find(r => r.name === userRole)?.Icon || LuUser;
@@ -321,6 +345,19 @@ function Navbar({ onOpenLogin = () => {} }) {
     return () => clearInterval(interval);
   }, [userRole]);
 
+  // Fetch pending user requests count (Admin GED only)
+  useEffect(() => {
+    if (userRole !== "Admin GED") return;
+    const fetchPending = () => {
+      axios.get(`${API}/users/pending-count`)
+        .then(r => setPendingCount(r.data.count))
+        .catch(() => {});
+    };
+    fetchPending();
+    const interval = setInterval(fetchPending, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, [userRole]);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
@@ -365,6 +402,7 @@ function Navbar({ onOpenLogin = () => {} }) {
             />
           </NavLink>
 
+<<<<<<< HEAD
           {/* ── Center: Role-based nav links ── */}
           <div className="flex items-center gap-0.5 flex-1 justify-center">
             {currentUser ? (
@@ -385,6 +423,15 @@ function Navbar({ onOpenLogin = () => {} }) {
                 <NavItem to="/archive"     label="Archivage"              icon={LuArchive}         />
                 <NavItem to="/ai"          label="Assistant IA"           icon={LuCpu}             />
               </>
+=======
+          {/* ── Center: Nav links (grid auto column = exactly as wide as needed) ── */}
+          <div className="flex items-center gap-0.5">
+            {NAV_ITEMS.map((item) => (
+              <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
+            ))}
+            {userRole === "Admin GED" && (
+              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} badge={pendingCount} />
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
             )}
           </div>
 

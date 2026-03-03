@@ -243,7 +243,11 @@ export default function UserManagement() {
                 Gestion des utilisateurs
               </h1>
               <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+<<<<<<< HEAD
                 Activation des comptes · Attribution des rôles — Admin
+=======
+                Activation des comptes · Attribution des rôles — Admin GED
+>>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
               </p>
             </div>
           </div>
