@@ -798,7 +798,19 @@ export default function DocumentList() {
             style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6)" }}>
             <h3 className="m-0 text-white text-base font-bold flex items-center gap-1.5"><LuPlus size={15} /> Nouvelle version — {selected.doc_code}</h3>
             <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
-              Version actuelle : <strong className="text-white">v{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>v{(() => { const c = selected.current_version; if (c==="-") return "A1"; const m = c.match(/^([A-Z])(\d+)$/); if (!m) return "A1"; const n = parseInt(m[2]); return n<9?`${m[1]}${n+1}`:`${String.fromCharCode(m[1].charCodeAt(0)+1)}1`; })()}</strong>
+              Version actuelle : <strong className="text-white">v{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>v{(() => {
+                const c = selected.current_version;
+                const v = selected.validated_version;
+                if (c === "-") return "A";
+                if (/^[A-Z]$/.test(c)) return `${c}1`;
+                const m = c.match(/^([A-Z])(\d+)$/);
+                if (!m) return "A";
+                const [, letter, num] = m;
+                if (v && c === v) return String.fromCharCode(letter.charCodeAt(0) + 1);
+                const n = parseInt(num);
+                if (n < 9) return `${letter}${n + 1}`;
+                return String.fromCharCode(letter.charCodeAt(0) + 1);
+              })()}</strong>
             </p>
             <div>
               <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Nouveau fichier *</label>

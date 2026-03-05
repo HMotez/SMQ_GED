@@ -12,3 +12,6 @@ ALTER TABLE versions  ADD COLUMN IF NOT EXISTS sharepoint_link VARCHAR(500);
 
 -- 3. SharePoint link on documents (tracks current version link)
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS sharepoint_link VARCHAR(500);
+
+-- 4. Track the last validated version (used for letter-cycle versioning)
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS validated_version VARCHAR(10);

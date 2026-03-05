@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker exec smq_db psql -U postgres -d smq_db -c \"ALTER TABLE documents ADD COLUMN IF NOT EXISTS validated_version VARCHAR\\(10\\);\")"
+    ]
+  }
+}

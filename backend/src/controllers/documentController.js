@@ -30,7 +30,7 @@ const ALLOWED_TRANSITIONS = {
   "En relecture":        ["En correction", "En validation"],
   "En correction":       ["Appel en relecture"],
   "En validation":       ["Validé"],
-  "Validé":              ["Diffusé"],
+  "Validé":              ["Diffusé", "En rédaction"],
   "Diffusé":             ["Obsolète"],
   "Obsolète":            ["Archivé"],
   "Archivé":             [],           // état terminal
@@ -400,7 +400,7 @@ const updateDocument = async (req, res) => {
 
     // 1. Récupérer le document avec son statut
     const docResult = await client.query(
-      `SELECT d.*, s.name AS status_name
+      `SELECT d.*, s.name AS status_name, d.validated_version
        FROM documents d
        JOIN status s ON s.id = d.status_id
        WHERE d.id = $1`,
@@ -432,34 +432,55 @@ const updateDocument = async (req, res) => {
       return res.status(400).json({ error: "Un nouveau fichier est requis pour créer une version." });
     }
 
-    // 5. Incrémenter la version  (- → A1 → A2 → … → A9 → B1 → …)
-    const cur = doc.current_version;
+    // 5. Incrémenter la version
+    //    -  → A          (première version : lettre seule)
+    //    A  → A1         (première correction)
+    //    A1 → A2 → A3… (corrections du même cycle)
+    //    A3 (validé) → B (nouveau cycle : lettre suivante)
+    //    B  → B1 → B2…
+    const cur          = doc.current_version;
+    const validatedVer = doc.validated_version; // null if never validated
     let next;
     if (cur === "-") {
-      next = "A1";
+      next = "A";
+    } else if (/^[A-Z]$/.test(cur)) {
+      // Lettre seule (ex: "A") → première correction
+      next = `${cur}1`;
     } else {
       const match = cur.match(/^([A-Z])(\d+)$/);
       if (!match) {
-        next = "A1";
+        next = "A";
       } else {
-        const letter = match[1];
-        const num    = parseInt(match[2], 10);
-        if (num < 9) {
-          next = `${letter}${num + 1}`;
-        } else {
+        const [, letter, num] = match;
+        if (validatedVer && cur === validatedVer) {
+          // Version actuelle = version validée → nouveau cycle (lettre suivante)
           const nextCode = letter.charCodeAt(0) + 1;
           if (nextCode > 90) {
             await client.query("ROLLBACK");
             return res.status(400).json({ error: "Nombre maximum de versions atteint." });
           }
-          next = `${String.fromCharCode(nextCode)}1`;
+          next = String.fromCharCode(nextCode); // ex: B
+        } else {
+          const n = parseInt(num, 10);
+          if (n < 9) {
+            next = `${letter}${n + 1}`;
+          } else {
+            // Overflow A9 → B (nouveau cycle)
+            const nextCode = letter.charCodeAt(0) + 1;
+            if (nextCode > 90) {
+              await client.query("ROLLBACK");
+              return res.status(400).json({ error: "Nombre maximum de versions atteint." });
+            }
+            next = String.fromCharCode(nextCode);
+          }
         }
       }
     }
 
     // 6. Calculer le nouveau doc_code (remplace le suffixe version)
-    //    TR0002_Trame_-   →  TR0002_Trame_vA1
-    //    TR0002_Trame_vA1 →  TR0002_Trame_vA2
+    //    FF0001_Procedure_-  →  FF0001_Procedure_vA
+    //    FF0001_Procedure_vA →  FF0001_Procedure_vA1
+    //    FF0001_Procedure_vA3 (validé) →  FF0001_Procedure_vB
     const baseCode   = doc.doc_code.replace(/_(?:-|v[A-Z]\d*)$/, "");
     const newDocCode = `${baseCode}_v${next}`;
 
@@ -549,7 +570,7 @@ const changeStatus = async (req, res) => {
 
     // 1. Récupérer le document + statut actuel
     const docResult = await client.query(
-      `SELECT d.id, d.doc_code, d.title, s.name AS status_name
+      `SELECT d.id, d.doc_code, d.title, d.current_version, s.name AS status_name
        FROM documents d
        JOIN status s ON s.id = d.status_id
        WHERE d.id = $1`,
@@ -654,6 +675,14 @@ const changeStatus = async (req, res) => {
       "UPDATE documents SET status_id = $1 WHERE id = $2",
       [newStatusId, docId]
     );
+
+    // 6b. Enregistrer la version validée (pour le cycle de versioning A→B)
+    if (newStatus === "Validé") {
+      await client.query(
+        "UPDATE documents SET validated_version = current_version WHERE id = $1",
+        [docId]
+      );
+    }
 
     // 7. Log enrichi de la transition (EF14 — Enhanced audit trail)
     await client.query(
