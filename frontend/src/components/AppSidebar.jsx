@@ -2,7 +2,6 @@
 // components/AppSidebar.jsx — Pure Tailwind CSS · No Emojis
 // All icons verified against installed react-icons/lu version
 // ============================================================
-import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
@@ -25,7 +24,6 @@ import {
   LuCpu,
   LuCrown,
   LuWrench,
-  LuChevronDown,
   LuLogOut,
   LuGitBranch,
 } from "react-icons/lu";
@@ -79,9 +77,9 @@ export const NAV_ITEMS = NAV_ITEMS_BY_ROLE["Admin"];
 
 /* ── Quick-access roles (role switcher) ──────────────────── */
 const QUICK_ROLES = [
-  { name:"Admin",        email:"admin@actia.com",    password:"Admin123!", color:"#f87171", Icon:LuCrown         },
-  { name:"Ing. Qualité", email:"ing@actia.com",      password:"Ing123!",   color:"#2dd4bf", Icon:LuWrench        },
-  { name:"Reviewer",     email:"reviewer@actia.com", password:"Rev123!",   color:"#4ade80", Icon:LuClipboardCheck },
+  { name:"Admin",        email:"admin@test.com",    password:"Admin123!", color:"#f87171", Icon:LuCrown         },
+  { name:"Ing. Qualité", email:"ing@test.com",      password:"Ing123!",   color:"#2dd4bf", Icon:LuWrench        },
+  { name:"Reviewer",     email:"reviewer@test.com", password:"Rev123!",   color:"#4ade80", Icon:LuClipboardCheck },
 ];
 
 const ROLE_STYLE = {
@@ -90,29 +88,15 @@ const ROLE_STYLE = {
   "Reviewer":     { color:"#4ade80", bg:"rgba(74,222,128,0.12)",  border:"rgba(74,222,128,0.25)"  },
 };
 
-/* ── SidebarRoleSwitcher ─────────────────────────────────── */
-function SidebarRoleSwitcher() {
-  const { currentUser, userRole, logout, autoLogin } = useUser();
-  const navigate   = useNavigate();
-  const [open,     setOpen]      = useState(false);
-  const [switching,setSwitching] = useState(null);
+/* ── SidebarUserPanel ────────────────────────────────────── */
+function SidebarUserPanel() {
+  const { currentUser, userRole, logout } = useUser();
+  const navigate = useNavigate();
 
   const s = ROLE_STYLE[userRole] || { color:"#8b949e", bg:"rgba(139,148,158,0.08)", border:"rgba(139,148,158,0.2)" };
   const RoleIcon = QUICK_ROLES.find(r => r.name === userRole)?.Icon || LuShieldCheck;
 
-  const handleSwitch = async (role) => {
-    if (switching || role.name === userRole) { setOpen(false); return; }
-    setSwitching(role.name);
-    try {
-      await autoLogin(role.email, role.password);
-      setOpen(false);
-      navigate("/", { replace: true });
-    } catch { /* ignore */ }
-    finally { setSwitching(null); }
-  };
-
   const handleLogout = async () => {
-    setOpen(false);
     await logout();
     navigate("/", { replace: true });
   };
@@ -122,7 +106,8 @@ function SidebarRoleSwitcher() {
       <div className="mx-2 mb-2">
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border"
           style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:"rgba(168,191,212,0.06)", border:"1.5px solid rgba(168,191,212,0.12)" }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background:"rgba(168,191,212,0.06)", border:"1.5px solid rgba(168,191,212,0.12)" }}>
             <LuShieldCheck size={15} style={{ color:"rgba(168,191,212,0.35)" }} />
           </div>
           <div className="flex-1 text-left">
@@ -135,54 +120,28 @@ function SidebarRoleSwitcher() {
   }
 
   return (
-    <div className="mx-2 mb-1 relative">
-      {/* Current role button */}
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all"
-        style={{ background:open?s.bg:"rgba(255,255,255,0.03)", borderColor:open?s.border:"rgba(255,255,255,0.07)", cursor:"pointer" }}
-        onMouseEnter={e => { if(!open){ e.currentTarget.style.background=s.bg; e.currentTarget.style.borderColor=s.border; }}}
-        onMouseLeave={e => { if(!open){ e.currentTarget.style.background="rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.07)"; }}}>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background:s.bg, border:`1.5px solid ${s.border}` }}>
-          <RoleIcon size={15} style={{ color:s.color }} />
+    <div className="mx-2 mb-1 flex flex-col gap-1">
+      {/* User info — static, not clickable */}
+      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border"
+        style={{ background: s.bg, borderColor: s.border }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
+          <RoleIcon size={15} style={{ color: s.color }} />
         </div>
-        <div className="flex-1 min-w-0 text-left">
+        <div className="flex-1 min-w-0">
           <p className="m-0 text-[12.5px] font-semibold text-white truncate leading-tight">{currentUser.name}</p>
-          <p className="m-0 text-[10.5px] font-bold leading-tight" style={{ color:s.color }}>{userRole || "Rôle inconnu"}</p>
+          <p className="m-0 text-[10.5px] font-bold leading-tight" style={{ color: s.color }}>{userRole || "Rôle inconnu"}</p>
         </div>
-        <LuChevronDown size={12} style={{ color:"rgba(168,191,212,0.4)", transform:open?"rotate(180deg)":"rotate(0)", transition:"transform 0.2s", flexShrink:0 }} />
-      </button>
+      </div>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 rounded-xl border overflow-hidden" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 50px rgba(0,0,0,0.6)", zIndex:200 }}>
-          <p className="text-[9.5px] uppercase tracking-[1.5px] font-bold px-3 pt-2.5 pb-1.5 m-0" style={{ color:"rgba(168,191,212,0.38)" }}>Changer de rôle</p>
-          {QUICK_ROLES.map(role => {
-            const RI       = role.Icon;
-            const isActive = role.name === userRole;
-            return (
-              <div key={role.name}
-                className="flex items-center gap-2.5 px-3 py-2"
-                style={{ background: isActive ? `${role.color}10` : "transparent" }}>
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background:`${role.color}18`, border:`1px solid ${role.color}30` }}>
-                  <RI size={12} style={{ color:role.color }} />
-                </div>
-                <span className="flex-1 text-[12px] font-semibold" style={{ color:isActive?role.color:"rgba(220,235,248,0.8)" }}>{role.name}</span>
-                {isActive && <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background:`${role.color}18`, color:role.color, border:`1px solid ${role.color}30` }}>Actif</span>}
-              </div>
-            );
-          })}
-          <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", marginTop:4 }}>
-            <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2.5 text-[11.5px] font-semibold border-none transition-all"
-              style={{ background:"transparent", color:"rgba(168,191,212,0.45)", cursor:"pointer" }}
-              onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.08)"; e.currentTarget.style.color="#f87171"; }}
-              onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(168,191,212,0.45)"; }}>
-              <LuLogOut size={12} /> Déconnexion
-            </button>
-          </div>
-          {open && <div className="fixed inset-0 z-[-1]" onClick={() => setOpen(false)} />}
-        </div>
-      )}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Logout */}
+      <button onClick={handleLogout}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11.5px] font-semibold border-none transition-all"
+        style={{ background:"transparent", color:"rgba(168,191,212,0.45)", cursor:"pointer", border:"1.5px solid transparent" }}
+        onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.08)"; e.currentTarget.style.color="#f87171"; e.currentTarget.style.borderColor="rgba(248,113,113,0.2)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(168,191,212,0.45)"; e.currentTarget.style.borderColor="transparent"; }}>
+        <LuLogOut size={13} /> Déconnexion
+      </button>
     </div>
   );
 }
@@ -442,7 +401,7 @@ export default function AppSidebar({
 
       {/* Bottom — role switcher always visible */}
       <div className="mt-auto border-t border-white/[0.06] pt-2 flex flex-col gap-2">
-        <SidebarRoleSwitcher />
+        <SidebarUserPanel />
         {bottomContent && <div className="px-2 pb-2">{bottomContent}</div>}
       </div>
     </aside>

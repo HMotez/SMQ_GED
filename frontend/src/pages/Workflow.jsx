@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
-import UserSelector from "../components/UserSelector";
 import AppSidebar from "../components/AppSidebar";
 import {
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2,
@@ -207,7 +206,6 @@ export default function Workflow() {
         <p className="m-0 font-black text-xl text-white">{STATUSES.length}</p>
         <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.4)" }}>étapes du cycle</p>
       </div>
-      <UserSelector />
     </>
   );
 

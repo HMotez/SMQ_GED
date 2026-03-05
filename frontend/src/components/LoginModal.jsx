@@ -12,7 +12,7 @@ import {
 const ROLES = [
   {
     name:     "Admin",
-    email:    "admin@actia.com",
+    email:    "admin@test.com",
     password: "Admin123!",
     badge:    "Administrateur",
     color:    "#f87171",
@@ -21,7 +21,7 @@ const ROLES = [
   },
   {
     name:     "Ing. Qualité",
-    email:    "ing@actia.com",
+    email:    "ing@test.com",
     password: "Ing123!",
     badge:    "Ingénieur",
     color:    "#2dd4bf",
@@ -30,7 +30,7 @@ const ROLES = [
   },
   {
     name:     "Reviewer",
-    email:    "reviewer@actia.com",
+    email:    "reviewer@test.com",
     password: "Rev123!",
     badge:    "Réviseur",
     color:    "#4ade80",

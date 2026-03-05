@@ -4,7 +4,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
-import UserSelector from "../components/UserSelector";
 import AppSidebar from "../components/AppSidebar";
 import {
   LuRefreshCw, LuCircleCheck, LuCircleX, LuClock,
@@ -356,7 +355,6 @@ export default function Validations() {
         <p className="m-0 font-black text-xl" style={{ color:"#60a5fa" }}>{relectureDocs.length} relecture</p>
         <p className="m-0 font-black text-xl" style={{ color:"#a5b4fc" }}>{validationDocs.length} validation</p>
       </div>
-      <UserSelector />
     </>
   );
 

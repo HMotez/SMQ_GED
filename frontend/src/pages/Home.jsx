@@ -67,9 +67,9 @@ const NAV_ITEMS_DEFAULT = NAV_ITEMS_BY_ROLE["Admin"];
 
 /* ── Quick-access roles (for switcher) ───────────────────── */
 const QUICK_ROLES = [
-  { name:"Admin",        email:"admin@actia.com",    password:"Admin123!", color:"#f87171", Icon: LuCrown         },
-  { name:"Ing. Qualité", email:"ing@actia.com",      password:"Ing123!",   color:"#2dd4bf", Icon: LuWrench        },
-  { name:"Reviewer",     email:"reviewer@actia.com", password:"Rev123!",   color:"#4ade80", Icon: LuClipboardCheck },
+  { name:"Admin",        email:"admin@test.com",    password:"Admin123!", color:"#f87171", Icon: LuCrown         },
+  { name:"Ing. Qualité", email:"ing@test.com",      password:"Ing123!",   color:"#2dd4bf", Icon: LuWrench        },
+  { name:"Reviewer",     email:"reviewer@test.com", password:"Rev123!",   color:"#4ade80", Icon: LuClipboardCheck },
 ];
 
 /* ── Animation styles ─────────────────────────────────── */

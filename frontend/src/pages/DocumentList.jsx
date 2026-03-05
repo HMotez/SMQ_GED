@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { NavLink } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import UserSelector from "../components/UserSelector";
 import useRoleCheck from "../hooks/useRoleCheck";
 import { AccessDeniedMessage, DocumentAccessStatus, DocumentRolePermissionsMatrix, RoleInfoBadge } from "../components/RoleBasedAccess";
 import AppSidebar from "../components/AppSidebar";
@@ -390,7 +389,6 @@ export default function DocumentList() {
         <p className="font-black text-2xl m-0" style={{ color:"#4ab83f" }}>{stats.total}</p>
         <p className="text-xs m-0 mt-0.5" style={{ color:"rgba(168,191,212,0.4)" }}>documents</p>
       </div>
-      <UserSelector />
     </>
   );
 

@@ -8,16 +8,14 @@ import CreateDocument from "./pages/CreateDocument";
 import DocumentList   from "./pages/DocumentList";
 import Archive        from "./pages/Archive";
 import Validations    from "./pages/Validations";
-import Dashboard        from "./pages/Dashboard";
-import UserManagement  from "./pages/UserManagement";
-import Notifications   from "./pages/Notifications";
-import AIAssistant     from "./pages/AIAssistant";
-import Workflow        from "./pages/Workflow";
+import Dashboard      from "./pages/Dashboard";
+import UserManagement from "./pages/UserManagement";
+import Notifications  from "./pages/Notifications";
+import AIAssistant    from "./pages/AIAssistant";
+import Workflow       from "./pages/Workflow";
 
-// ── Garde toutes les routes protégées ────────────────────────
 function ProtectedRoute({ children }) {
   const { isAuthenticated, authLoading } = useUser();
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background:"#0a1420" }}>
@@ -29,15 +27,10 @@ function ProtectedRoute({ children }) {
       </div>
     );
   }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
 
-// ── Garde Admin uniquement ────────────────────────────────────
 function AdminRoute({ children }) {
   const { isAuthenticated, authLoading, userRole } = useUser();
   if (authLoading) return null;
@@ -46,7 +39,6 @@ function AdminRoute({ children }) {
   return children;
 }
 
-// ── Routes publiques (login seulement) ───────────────────────
 function PublicRoute({ children }) {
   const { isAuthenticated, authLoading } = useUser();
   if (authLoading) return null;
@@ -58,38 +50,22 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login" element={
-        <PublicRoute><Login /></PublicRoute>
-      } />
-      <Route path="/register" element={
-        <PublicRoute><Register /></PublicRoute>
-      } />
+      <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
-      {/* Home — public, shows landing when not authenticated */}
-      <Route path="/" element={<Home />} />
-      <Route path="/create" element={
-        <ProtectedRoute><CreateDocument /></ProtectedRoute>
-      } />
-      {/* Lecteur-accessible — read-only for unauthenticated visitors */}
-      <Route path="/list" element={<DocumentList />} />
-      <Route path="/archive" element={<Archive />} />
+      {/* Visitor-accessible */}
+      <Route path="/"           element={<Home />} />
+      <Route path="/list"       element={<DocumentList />} />
+      <Route path="/archive"    element={<Archive />} />
       <Route path="/validations" element={<Validations />} />
-      <Route path="/workflow" element={<Workflow />} />
-      <Route path="/ai" element={<AIAssistant />} />
+      <Route path="/workflow"   element={<Workflow />} />
 
-      {/* Auth-required routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute><Dashboard /></ProtectedRoute>
-      } />
-      <Route path="/admin/users" element={
-        <AdminRoute><UserManagement /></AdminRoute>
-      } />
-      <Route path="/notifications" element={
-        <ProtectedRoute><Notifications /></ProtectedRoute>
-      } />
-      <Route path="/ai" element={
-        <ProtectedRoute><AIAssistant /></ProtectedRoute>
-      } />
+      {/* Auth-required */}
+      <Route path="/create"        element={<ProtectedRoute><CreateDocument /></ProtectedRoute>} />
+      <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+      <Route path="/ai"            element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
+      <Route path="/admin/users"   element={<AdminRoute><UserManagement /></AdminRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -100,12 +76,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <UserProvider>
-      <Toaster
-        position="bottom-right"
-        theme="dark"
-        richColors
-        toastOptions={{ duration: 4000 }}
-      />
+      <Toaster position="bottom-right" theme="dark" richColors toastOptions={{ duration:4000 }} />
       <AppRoutes />
     </UserProvider>
   );

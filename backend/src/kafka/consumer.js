@@ -21,8 +21,14 @@ const TOPICS = [
 /**
  * Get email addresses of all active users with any of the given role names.
  */
+function withAdminEmail(emails) {
+  const admin = process.env.ADMIN_NOTIFY_EMAIL;
+  if (admin && !emails.includes(admin)) return [...emails, admin];
+  return emails;
+}
+
 async function emailsByRoles(roles) {
-  if (!roles || !roles.length) return [];
+  if (!roles || !roles.length) return withAdminEmail([]);
   const placeholders = roles.map((_, i) => `$${i + 1}`).join(",");
   const result = await pool.query(
     `SELECT u.email FROM users u
@@ -30,17 +36,14 @@ async function emailsByRoles(roles) {
      WHERE r.name IN (${placeholders}) AND u.is_active = true AND u.email IS NOT NULL`,
     roles
   );
-  return result.rows.map((r) => r.email);
+  return withAdminEmail(result.rows.map((r) => r.email));
 }
 
-/**
- * Get email addresses of all active users.
- */
 async function allActiveEmails() {
   const result = await pool.query(
     `SELECT email FROM users WHERE is_active = true AND email IS NOT NULL`
   );
-  return result.rows.map((r) => r.email);
+  return withAdminEmail(result.rows.map((r) => r.email));
 }
 
 // ── Topic handlers ────────────────────────────────────────────

@@ -4,7 +4,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
-import UserSelector from "../components/UserSelector";
 import AppSidebar from "../components/AppSidebar";
 import {
   LuRefreshCw, LuZap, LuShare2, LuTriangleAlert, LuCircleCheckBig,
@@ -360,7 +359,6 @@ export default function Archive() {
           <span className="font-bold text-base" style={{ color:accent }}>{value}</span>
         </div>
       ))}
-      <UserSelector />
     </>
   );
 

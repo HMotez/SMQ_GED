@@ -226,7 +226,7 @@ export default function Register() {
                   <LuMail size={13} /> Email professionnel
                 </label>
                 <input type="email" value={form.email} onChange={e => set("email", e.target.value)}
-                  placeholder="prenom.nom@actia.com" autoComplete="email" disabled={loading} className={inputCls(!!form.email)} />
+                  placeholder="prenom.nom@test.com" autoComplete="email" disabled={loading} className={inputCls(!!form.email)} />
               </div>
 
               {/* Password */}

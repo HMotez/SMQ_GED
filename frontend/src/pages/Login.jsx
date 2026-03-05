@@ -15,7 +15,7 @@ import {
 const ROLES = [
   {
     name:     "Admin",
-    email:    "admin@actia.com",
+    email:    "admin@test.com",
     password: "Admin123!",
     badge:    "Administrateur",
     color:    "#f87171",
@@ -24,7 +24,7 @@ const ROLES = [
   },
   {
     name:     "Ing. Qualité",
-    email:    "ing@actia.com",
+    email:    "ing@test.com",
     password: "Ing123!",
     badge:    "Ingénieur",
     color:    "#2dd4bf",
@@ -33,7 +33,7 @@ const ROLES = [
   },
   {
     name:     "Reviewer",
-    email:    "reviewer@actia.com",
+    email:    "reviewer@test.com",
     password: "Rev123!",
     badge:    "Réviseur",
     color:    "#4ade80",
@@ -137,7 +137,6 @@ export default function Login() {
   const [email,        setEmail]        = useState("");
   const [password,     setPassword]     = useState("");
   const [loading,      setLoading]      = useState(false);
-  const [quickLoading, setQuickLoading] = useState(null); // role name being quick-logged
   const [error,        setError]        = useState("");
   const [showPass,     setShowPass]     = useState(false);
 
@@ -153,19 +152,6 @@ export default function Login() {
       setError(err.response?.data?.error || err.message || "Identifiants incorrects. Veuillez réessayer.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async (role) => {
-    setError("");
-    setQuickLoading(role.name);
-    try {
-      await login(role.email, role.password);
-      navigate("/", { replace: true });
-    } catch (err) {
-      setError(err.response?.data?.error || err.message || "Connexion rapide échouée.");
-    } finally {
-      setQuickLoading(null);
     }
   };
 
@@ -287,7 +273,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="votre@actia.com"
+                  placeholder="votre@test.com"
                   autoComplete="email"
                   disabled={loading}
                   className="dark-input"
@@ -419,51 +405,26 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Role cards — click to quick-login */}
+          {/* Role cards — info only */}
           <div className="flex flex-col gap-2">
             {ROLES.map((r, idx) => {
               const Icon = r.icon;
-              const isLogging = quickLoading === r.name;
               return (
                 <div
                   key={r.email}
-                  className="role-card flex items-center gap-3 rounded-[13px] px-4 py-3"
-                  onClick={() => !quickLoading && !loading && handleQuickLogin(r)}
-                  title={`Se connecter en tant que ${r.name}`}
+                  className="flex items-center gap-3 rounded-[13px] px-4 py-3"
                   style={{
                     background: `${r.color}0d`,
-                    border: `1px solid ${isLogging ? r.color : `${r.color}28`}`,
+                    border: `1px solid ${r.color}28`,
                     animation: `roleIn 0.4s cubic-bezier(.16,1,.3,1) ${0.08 + idx * 0.07}s both`,
-                    opacity: quickLoading && !isLogging ? 0.5 : 1,
-                    boxShadow: isLogging ? `0 0 0 2px ${r.color}40` : "none",
-                  }}
-                  onMouseEnter={e => {
-                    if (quickLoading) return;
-                    e.currentTarget.style.background  = `${r.color}15`;
-                    e.currentTarget.style.borderColor  = `${r.color}45`;
-                    e.currentTarget.style.boxShadow    = `0 8px 28px rgba(0,0,0,0.25),0 0 0 1px ${r.color}20`;
-                  }}
-                  onMouseLeave={e => {
-                    if (isLogging) return;
-                    e.currentTarget.style.background  = `${r.color}0d`;
-                    e.currentTarget.style.borderColor  = `${r.color}28`;
-                    e.currentTarget.style.boxShadow    = "none";
                   }}
                 >
-                  {/* Role icon / spinner */}
+                  {/* Role icon */}
                   <div
                     className="w-[38px] h-[38px] rounded-xl flex-shrink-0 flex items-center justify-center"
                     style={{ background: `${r.color}15`, border: `1px solid ${r.color}30` }}
                   >
-                    {isLogging ? (
-                      <span style={{
-                        width: 17, height: 17, display: "inline-block", borderRadius: "50%",
-                        border: `2px solid ${r.color}30`, borderTopColor: r.color,
-                        animation: "spin 0.7s linear infinite",
-                      }} />
-                    ) : (
-                      <Icon size={17} style={{ color: r.color }} />
-                    )}
+                    <Icon size={17} style={{ color: r.color }} />
                   </div>
 
                   {/* Role info */}
@@ -484,7 +445,7 @@ export default function Login() {
                           animation: `badgePop 0.4s cubic-bezier(.34,1.56,.64,1) ${0.2 + idx * 0.07}s both`,
                         }}
                       >
-                        {isLogging ? "Connexion…" : r.badge}
+                        {r.badge}
                       </span>
                     </div>
 
@@ -506,11 +467,8 @@ export default function Login() {
                     </div>
                   </div>
 
-                  {/* Email + click hint */}
+                  {/* Email only */}
                   <div className="text-right flex-shrink-0">
-                    <p className="m-0 text-[10px] mb-0.5" style={{ color: "rgba(168,191,212,0.4)" }}>
-                      {isLogging ? "Connexion…" : "Cliquer pour accéder"}
-                    </p>
                     <p
                       className="m-0 text-[10.5px] font-medium"
                       style={{
