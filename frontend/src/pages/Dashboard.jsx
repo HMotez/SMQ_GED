@@ -491,7 +491,7 @@ export default function Dashboard() {
                 <span className="text-sm font-semibold" style={{ color:"#4ab83f" }}>Tableau de bord — Supervision</span>
               </div>
               <h1 className="m-0 text-3xl font-black text-white" style={{ letterSpacing:-1 }}>Supervision Documentaire</h1>
-              <p className="m-0 mt-2 text-base" style={{ color:"rgba(168,191,212,0.7)" }}>Vue temps réel · Conformité ISO 9001:2015</p>
+              <p className="m-0 mt-2 text-base" style={{ color:"rgba(168,191,212,0.7)" }}>Vue temps réel · Conformité ISO 9001</p>
             </div>
             <button onClick={() => { setLoadingOv(true); setLoadingSt(true); fetchData(); }} disabled={loadingOv||loadingSt}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:bg-white/20"
@@ -636,7 +636,7 @@ export default function Dashboard() {
         <footer className="border-t px-8 py-5" style={{ background:"rgba(10,20,32,0.6)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.07)" }}>
           <div className="max-w-[1280px] mx-auto flex justify-between items-center flex-wrap gap-2.5">
             <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>
-              © 2025 <span className="font-semibold" style={{ color:"#4ab83f" }}>ACTIA Engineering Services</span> — GED · ISO 9001:2015
+              © 2025 <span className="font-semibold" style={{ color:"#4ab83f" }}>ACTIA Engineering Services</span> — GED · ISO 9001
             </p>
             <div className="flex gap-5">
               {[{to:"/list",label:"Documents"},{to:"/validations",label:"Validations"},{to:"/archive",label:"Archivage"}].map(({to,label}) => (

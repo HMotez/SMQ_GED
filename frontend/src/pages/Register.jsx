@@ -389,7 +389,7 @@ export default function Register() {
           <div className="rounded-2xl px-5 py-3.5 flex items-center gap-3" style={{ background:"rgba(74,184,63,0.06)", border:"1px solid rgba(74,184,63,0.18)" }}>
             <LuShieldCheck size={16} className="flex-shrink-0" style={{ color:"#4ab83f" }} />
             <p className="text-[11px] m-0 flex items-center gap-1" style={{ color:"rgba(168,191,212,0.55)" }}>
-              <LuLock size={13} /> Authentification sécurisée JWT · ISO 9001:2015 · Données chiffrées
+              <LuLock size={13} /> Authentification sécurisée JWT · ISO 9001 · Données chiffrées
             </p>
           </div>
         </div>

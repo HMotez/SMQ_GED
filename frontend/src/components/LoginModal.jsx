@@ -51,9 +51,13 @@ const STYLES = `
   }
   .modal-role-card:hover  { transform: translateY(-3px) scale(1.01); }
   .modal-role-card:active { transform: scale(0.98); }
+  .modal-role-card-info {
+    transition: border-color 0.15s, background 0.15s;
+    cursor: default;
+  }
 `;
 
-export default function LoginModal({ onClose, message = "Connectez-vous pour accéder à cette fonctionnalité." }) {
+export default function LoginModal({ onClose, message = "Connectez-vous pour accéder à cette fonctionnalité.", infoOnly = false }) {
   const navigate       = useNavigate();
   const { login }      = useUser();
   const [quickLoading, setQuickLoading] = useState(null);
@@ -135,30 +139,30 @@ export default function LoginModal({ onClose, message = "Connectez-vous pour acc
         {/* ── Role cards ─────────────────────────────── */}
         <div className="flex flex-col gap-2.5 mb-5">
           {ROLES.map((r) => {
-            const Icon     = r.icon;
+            const Icon      = r.icon;
             const isLogging = quickLoading === r.name;
             return (
               <div
                 key={r.name}
-                className="modal-role-card flex items-center gap-3 rounded-xl px-4 py-3"
-                onClick={() => !quickLoading && handleQuickLogin(r)}
+                className={infoOnly ? "modal-role-card-info flex items-center gap-3 rounded-xl px-4 py-3" : "modal-role-card flex items-center gap-3 rounded-xl px-4 py-3"}
+                onClick={infoOnly ? undefined : () => !quickLoading && handleQuickLogin(r)}
                 style={{
-                  background:  `${r.color}0a`,
-                  border:      `1px solid ${isLogging ? r.color : `${r.color}22`}`,
-                  opacity:     quickLoading && !isLogging ? 0.45 : 1,
-                  boxShadow:   isLogging ? `0 0 0 2px ${r.color}35` : "none",
+                  background: `${r.color}0a`,
+                  border:     `1px solid ${isLogging ? r.color : `${r.color}22`}`,
+                  opacity:    !infoOnly && quickLoading && !isLogging ? 0.45 : 1,
+                  boxShadow:  isLogging ? `0 0 0 2px ${r.color}35` : "none",
                 }}
-                onMouseEnter={e => {
+                onMouseEnter={infoOnly ? undefined : e => {
                   if (quickLoading) return;
-                  e.currentTarget.style.background   = `${r.color}12`;
-                  e.currentTarget.style.borderColor  = `${r.color}40`;
-                  e.currentTarget.style.boxShadow    = `0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px ${r.color}18`;
+                  e.currentTarget.style.background  = `${r.color}12`;
+                  e.currentTarget.style.borderColor = `${r.color}40`;
+                  e.currentTarget.style.boxShadow   = `0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px ${r.color}18`;
                 }}
-                onMouseLeave={e => {
+                onMouseLeave={infoOnly ? undefined : e => {
                   if (isLogging) return;
-                  e.currentTarget.style.background   = `${r.color}0a`;
-                  e.currentTarget.style.borderColor  = `${r.color}22`;
-                  e.currentTarget.style.boxShadow    = "none";
+                  e.currentTarget.style.background  = `${r.color}0a`;
+                  e.currentTarget.style.borderColor = `${r.color}22`;
+                  e.currentTarget.style.boxShadow   = "none";
                 }}
               >
                 {/* Icon */}
@@ -188,14 +192,16 @@ export default function LoginModal({ onClose, message = "Connectez-vous pour acc
                   </div>
                 </div>
 
-                {/* Arrow */}
-                <span className="flex-shrink-0" style={{ color: isLogging ? r.color : "rgba(168,191,212,0.3)" }}>
-                  {isLogging ? (
-                    <span className="text-[11px] font-semibold">…</span>
-                  ) : (
-                    <LuArrowRight size={14} />
-                  )}
-                </span>
+                {/* Arrow — hidden in info-only mode */}
+                {!infoOnly && (
+                  <span className="flex-shrink-0" style={{ color: isLogging ? r.color : "rgba(168,191,212,0.3)" }}>
+                    {isLogging ? (
+                      <span className="text-[11px] font-semibold">…</span>
+                    ) : (
+                      <LuArrowRight size={14} />
+                    )}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -229,7 +235,7 @@ export default function LoginModal({ onClose, message = "Connectez-vous pour acc
           <div className="flex items-center justify-center gap-1.5">
             <LuShieldCheck size={11} style={{ color:"rgba(74,184,63,0.45)" }} />
             <p className="m-0 text-[10.5px]" style={{ color:"rgba(168,191,212,0.28)" }}>
-              Authentification JWT sécurisée · ISO 9001:2015
+              Authentification JWT sécurisée · ISO 9001
             </p>
           </div>
         </div>

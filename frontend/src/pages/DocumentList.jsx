@@ -19,30 +19,34 @@ import { toast } from "sonner";
 
 import { API, BACKEND } from "../config";
 
-const ISO_LIFECYCLE   = ["Brouillon","En rédaction","En relecture","En validation","Validé","Diffusé","Obsolète","Archivé"];
+const ISO_LIFECYCLE   = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Diffusé","Obsolète","Archivé"];
 const LOCKED_STATUSES = ["Validé","Diffusé","Obsolète","Archivé"];
 const TERMINAL_STATUS = "Archivé";
 const ALLOWED_TRANSITIONS = {
-  "Brouillon":     ["En rédaction"],
-  "En rédaction":  ["En relecture"],
-  "En relecture":  ["En validation"],
-  "En validation": ["Validé"],
-  "Validé":        ["Diffusé"],
-  "Diffusé":       ["Obsolète"],
-  "Obsolète":      ["Archivé"],
-  "Archivé":       [],
+  "Brouillon":           ["En rédaction"],
+  "En rédaction":        ["Appel en relecture"],
+  "Appel en relecture":  ["En relecture"],
+  "En relecture":        ["En correction", "En validation"],
+  "En correction":       ["Appel en relecture"],
+  "En validation":       ["Validé"],
+  "Validé":              ["Diffusé"],
+  "Diffusé":             ["Obsolète"],
+  "Obsolète":            ["Archivé"],
+  "Archivé":             [],
 };
 
 /* Dark-adapted status config */
 const STATUS_CFG = {
-  "Brouillon":     { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil          },
-  "En rédaction":  { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon:LuPenLine         },
-  "En relecture":  { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon:LuEye             },
-  "En validation": { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon:LuClipboardCheck  },
-  "Validé":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon:LuCircleCheckBig  },
-  "Diffusé":       { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2          },
-  "Obsolète":      { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert   },
-  "Archivé":       { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive         },
+  "Brouillon":           { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil          },
+  "En rédaction":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon:LuPenLine         },
+  "Appel en relecture":  { bg:"rgba(255,247,205,0.08)", text:"#fbbf24", border:"rgba(252,211,77,0.2)",   Icon:LuEye             },
+  "En relecture":        { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon:LuEye             },
+  "En correction":       { bg:"rgba(255,237,213,0.08)", text:"#f97316", border:"rgba(253,186,116,0.2)",  Icon:LuPenLine         },
+  "En validation":       { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon:LuClipboardCheck  },
+  "Validé":              { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon:LuCircleCheckBig  },
+  "Diffusé":             { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2          },
+  "Obsolète":            { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert   },
+  "Archivé":             { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive         },
 };
 const sCfg = (n) => STATUS_CFG[n] || { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuCircleHelp };
 
@@ -228,6 +232,7 @@ export default function DocumentList() {
   const [newVerOpen,     setNewVerOpen]      = useState(false);
   const [downloadOpen,   setDownloadOpen]    = useState(false);
   const [summary,        setSummary]         = useState("");
+  const [spLink,         setSpLink]          = useState("");
   const [newFile,        setNewFile]         = useState(null);
   const [submitting,     setSubmitting]      = useState(false);
   const [statusChanging, setStatusChanging]  = useState(false);
@@ -288,7 +293,7 @@ export default function DocumentList() {
     setSelected(doc); setVersions([]);
     try { const res = await axios.get(`${API}/documents/${doc.id}/versions`); setVersions(res.data); } catch { /* silent */ }
   };
-  const closeDoc = () => { setSelected(null); setVersions([]); setNewVerOpen(false); setSummary(""); setNewFile(null); };
+  const closeDoc = () => { setSelected(null); setVersions([]); setNewVerOpen(false); setSummary(""); setSpLink(""); setNewFile(null); };
 
   const handleStatusChange = async (nextStatus) => {
     if (!selected) return; setStatusChanging(true);
@@ -318,12 +323,15 @@ export default function DocumentList() {
     if (!summary.trim()) return void toast.warning("Le résumé des changements est obligatoire.");
     setSubmitting(true);
     try {
-      const form = new FormData(); form.append("file", newFile); form.append("change_summary", summary.trim());
+      const form = new FormData();
+      form.append("file", newFile);
+      form.append("change_summary", summary.trim());
+      if (spLink.trim()) form.append("sharepoint_link", spLink.trim());
       const res = await axios.put(`${API}/documents/${selected.id}`, form, { headers:{ "Content-Type":"multipart/form-data" } });
       const [docRes, verRes] = await Promise.all([axios.get(`${API}/documents/${selected.id}`), axios.get(`${API}/documents/${selected.id}/versions`)]);
       setSelected(docRes.data); setVersions(verRes.data);
       setDocuments(prev => prev.map(d => d.id===selected.id ? { ...d, current_version:res.data.version } : d));
-      setNewVerOpen(false); setSummary(""); setNewFile(null); toast.success(res.data.message);
+      setNewVerOpen(false); setSummary(""); setSpLink(""); setNewFile(null); toast.success(res.data.message);
     } catch (err) { toast.error(err.response?.data?.error || "Erreur lors de la création de la version."); }
     finally { setSubmitting(false); }
   };
@@ -746,6 +754,13 @@ export default function DocumentList() {
                         </div>
                       </div>
                       {v.change_summary && <p className="m-0 mt-1 text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>{v.change_summary}</p>}
+                      {v.sharepoint_link && (
+                        <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium"
+                          style={{ color:"#60a5fa" }}>
+                          <LuShare2 size={11} /> SharePoint
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -785,7 +800,7 @@ export default function DocumentList() {
             style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6)" }}>
             <h3 className="m-0 text-white text-base font-bold flex items-center gap-1.5"><LuPlus size={15} /> Nouvelle version — {selected.doc_code}</h3>
             <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
-              Version actuelle : <strong className="text-white">v{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>v{selected.current_version==="-"?"A":String.fromCharCode(selected.current_version.charCodeAt(0)+1)}</strong>
+              Version actuelle : <strong className="text-white">v{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>v{(() => { const c = selected.current_version; if (c==="-") return "A1"; const m = c.match(/^([A-Z])(\d+)$/); if (!m) return "A1"; const n = parseInt(m[2]); return n<9?`${m[1]}${n+1}`:`${String.fromCharCode(m[1].charCodeAt(0)+1)}1`; })()}</strong>
             </p>
             <div>
               <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Nouveau fichier *</label>
@@ -796,6 +811,12 @@ export default function DocumentList() {
               <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Résumé des changements *</label>
               <textarea required rows={3} value={summary} onChange={e => setSummary(e.target.value)} placeholder="Décrivez les modifications…"
                 className="w-full px-3 py-1.5 rounded-lg border text-sm resize-y outline-none"
+                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Lien SharePoint <span style={{ color:"rgba(168,191,212,0.35)", fontWeight:400 }}>(optionnel)</span></label>
+              <input type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
+                className="w-full px-3 py-1.5 rounded-lg border text-sm outline-none"
                 style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>
             <div className="flex gap-2">

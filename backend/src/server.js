@@ -202,4 +202,22 @@ app.listen(process.env.PORT || 4000, async () => {
   // ── Module IA Sprint 6 — tables IA ─────────────────────────
   const { ensureAITables } = require("./controllers/aiController");
   await ensureAITables();
+
+  // ── Kafka + Email Sprint 8 ────────────────────────────────
+  if (process.env.KAFKA_BROKER) {
+    const { connectProducer, disconnectProducer } = require("./kafka/producer");
+    const { connectConsumer } = require("./kafka/consumer");
+    const { verifyEmailTransporter } = require("./services/emailService");
+    await verifyEmailTransporter();
+    try {
+      await connectProducer();
+      await connectConsumer();
+    } catch (err) {
+      console.error("[Kafka] Init failed — continuing without Kafka:", err.message);
+    }
+    process.on("SIGTERM", async () => {
+      await disconnectProducer();
+      process.exit(0);
+    });
+  }
 });

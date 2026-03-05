@@ -765,20 +765,12 @@ const TABS = [
 ];
 
 export default function AIAssistant() {
-<<<<<<< HEAD
   const { currentUser, token } = useUser();
-=======
-  const { user, token } = useUser();
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
   const [activeTab, setActiveTab] = useState("chatbot");
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(145deg,#0a1420 0%,#0d1f2d 50%,#0b1929 100%)" }}>
-<<<<<<< HEAD
       <AppSidebar user={currentUser} />
-=======
-      <AppSidebar user={user} />
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 
       <main style={{ flex: 1, overflowY: "auto", padding: "28px 32px", maxWidth: 1100 }}>
 

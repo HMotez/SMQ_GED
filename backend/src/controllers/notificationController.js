@@ -1,10 +1,31 @@
 // ============================================================
-// controllers/notificationController.js — Sprint 5
-// Notifications Intelligentes : table, triggers, CRON, API
+// controllers/notificationController.js — Sprint 5 + Sprint 8
+// Notifications Intelligentes : table, triggers, CRON, API + Kafka
 // ============================================================
 "use strict";
 
 const pool = require("../db");
+const { publishEvent } = require("../kafka/producer");
+const emailService = require("../services/emailService");
+
+// ── Helper: get emails of active users by role ─────────────────
+async function emailsByRoles(roles) {
+  if (!roles || !roles.length) return [];
+  const placeholders = roles.map((_, i) => `$${i + 1}`).join(",");
+  const result = await pool.query(
+    `SELECT u.email FROM users u
+     JOIN roles r ON r.id = u.role_id
+     WHERE r.name IN (${placeholders}) AND u.is_active = true AND u.email IS NOT NULL`,
+    roles
+  );
+  return result.rows.map(r => r.email);
+}
+async function allActiveEmails() {
+  const result = await pool.query(
+    `SELECT email FROM users WHERE is_active = true AND email IS NOT NULL`
+  );
+  return result.rows.map(r => r.email);
+}
 
 // ─────────────────────────────────────────────────────────────
 // ensureNotificationsTable — crée la table au démarrage
@@ -84,7 +105,21 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
     : "le système";
 
   try {
-    if (toStatus === "En validation") {
+    if (toStatus === "Appel en relecture") {
+      await createNotificationsForRoles(
+        ["Admin", "Ing. Qualité", "Reviewer"],
+        docId,
+        `[${docCode}] "${docTitle}" — appel en relecture émis par ${actor}. Une nouvelle version est disponible pour relecture.`,
+        "validation"
+      );
+    } else if (toStatus === "En correction") {
+      await createNotificationsForRoles(
+        ["Admin", "Ing. Qualité"],
+        docId,
+        `[${docCode}] "${docTitle}" — corrections requises suite à la relecture par ${actor}. Veuillez soumettre une nouvelle version.`,
+        "validation"
+      );
+    } else if (toStatus === "En validation") {
       await createNotificationsForRoles(
         ["Admin", "Ing. Qualité", "Reviewer"],
         docId,
@@ -125,6 +160,35 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
       );
     }
     console.log(`[Notif] Trigger statut ${fromStatus} → ${toStatus} (doc ${docCode})`);
+
+    // ── Direct email (no Kafka dependency) ───────────────────
+    try {
+      let emailTo = [];
+      if (toStatus === "En validation" || toStatus === "Appel en relecture") {
+        emailTo = await emailsByRoles(["Admin", "Ing. Qualité", "Reviewer"]);
+      } else if (toStatus === "En correction") {
+        emailTo = await emailsByRoles(["Admin", "Ing. Qualité"]);
+      } else if (toStatus === "Validé" || toStatus === "Obsolète") {
+        emailTo = await emailsByRoles(["Admin"]);
+      } else if (toStatus === "Diffusé") {
+        emailTo = await allActiveEmails();
+      } else {
+        emailTo = await emailsByRoles(["Admin"]);
+      }
+      if (emailTo.length > 0) {
+        await emailService.sendStatusChangedEmail({
+          to: emailTo,
+          docCode, title: docTitle, fromStatus, toStatus, actor,
+        });
+      }
+    } catch (emailErr) {
+      console.error("[Notif] Direct email error:", emailErr.message);
+    }
+
+    // Fire-and-forget Kafka event
+    publishEvent("smq.document.status_changed", {
+      docId, docCode, title: docTitle, fromStatus, toStatus, actor,
+    }, docId).catch(() => {});
   } catch (err) {
     console.error("[Notif] triggerStatusNotification error:", err.message);
   }
@@ -151,6 +215,24 @@ async function triggerNewVersionNotification(docId, docCode, docTitle, version, 
       "version"
     );
     console.log(`[Notif] Trigger nouvelle version v${version} → ${docCode}`);
+
+    // ── Direct email ─────────────────────────────────────────
+    try {
+      const emailTo = await emailsByRoles(["Admin", "Ing. Qualité"]);
+      if (emailTo.length > 0) {
+        await emailService.sendNewVersionEmail({
+          to: emailTo,
+          docCode, title: docTitle, version, uploadedBy: actorName,
+        });
+      }
+    } catch (emailErr) {
+      console.error("[Notif] Direct email (version) error:", emailErr.message);
+    }
+
+    // Fire-and-forget Kafka event
+    publishEvent("smq.document.version_added", {
+      docId, docCode, title: docTitle, version, uploadedBy: actorName,
+    }, docId).catch(() => {});
   } catch (err) {
     console.error("[Notif] triggerNewVersionNotification error:", err.message);
   }
@@ -191,6 +273,12 @@ async function runExpirationNotificationsJob() {
         "expiration"
       );
     }
+    for (const doc of expired.rows) {
+      publishEvent("smq.document.expiring", {
+        docCode: doc.doc_code, title: doc.title,
+        reviewDate: fmtDate(doc.next_review_date),
+      }, doc.id).catch(() => {});
+    }
     if (expired.rows.length) {
       console.log(`[Notif-CRON] ${expired.rows.length} document(s) expirés.`);
     }
@@ -211,6 +299,12 @@ async function runExpirationNotificationsJob() {
         `[${doc.doc_code}] "${doc.title}" (${doc.status_name}) — aucune modification depuis plus de 6 mois (dernière activité : ${fmtDate(doc.updated_at)}). Archivage recommandé.`,
         "inactivite"
       );
+    }
+    for (const doc of inactive.rows) {
+      publishEvent("smq.document.inactive", {
+        docCode: doc.doc_code, title: doc.title,
+        lastModified: fmtDate(doc.updated_at),
+      }, doc.id).catch(() => {});
     }
     if (inactive.rows.length) {
       console.log(`[Notif-CRON] ${inactive.rows.length} document(s) inactifs.`);

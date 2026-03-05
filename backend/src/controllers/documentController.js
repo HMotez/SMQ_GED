@@ -17,20 +17,23 @@ const {
   triggerStatusNotification,
   triggerNewVersionNotification,
 } = require("./notificationController");
+const { publishEvent } = require("../kafka/producer");
 
 // ─────────────────────────────────────────────────────────────
 // Machine à états ISO — Carte 4
 // Transitions autorisées : aucun saut de statut illégal
 // ─────────────────────────────────────────────────────────────
 const ALLOWED_TRANSITIONS = {
-  "Brouillon":     ["En rédaction"],
-  "En rédaction":  ["En relecture"],
-  "En relecture":  ["En validation"],
-  "En validation": ["Validé"],
-  "Validé":        ["Diffusé"],
-  "Diffusé":       ["Obsolète"],
-  "Obsolète":      ["Archivé"],
-  "Archivé":       [],           // état terminal
+  "Brouillon":           ["En rédaction"],
+  "En rédaction":        ["Appel en relecture"],
+  "Appel en relecture":  ["En relecture"],
+  "En relecture":        ["En correction", "En validation"],
+  "En correction":       ["Appel en relecture"],
+  "En validation":       ["Validé"],
+  "Validé":              ["Diffusé"],
+  "Diffusé":             ["Obsolète"],
+  "Obsolète":            ["Archivé"],
+  "Archivé":             [],           // état terminal
 };
 
 // Statuts qui bloquent toute modification de fichier/version
@@ -109,7 +112,7 @@ const createDocument = async (req, res) => {
       return res.status(400).json({ error: "Origin invalide : INTERNE ou EXTERNE." });
     }
 
-    // 5. Générer doc_code AES — format {TYPE}{NNNN} ex: PR0002 (séquence globale par type)
+    // 5. Générer doc_code AES — format {TYPE}{NNNN}_{TitleSlug}_{version} ex: FF0001_Procedure_-
     const seqResult = await client.query(
       `INSERT INTO doc_code_sequences (type_code, process_code, last_number)
        VALUES ($1, 'GLOBAL', 1)
@@ -118,10 +121,16 @@ const createDocument = async (req, res) => {
        RETURNING last_number`,
       [typeCode.toUpperCase()]
     );
-    const num     = seqResult.rows[0].last_number;
-    const docCode = `${typeCode.toUpperCase()}${String(num).padStart(4, "0")}`;
+    const num       = seqResult.rows[0].last_number;
+    const titleSlug = title
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .trim().split(/\s+/)[0]
+      .replace(/^(.)/, c => c.toUpperCase());
+    // doc_code inclut la version initiale "-"
+    const docCode = `${typeCode.toUpperCase()}${String(num).padStart(4, "0")}_${titleSlug}_-`;
 
-    // 5b. Renommer fichier avec doc_code — EF02 (visible dans nom fichier)
+    // 5b. Renommer fichier avec doc_code — EF02
     const fileExt     = path.extname(req.file.originalname);
     const newFileName = `${docCode}${fileExt}`;
     const newFilePath = path.join(path.dirname(req.file.path), newFileName);
@@ -186,6 +195,14 @@ const createDocument = async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    // Fire-and-forget Kafka event (after COMMIT — never blocks the response)
+    publishEvent("smq.document.created", {
+      docId:     document.id,
+      docCode:   document.doc_code,
+      title:     document.title,
+      createdBy: req.currentUser?.name || undefined,
+    }, document.id).catch(() => {});
 
     return res.status(201).json({
       message: "Document créé avec succès",
@@ -379,7 +396,7 @@ const updateDocument = async (req, res) => {
     await client.query("BEGIN");
 
     const docId = parseInt(req.params.id, 10);
-    const { change_summary, userId } = req.body;
+    const { change_summary, userId, sharepoint_link } = req.body;
 
     // 1. Récupérer le document avec son statut
     const docResult = await client.query(
@@ -415,42 +432,61 @@ const updateDocument = async (req, res) => {
       return res.status(400).json({ error: "Un nouveau fichier est requis pour créer une version." });
     }
 
-    // 5. Incrémenter la version  (- → A → B → … → Z)
+    // 5. Incrémenter la version  (- → A1 → A2 → … → A9 → B1 → …)
     const cur = doc.current_version;
     let next;
     if (cur === "-") {
-      next = "A";
+      next = "A1";
     } else {
-      const code = cur.charCodeAt(0);
-      if (code >= 90) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({ error: "Nombre maximum de versions atteint (Z)." });
+      const match = cur.match(/^([A-Z])(\d+)$/);
+      if (!match) {
+        next = "A1";
+      } else {
+        const letter = match[1];
+        const num    = parseInt(match[2], 10);
+        if (num < 9) {
+          next = `${letter}${num + 1}`;
+        } else {
+          const nextCode = letter.charCodeAt(0) + 1;
+          if (nextCode > 90) {
+            await client.query("ROLLBACK");
+            return res.status(400).json({ error: "Nombre maximum de versions atteint." });
+          }
+          next = `${String.fromCharCode(nextCode)}1`;
+        }
       }
-      next = String.fromCharCode(code + 1);
     }
 
-    // 6. Renommer le fichier uploadé  (docCode-vX.ext)
+    // 6. Calculer le nouveau doc_code (remplace le suffixe version)
+    //    TR0002_Trame_-   →  TR0002_Trame_vA1
+    //    TR0002_Trame_vA1 →  TR0002_Trame_vA2
+    const baseCode   = doc.doc_code.replace(/_(?:-|v[A-Z]\d*)$/, "");
+    const newDocCode = `${baseCode}_v${next}`;
+
+    // 6b. Renommer le fichier uploadé avec le nouveau doc_code
     const fileExt     = path.extname(req.file.originalname);
-    const newFileName = `${doc.doc_code}-v${next}${fileExt}`;
+    const newFileName = `${newDocCode}${fileExt}`;
     const newFilePath = path.join(path.dirname(req.file.path), newFileName);
     fs.renameSync(req.file.path, newFilePath);
 
-    // 7. Mettre à jour le document (version courante + fichier)
+    // 7. Mettre à jour le document (doc_code, version courante + fichier + sharepoint_link)
     await client.query(
       `UPDATE documents
-       SET current_version = $1,
-           file_path = $2, file_name = $3,
-           file_size = $4, mime_type = $5
-       WHERE id = $6`,
-      [next, newFilePath, newFileName, req.file.size, req.file.mimetype, docId]
+       SET doc_code = $1,
+           current_version = $2,
+           file_path = $3, file_name = $4,
+           file_size = $5, mime_type = $6,
+           sharepoint_link = $7
+       WHERE id = $8`,
+      [newDocCode, next, newFilePath, newFileName, req.file.size, req.file.mimetype, sharepoint_link || null, docId]
     );
 
     // 8. Insérer la nouvelle version dans la table versions
     await client.query(
       `INSERT INTO versions
-         (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [docId, next, newFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim()]
+         (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary, sharepoint_link)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [docId, next, newFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim(), sharepoint_link || null]
     );
 
     // 9a. Log VERSION_SUPERSEDED pour la version remplacée — EF11 (Archivage si version remplacée)

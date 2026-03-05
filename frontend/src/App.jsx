@@ -12,6 +12,7 @@ import Dashboard        from "./pages/Dashboard";
 import UserManagement  from "./pages/UserManagement";
 import Notifications   from "./pages/Notifications";
 import AIAssistant     from "./pages/AIAssistant";
+import Workflow        from "./pages/Workflow";
 
 // ── Garde toutes les routes protégées ────────────────────────
 function ProtectedRoute({ children }) {
@@ -73,6 +74,7 @@ function AppRoutes() {
       <Route path="/list" element={<DocumentList />} />
       <Route path="/archive" element={<Archive />} />
       <Route path="/validations" element={<Validations />} />
+      <Route path="/workflow" element={<Workflow />} />
       <Route path="/ai" element={<AIAssistant />} />
 
       {/* Auth-required routes */}

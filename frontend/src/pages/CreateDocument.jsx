@@ -222,7 +222,15 @@ export default function CreateDocument() {
   const getProcessId = () => selectedL3 || selectedL2 || "";
 
   const getPreview = () => {
-    return form.typeCode ? `${form.typeCode.toUpperCase()}XXXX` : null;
+    if (!form.typeCode) return null;
+    const slug = form.title
+      ? (form.title
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9\s]/g, "")
+          .trim().split(/\s+/)[0]
+          .replace(/^(.)/, c => c.toUpperCase()) || "Doc")
+      : "Doc";
+    return `${form.typeCode.toUpperCase()}XXXX_${slug}_-`;
   };
 
   const handleSubmit = async e => {

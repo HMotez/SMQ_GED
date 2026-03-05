@@ -98,13 +98,13 @@ const ensureValidationsTable = async () => {
 const createValidation = async (req, res) => {
   const { docId } = req.params;
   const {
-    validatorId,
     comment  = "",
     decision = "EN_ATTENTE",
     signatureData = null,  // pour audit trail
   } = req.body;
 
-  // 1. Validation de validatorId (OBLIGATOIRE)
+  // 1. validatorId = utilisateur connecté (fallback sur le corps)
+  const validatorId = req.body.validatorId || req.currentUser?.id;
   if (!validatorId) {
     return res.status(400).json({
       error: "validatorId est obligatoire. La validation ISO requiert un validateur nommé.",
@@ -393,7 +393,7 @@ const getValidationStats = async (req, res) => {
         `SELECT COUNT(*)::int AS count
          FROM documents d
          JOIN status s ON s.id = d.status_id
-         WHERE s.name = 'En validation'`
+         WHERE s.name IN ('En relecture', 'En validation')`
       ),
     ]);
 
@@ -437,7 +437,10 @@ const getPendingDocuments = async (req, res) => {
          last_v.comment          AS last_comment,
 
          -- Nombre total de validations pour ce doc
-         (SELECT COUNT(*) FROM validations WHERE document_id = d.id)::int AS validation_count
+         (SELECT COUNT(*) FROM validations WHERE document_id = d.id)::int AS validation_count,
+
+         -- SharePoint link de la dernière version
+         last_ver.sharepoint_link
 
        FROM documents d
        JOIN status             s  ON s.id  = d.status_id
@@ -454,7 +457,16 @@ const getPendingDocuments = async (req, res) => {
          LIMIT 1
        ) last_v ON TRUE
 
-       WHERE s.name = 'En validation'
+       -- Latest version SharePoint link
+       LEFT JOIN LATERAL (
+         SELECT sharepoint_link
+         FROM versions
+         WHERE document_id = d.id
+         ORDER BY created_at DESC
+         LIMIT 1
+       ) last_ver ON TRUE
+
+       WHERE s.name IN ('En relecture', 'En validation')
        ORDER BY d.doc_code`,
     );
     return res.json(result.rows);

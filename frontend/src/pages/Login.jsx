@@ -381,7 +381,7 @@ export default function Login() {
           >
             <LuShieldCheck size={15} className="flex-shrink-0" style={{ color: "#4ab83f" }} />
             <p className="m-0 text-[11px] tracking-[0.1px]" style={{ color: "rgba(168,191,212,0.55)" }}>
-              Authentification sécurisée JWT · ISO 9001:2015
+              Authentification sécurisée JWT · ISO 9001
             </p>
           </div>
         </div>

@@ -23,11 +23,11 @@ import {
   LuUsers,
   LuBell,
   LuCpu,
-<<<<<<< HEAD
   LuCrown,
   LuWrench,
   LuChevronDown,
   LuLogOut,
+  LuGitBranch,
 } from "react-icons/lu";
 
 // Navigation items per role — each role sees only relevant items
@@ -39,6 +39,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
     { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",   end: false },
     { icon: LuArchive,         label: "Archivage",        href: "/archive",       end: false },
+    { icon: LuGitBranch,       label: "Workflow",         href: "/workflow",      end: false },
     { icon: LuBell,            label: "Notifications",    href: "/notifications", end: false },
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
@@ -47,6 +48,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFilePlus,        label: "Nouveau document", href: "/create",        end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
+    { icon: LuGitBranch,       label: "Workflow",         href: "/workflow",      end: false },
     { icon: LuBell,            label: "Notifications",    href: "/notifications", end: false },
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
@@ -54,6 +56,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuHouse,           label: "Accueil",          href: "/",              end: true  },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
     { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",   end: false },
+    { icon: LuGitBranch,       label: "Workflow",         href: "/workflow",      end: false },
     { icon: LuBell,            label: "Notifications",    href: "/notifications", end: false },
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
@@ -66,19 +69,6 @@ const NAV_ITEMS_VISITOR = [
   { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
   { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
   { icon: LuCpu,            label: "Assistant IA",     href: "/ai",          end: false },
-=======
-} from "react-icons/lu";
-
-export const NAV_ITEMS = [
-  { icon: LuHouse,           label: "Accueil",          href: "/",               end: true  },
-  { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",      end: false },
-  { icon: LuFilePlus,        label: "Nouveau document", href: "/create",         end: false },
-  { icon: LuFileText,        label: "Liste documents",  href: "/list",           end: false },
-  { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",    end: false },
-  { icon: LuArchive,         label: "Archivage",        href: "/archive",        end: false },
-  { icon: LuBell,            label: "Notifications",    href: "/notifications",  end: false },
-  { icon: LuCpu,             label: "Assistant IA",     href: "/ai",             end: false },
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 ];
 
 // Fallback for unknown/old roles — show full Admin nav

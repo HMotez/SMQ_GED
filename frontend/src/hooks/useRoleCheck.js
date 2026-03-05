@@ -154,14 +154,16 @@ export function useRoleCheck() {
    */
   const canTransitionStatus = useCallback((fromStatus, toStatus) => {
     const ALLOWED = {
-      "Brouillon": ["En rédaction"],
-      "En rédaction": ["En relecture"],
-      "En relecture": ["En validation"],
-      "En validation": ["Validé"],
-      "Validé": ["Diffusé"],
-      "Diffusé": ["Obsolète"],
-      "Obsolète": ["Archivé"],
-      "Archivé": [],
+      "Brouillon":           ["En rédaction"],
+      "En rédaction":        ["Appel en relecture"],
+      "Appel en relecture":  ["En relecture"],
+      "En relecture":        ["En correction", "En validation"],
+      "En correction":       ["Appel en relecture"],
+      "En validation":       ["Validé"],
+      "Validé":              ["Diffusé"],
+      "Diffusé":             ["Obsolète"],
+      "Obsolète":            ["Archivé"],
+      "Archivé":             [],
     };
 
     const allowed = ALLOWED[fromStatus] || [];
@@ -170,13 +172,16 @@ export function useRoleCheck() {
     // Check role permissions for this specific transition
     const key = `${fromStatus}→${toStatus}`;
     const TRANSITION_ROLE_MAP = {
-      "Brouillon→En rédaction":     ["Admin", "Ing. Qualité"],
-      "En rédaction→En relecture":  ["Admin", "Ing. Qualité"],
-      "En relecture→En validation": ["Admin", "Ing. Qualité"],
-      "En validation→Validé":       ["Admin", "Reviewer"],
-      "Validé→Diffusé":             ["Admin"],
-      "Diffusé→Obsolète":           ["Admin"],
-      "Obsolète→Archivé":           ["Admin"],
+      "Brouillon→En rédaction":                   ["Admin", "Ing. Qualité"],
+      "En rédaction→Appel en relecture":           ["Admin", "Ing. Qualité"],
+      "Appel en relecture→En relecture":           ["Admin", "Ing. Qualité", "Reviewer"],
+      "En relecture→En correction":                ["Admin", "Reviewer"],
+      "En relecture→En validation":                ["Admin", "Reviewer"],
+      "En correction→Appel en relecture":          ["Admin", "Ing. Qualité"],
+      "En validation→Validé":                      ["Admin", "Reviewer"],
+      "Validé→Diffusé":                            ["Admin"],
+      "Diffusé→Obsolète":                          ["Admin"],
+      "Obsolète→Archivé":                          ["Admin"],
     };
 
     const allowedRoles = TRANSITION_ROLE_MAP[key] || [];
@@ -190,14 +195,16 @@ export function useRoleCheck() {
    */
   const getAllowedTransitions = useCallback((currentStatus) => {
     const ALLOWED = {
-      "Brouillon": ["En rédaction"],
-      "En rédaction": ["En relecture"],
-      "En relecture": ["En validation"],
-      "En validation": ["Validé"],
-      "Validé": ["Diffusé"],
-      "Diffusé": ["Obsolète"],
-      "Obsolète": ["Archivé"],
-      "Archivé": [],
+      "Brouillon":           ["En rédaction"],
+      "En rédaction":        ["Appel en relecture"],
+      "Appel en relecture":  ["En relecture"],
+      "En relecture":        ["En correction", "En validation"],
+      "En correction":       ["Appel en relecture"],
+      "En validation":       ["Validé"],
+      "Validé":              ["Diffusé"],
+      "Diffusé":             ["Obsolète"],
+      "Obsolète":            ["Archivé"],
+      "Archivé":             [],
     };
 
     const possibilities = ALLOWED[currentStatus] || [];

@@ -1,23 +1,7 @@
 # =============================================================
-<<<<<<< HEAD
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
 # Node.js 20 + Express + LibreOffice + Module IA Gemini
-# =============================================================
-# Stage 1 : Installation des dépendances production uniquement
-# Stage 2 : Image finale avec LibreOffice pour la conversion
-#           de documents + Module IA (NLP, Gemini, classification)
-=======
-# SMQ_GED — Backend Dockerfile
-# Sprint 7 — Dockerisation & Déploiement Containerisé
-# Sprint 6 — Module IA embarqué (NLP, classification, extraction
-#             dates, amélioration continue) — aucune dépendance
-#             système supplémentaire requise.
-# =============================================================
-# Stage 1: Install production dependencies only
-# Stage 2: Final image with LibreOffice for document conversion
-#          + Module IA Sprint 6 (pur Node.js + PostgreSQL)
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
-# =============================================================
+# ======================================================# =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────
 FROM node:20-slim AS deps

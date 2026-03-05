@@ -31,13 +31,16 @@ const ROLE_PERMISSIONS = {
 
 // Transitions autorisées par rôle (EF06 — Ing. Qualité ≠ Reviewer)
 const TRANSITION_ROLE_MAP = {
-  "Brouillon→En rédaction":     ["Admin", "Ing. Qualité"],
-  "En rédaction→En relecture":  ["Admin", "Ing. Qualité"],
-  "En relecture→En validation": ["Admin", "Ing. Qualité"],
-  "En validation→Validé":       ["Admin", "Reviewer"],
-  "Validé→Diffusé":             ["Admin"],
-  "Diffusé→Obsolète":           ["Admin"],
-  "Obsolète→Archivé":           ["Admin"],
+  "Brouillon→En rédaction":                ["Admin", "Ing. Qualité"],
+  "En rédaction→Appel en relecture":        ["Admin", "Ing. Qualité"],
+  "Appel en relecture→En relecture":        ["Admin", "Ing. Qualité", "Reviewer"],
+  "En relecture→En correction":             ["Admin", "Reviewer"],
+  "En relecture→En validation":             ["Admin", "Reviewer"],
+  "En correction→Appel en relecture":       ["Admin", "Ing. Qualité"],
+  "En validation→Validé":                   ["Admin", "Reviewer"],
+  "Validé→Diffusé":                         ["Admin"],
+  "Diffusé→Obsolète":                       ["Admin"],
+  "Obsolète→Archivé":                       ["Admin"],
 };
 
 // ─────────────────────────────────────────────────────────────

@@ -16,15 +16,10 @@ import {
   LuRefreshCw, LuShieldCheck, LuSearch, LuUsers,
   LuPlus, LuArrowRight, LuLogOut, LuInbox, LuUser, LuZap, LuAward,
   LuHouse, LuLayoutDashboard, LuBell, LuCpu,
-<<<<<<< HEAD
   LuCrown, LuWrench, LuChevronDown, LuShield, LuLock,
 } from "react-icons/lu";
 import { API } from "../config";
 import LoginModal from "../components/LoginModal";
-=======
-} from "react-icons/lu";
-import { API } from "../config";
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
@@ -44,7 +39,6 @@ const ROLE_COLOR = {
   "Reviewer":     "#4ade80",
 };
 
-<<<<<<< HEAD
 /* ── Nav items per role ───────────────────────────────────── */
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
@@ -76,15 +70,6 @@ const QUICK_ROLES = [
   { name:"Admin",        email:"admin@actia.com",    password:"Admin123!", color:"#f87171", Icon: LuCrown         },
   { name:"Ing. Qualité", email:"ing@actia.com",      password:"Ing123!",   color:"#2dd4bf", Icon: LuWrench        },
   { name:"Reviewer",     email:"reviewer@actia.com", password:"Rev123!",   color:"#4ade80", Icon: LuClipboardCheck },
-=======
-const NAV_ITEMS = [
-  { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
-  { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
-  { to: "/list",        label: "Documents",                  Icon: LuFileText        },
-  { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
-  { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
-  { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 ];
 
 /* ── Animation styles ─────────────────────────────────── */
@@ -165,21 +150,12 @@ function AdminNavItem({ to, label, icon, badge = 0 }) {
   );
 }
 
-<<<<<<< HEAD
 /* ── NavRoleSwitcher — dropdown for user/role in top nav ──── */
 function NavRoleSwitcher() {
   const { currentUser, userRole, logout, autoLogin } = useUser();
   const navigate  = useNavigate();
   const [open,     setOpen]     = useState(false);
   const [switching,setSwitching]= useState(null);
-=======
-/* ── Navbar ─────────────────────────────────────────────── */
-function Navbar() {
-  const { currentUser, userRole, logout } = useUser();
-  const navigate = useNavigate();
-  const [scrolled,      setScrolled]      = useState(false);
-  const [pendingCount,  setPendingCount]  = useState(0);
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
 
   const roleColor = ROLE_COLOR[userRole] || "#94a3b8";
   const RoleIcon  = QUICK_ROLES.find(r => r.name === userRole)?.Icon || LuUser;
@@ -402,7 +378,6 @@ function Navbar({ onOpenLogin = () => {} }) {
             />
           </NavLink>
 
-<<<<<<< HEAD
           {/* ── Center: Role-based nav links ── */}
           <div className="flex items-center gap-0.5 flex-1 justify-center">
             {currentUser ? (
@@ -423,15 +398,6 @@ function Navbar({ onOpenLogin = () => {} }) {
                 <NavItem to="/archive"     label="Archivage"              icon={LuArchive}         />
                 <NavItem to="/ai"          label="Assistant IA"           icon={LuCpu}             />
               </>
-=======
-          {/* ── Center: Nav links (grid auto column = exactly as wide as needed) ── */}
-          <div className="flex items-center gap-0.5">
-            {NAV_ITEMS.map((item) => (
-              <NavItem key={item.to} to={item.to} label={item.label} end={item.end} icon={item.Icon} />
-            ))}
-            {userRole === "Admin GED" && (
-              <AdminNavItem to="/admin/users" label="Utilisateurs" icon={LuUsers} badge={pendingCount} />
->>>>>>> 1d2558f60f462409d3243bfe5057dd02adcf7580
             )}
           </div>
 
@@ -679,7 +645,7 @@ export default function Home() {
                 }}
               />
               <span className="text-sm font-semibold" style={{ color: "#4ab83f" }}>
-                ISO 9001:2015 — Système en ligne
+                ISO 9001 — Système en ligne
               </span>
             </div>
 
@@ -943,7 +909,7 @@ export default function Home() {
                   className="m-0 text-3xl font-black text-white"
                   style={{ letterSpacing: -1, textShadow: "0 4px 20px rgba(74,184,63,0.3)" }}
                 >
-                  Conformité ISO 9001:2015
+                  Conformité ISO 9001
                 </h2>
                 <div className="w-1 h-8 rounded-full" style={{ background: "linear-gradient(to bottom, rgba(74,184,63,0.2), #4ab83f)" }} />
               </div>
@@ -997,7 +963,7 @@ export default function Home() {
               <div className="flex items-center justify-center gap-3 mb-1">
                 <div className="w-1 h-8 rounded-full" style={{ background:"linear-gradient(to bottom,#4ab83f,rgba(74,184,63,0.2))" }} />
                 <h2 className="m-0 text-3xl font-black text-white" style={{ letterSpacing:-1, textShadow:"0 4px 20px rgba(74,184,63,0.3)" }}>
-                  Conformité ISO 9001:2015
+                  Conformité ISO 9001
                 </h2>
                 <div className="w-1 h-8 rounded-full" style={{ background:"linear-gradient(to bottom,rgba(74,184,63,0.2),#4ab83f)" }} />
               </div>
@@ -1173,7 +1139,7 @@ export default function Home() {
             <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.45)" }}>
               © 2025{" "}
               <span className="font-semibold" style={{ color: "#4ab83f" }}>ACTIA Engineering Services</span>
-              {" "}— GED · ISO 9001:2015
+              {" "}— GED · ISO 9001
             </p>
             <div className="flex gap-5">
               {[{ to:"/list", label:"Documents" }, { to:"/validations", label:"Validations" }, { to:"/archive", label:"Archivage" }].map(({ to, label }) => (
@@ -1198,6 +1164,7 @@ export default function Home() {
         <LoginModal
           onClose={() => setShowLoginModal(false)}
           message="Connectez-vous pour accéder à cette fonctionnalité."
+          infoOnly
         />
       )}
     </div>
