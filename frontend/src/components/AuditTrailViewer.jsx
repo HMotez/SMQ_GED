@@ -176,7 +176,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           Audit Trail & Traçabilité ISO
-          <span className="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded">EF14</span>
+          
         </h2>
         <p className="text-gray-600 mt-1">
           Historique complet à des fins légales et de conformité ISO
@@ -330,7 +330,7 @@ const AuditTrailViewer = ({ documentId, userId }) => {
       {/* ISO Compliance Notice */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
         <strong>Conformité ISO:</strong> Cet audit trail est immuable et conservé à des fins
-        légales. Les suppressions et modifications sont interdites (EF14 - Traçabilité).
+        légales. Les suppressions et modifications sont interdites .
       </div>
     </div>
   );

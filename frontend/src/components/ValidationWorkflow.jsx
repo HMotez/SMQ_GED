@@ -151,7 +151,7 @@ const ValidationWorkflow = ({ documentId, documentResponsible, userId, userRole 
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             🔍 Validations ISO
-            <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">EF05+EF14</span>
+            
           </h2>
           <p className="text-gray-600 mt-1">
             Workflow de validation ISO avec traçabilité légale

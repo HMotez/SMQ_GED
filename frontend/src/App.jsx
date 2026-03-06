@@ -62,9 +62,9 @@ function AppRoutes() {
 
       {/* Auth-required */}
       <Route path="/create"        element={<ProtectedRoute><CreateDocument /></ProtectedRoute>} />
-      <Route path="/dashboard"     element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard"     element={<Dashboard />} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-      <Route path="/ai"            element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
+      <Route path="/ai"            element={<AIAssistant />} />
       <Route path="/admin/users"   element={<AdminRoute><UserManagement /></AdminRoute>} />
 
       {/* Fallback */}

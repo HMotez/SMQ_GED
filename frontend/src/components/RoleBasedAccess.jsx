@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { LuCheck, LuX } from 'react-icons/lu';
+import { LuCheck, LuX, LuShieldCheck, LuInfo } from 'react-icons/lu';
 import { useUser, ROLE_PERMISSIONS } from '../context/UserContext';
 import useRoleCheck from '../hooks/useRoleCheck';
 
@@ -188,7 +188,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
       overflowX: 'auto',
     }}>
       <p style={{ color: '#8b949e', fontSize: 12, margin: '0 0 12px', textTransform: 'uppercase', fontWeight: 600 }}>
-        📋 Matrice de permissions par rôle
+        <LuShieldCheck size={13} style={{marginRight:6,verticalAlign:"middle"}} /> Matrice de permissions par rôle
       </p>
 
       <div style={{ display: 'block', overflowX: 'auto' }}>
@@ -292,7 +292,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
         color: '#8b949e',
       }}>
         <p style={{ margin: 0 }}>
-          📌 <strong>Légende :</strong> Permissions définies selon le rôle. Admin a accès complet; Ing. Qualité peut créer et soumettre; Reviewer peut valider les documents.
+          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Permissions définies selon le rôle. Admin a accès complet; Ing. Qualité peut créer et soumettre; Reviewer peut valider les documents.
         </p>
       </div>
     </div>
@@ -408,7 +408,7 @@ export function RolePermissionTag({ action }) {
     validate: {
       label: 'Valider document',
       roles: ['Admin', 'Reviewer'],
-      note: '⚠️ Reviewer ≠ Rédacteur (ISO EF05)',
+      note: '⚠️ Reviewer ≠ Rédacteur',
     },
     change_status: {
       label: 'Changer le statut',

@@ -230,7 +230,7 @@ export default function Workflow() {
                 Workflow ISO 9001
               </h1>
               <p className="m-0 text-xs mt-0.5" style={{ color: "rgba(168,191,212,0.48)" }}>
-                EF06 — Cycle de vie documentaire · Rôles & transitions autorisées
+                Cycle de vie documentaire · Rôles & transitions autorisées
               </p>
             </div>
           </div>
@@ -312,10 +312,6 @@ export default function Workflow() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-white text-sm">{s.name}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono"
-                                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(168,191,212,0.5)" }}>
-                                {s.iso}
-                              </span>
                               {!loading && <StatBadge count={count} color={s.color} />}
                             </div>
                             <p className="m-0 text-xs mt-0.5" style={{ color: "rgba(168,191,212,0.5)" }}>{s.description}</p>

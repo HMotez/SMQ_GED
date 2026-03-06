@@ -53,12 +53,16 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
+    { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+    { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Reviewer": [
     { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
+    { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
+    { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
 };
@@ -392,11 +396,12 @@ function Navbar({ onOpenLogin = () => {} }) {
             ) : (
               /* Visitor — Lecteur-level nav (read-only access) */
               <>
-                <NavItem to="/"            label="Accueil"       end={true} icon={LuHouse}          />
-                <NavItem to="/list"        label="Documents"              icon={LuFileText}        />
-                <NavItem to="/validations" label="Validations"            icon={LuClipboardCheck}  />
-                <NavItem to="/archive"     label="Archivage"              icon={LuArchive}         />
-                <NavItem to="/ai"          label="Assistant IA"           icon={LuCpu}             />
+                <NavItem to="/"            label="Accueil"         end={true} icon={LuHouse}          />
+                <NavItem to="/dashboard"   label="Tableau de bord"           icon={LuLayoutDashboard} />
+                <NavItem to="/list"        label="Documents"                 icon={LuFileText}        />
+                <NavItem to="/validations" label="Validations"               icon={LuClipboardCheck}  />
+                <NavItem to="/archive"     label="Archivage"                 icon={LuArchive}         />
+                <NavItem to="/ai"          label="Assistant IA"              icon={LuCpu}             />
               </>
             )}
           </div>
@@ -781,7 +786,7 @@ export default function Home() {
                   { to:"/create",      icon:LuFilePlus,       label:"Nouveau document",    desc:"Créer et soumettre un document",     accent:"#4ab83f"  },
                   { to:"/list",        icon:LuList,           label:"Liste des documents",  desc:"Rechercher, filtrer, gérer",         accent:"#60a5fa"  },
                   { to:"/validations", icon:LuClipboardCheck, label:"Workflow validation",   desc:"Approuver ou rejeter des documents",  accent:"#a5b4fc"  },
-                  { to:"/archive",     icon:LuArchive,        label:"Archivage ISO",        desc:"Gestion du cycle de vie EF11",       accent:"#94a3b8"  },
+                  { to:"/archive",     icon:LuArchive,        label:"Archivage ISO",        desc:"Gestion du cycle de vie",       accent:"#94a3b8"  },
                 ].map(({ to, icon, label, desc, accent }) => {
                   const ActionIcon = icon;
                   const iconEl = <ActionIcon size={16} style={{ color: accent }} />;
@@ -917,9 +922,9 @@ export default function Home() {
             </div>
             <div className="flex gap-4 flex-wrap">
               <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
-              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation EF05/EF06"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
-              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité EF14"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
-              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage EF11"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
               <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
               <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="3 rôles : Admin, Ing. Qualité, Reviewer. Contrôle d'accès granulaire par rôle et permission." />
             </div>
@@ -973,9 +978,9 @@ export default function Home() {
             </div>
             <div className="flex gap-4 flex-wrap">
               <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
-              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation EF05/EF06"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
-              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité EF14"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
-              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage EF11"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
               <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
               <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="3 rôles : Admin, Ing. Qualité, Reviewer. Contrôle d'accès granulaire par rôle et permission." />
             </div>
@@ -1019,7 +1024,7 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Workflow de Validation</p>
-                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Suivre les cycles de validation EF05/EF06 — lecture seule</p>
+                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Suivre les cycles de validation — lecture seule</p>
                 </div>
                 <LuArrowRight size={16} style={{ color:"rgba(165,180,252,0.5)", flexShrink:0 }} />
               </NavLink>
@@ -1033,7 +1038,7 @@ export default function Home() {
                   <LuArchive size={22} style={{ color:"#fbbf24" }} />
                 </div>
                 <div className="flex-1">
-                  <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Archivage EF11</p>
+                  <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Archivage</p>
                   <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Consulter les documents archivés — lecture seule</p>
                 </div>
                 <LuArrowRight size={16} style={{ color:"rgba(251,191,36,0.5)", flexShrink:0 }} />

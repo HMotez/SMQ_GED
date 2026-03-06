@@ -378,7 +378,7 @@ export default function CreateDocument() {
             <div>
               <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Nouveau Document</h1>
               <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
-                Création · EF01 · EF02 · EF03 · EF04
+                Création
               </p>
             </div>
           </div>

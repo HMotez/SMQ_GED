@@ -25,7 +25,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
   // Check prerequisites
   const canDistribute = document?.status_name === 'Validé';
   const distributionError = !canDistribute
-    ? `ISO EF14: La distribution nécessite le statut "Validé". Statut actuel: "${document?.status_name || '—'}"`
+    ? `ISO: La distribution nécessite le statut "Validé". Statut actuel: "${document?.status_name || '—'}"`
     : null;
 
   const handleSubmit = async (e) => {
@@ -105,7 +105,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
           marginBottom: 12,
         }}>
           <p style={{ color: '#3fb950', margin: 0, fontSize: 12, fontWeight: 600 }}>
-            Distribution enregistrée avec succès (ISO EF14 conforme)
+            Distribution enregistrée avec succès (ISO conforme)
           </p>
         </div>
       )}
@@ -312,7 +312,7 @@ export function DistributionForm({ document, onSuccess, onClose }) {
             fontSize: 10,
             lineHeight: 1.4,
           }}>
-            <strong>ISO EF14 Compliance:</strong> Cette distribution crée une preuve immuable avec validation et signature numérique.
+            <strong>Conformité ISO:</strong> Cette distribution crée une preuve immuable avec validation et signature numérique.
             Elle sera enregistrée dans l'audit trail permanent.
           </p>
         </div>

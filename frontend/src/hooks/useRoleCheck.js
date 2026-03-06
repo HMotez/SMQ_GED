@@ -115,7 +115,7 @@ export function useRoleCheck() {
                  `Seuls: Admin, Reviewer.`;
         }
         if (currentUser?.name === docResponsible) {
-          return `⛔ ISO Constraint EF05: Vous ne pouvez pas valider votre propre document. ` +
+          return `⛔ Vous ne pouvez pas valider votre propre document. ` +
                  `Le validateur doit être différent du responsable (${docResponsible}).`;
         }
         return null;
@@ -132,11 +132,11 @@ export function useRoleCheck() {
 
       case 'distribute':
         if (!['Admin'].includes(userRole)) {
-          return `⛔ ISO EF14: Seul Admin peut distribuer. ` +
+          return `⛔ Seul Admin peut distribuer. ` +
                  `Votre rôle: ${userRole}.`;
         }
         if (docStatus !== 'Validé') {
-          return `⛔ ISO EF14: Le document doit être au statut "Validé" pour être distribué. ` +
+          return `⛔ Le document doit être au statut "Validé" pour être distribué. ` +
                  `Statut actuel: "${docStatus}".`;
         }
         return null;
