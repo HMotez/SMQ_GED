@@ -635,22 +635,22 @@ const changeStatus = async (req, res) => {
         }
       }
 
-      // Vérification inline dans la même transaction (pool séparé ne verrait pas l'insert)
+      // Vérification : seule la décision la plus récente compte
       const valCheck = await client.query(
-        `SELECT
-           COUNT(CASE WHEN decision = 'APPROUVÉ' THEN 1 END)::int  AS approvals,
-           COUNT(CASE WHEN decision = 'REJETÉ'   THEN 1 END)::int  AS rejections,
-           COUNT(CASE WHEN decision = 'EN_ATTENTE' THEN 1 END)::int AS pending
-         FROM validations WHERE document_id = $1`,
+        `SELECT decision AS latest_decision
+         FROM validations
+         WHERE document_id = $1
+         ORDER BY id DESC
+         LIMIT 1`,
         [docId]
       );
-      const vs = valCheck.rows[0];
-      if (vs.approvals === 0 || vs.rejections > 0 || vs.pending > 0) {
+      const latestDecision = valCheck.rows[0]?.latest_decision;
+      if (!latestDecision || latestDecision !== 'APPROUVÉ') {
         await client.query("ROLLBACK");
-        const reason = vs.rejections > 0
-          ? "Des validations REJETÉ existent — résolvez-les d'abord."
-          : vs.pending > 0
-            ? "Des validations EN_ATTENTE existent — toutes doivent être traitées."
+        const reason = latestDecision === 'REJETÉ'
+          ? "La dernière décision est un rejet — approuvez le document avant de le valider."
+          : latestDecision === 'EN_ATTENTE'
+            ? "Une décision est en attente — elle doit être traitée avant validation."
             : "Aucune approbation enregistrée. Minimum 1 approbation requise.";
         return res.status(403).json({
           error: `✗ Impossible de valider ce document : ${reason}`,

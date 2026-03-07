@@ -189,7 +189,7 @@ export default function CreateDocument() {
 
   const [form, setForm] = useState({
     title:"", responsible:"", nextReviewDate:"",
-    typeCode:"", origin:"INTERNE", context:"", keywords:"", userId:"1",
+    typeCode:"", origin:"INTERNE", context:"", keywords:"",
   });
 
   const [file,    setFile]    = useState(null);
@@ -259,12 +259,12 @@ export default function CreateDocument() {
       fd.append("origin",         form.origin);
       if (form.context)  fd.append("context",  form.context);
       if (form.keywords) fd.append("keywords", form.keywords);
-      fd.append("userId", form.userId);
+      fd.append("userId", currentUser?.id);
       fd.append("file",   file);
 
       const res = await axios.post(`${API}/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       setMessage(res.data.document.doc_code);
-      setForm({ title:"", responsible:"", nextReviewDate:"", typeCode:"", origin:"INTERNE", context:"", keywords:"", userId:"1" });
+      setForm({ title:"", responsible:"", nextReviewDate:"", typeCode:"", origin:"INTERNE", context:"", keywords:"" });
       setFile(null); setSelectedL1(""); setSelectedL2(""); setSelectedL3(""); setStep(1);
       document.getElementById("fileInput").value = "";
     } catch (err) {
@@ -598,10 +598,10 @@ export default function CreateDocument() {
                     <div className="text-center px-6">
                       <LuUpload size={44} className="mx-auto mb-3" style={{ color:"rgba(168,191,212,0.4)" }} />
                       <p className="text-base font-medium m-0 text-white">Déposer ou cliquer pour uploader</p>
-                      <p className="text-xs mt-1.5" style={{ color:"rgba(168,191,212,0.55)" }}>PDF, DOCX · Max 50 Mo</p>
+                      <p className="text-xs mt-1.5" style={{ color:"rgba(168,191,212,0.55)" }}>PDF, Word, Excel · Max 50 Mo</p>
                     </div>
                   )}
-                  <input id="fileInput" type="file" accept=".pdf,.docx"
+                  <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xlsx,.xls"
                     onChange={e => setFile(e.target.files?.[0] || null)} className="hidden" />
                 </label>
 

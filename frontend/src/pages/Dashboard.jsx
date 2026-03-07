@@ -7,13 +7,14 @@ import axios from "axios";
 import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
 import NotificationBell from "../components/NotificationBell";
+import DownloadMenu from "../components/DownloadMenu";
 import {
   LuShieldCheck, LuList, LuSearch, LuUsers,
   LuClipboardCheck, LuClock, LuCircleAlert, LuCircleCheck,
   LuTriangleAlert, LuRefreshCw, LuArrowRight,
   LuLogOut, LuPlus, LuUser,
   LuHouse, LuLayoutDashboard, LuFile, LuFileText, LuArchive, LuBell, LuCpu,
-  LuX, LuDownload, LuCalendar, LuTag, LuFolder, LuHistory, LuArrowLeftRight, LuZap, LuEye,
+  LuX, LuCalendar, LuTag, LuFolder, LuHistory, LuArrowLeftRight, LuZap, LuEye,
 } from "react-icons/lu";
 
 import { API, BACKEND } from "../config";
@@ -487,18 +488,6 @@ function DocDetailModal({ docId, onClose }) {
     fetchAll();
   }, [docId]);
 
-  const handleDownload = async (filename) => {
-    try {
-      const response = await fetch(`${BACKEND}/download/${encodeURIComponent(filename)}`);
-      if (!response.ok) throw new Error();
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url; link.download = filename;
-      document.body.appendChild(link); link.click();
-      document.body.removeChild(link); URL.revokeObjectURL(url);
-    } catch { toast.error("Impossible de télécharger."); }
-  };
 
   const s  = doc ? statusCfg(doc.status_name) : null;
   const SI = s?.Icon;
@@ -695,13 +684,7 @@ function DocDetailModal({ docId, onClose }) {
                             onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
                             <LuEye size={14} /> Consulter
                           </button>
-                          <button onClick={() => handleDownload(v.file_path.split("/").pop() || v.file_path)}
-                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
-                            style={{ background:"rgba(74,184,63,0.06)", borderColor:"rgba(74,184,63,0.2)", color:"#4ab83f", cursor:"pointer" }}
-                            onMouseEnter={e => { e.currentTarget.style.background="rgba(74,184,63,0.15)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.4)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background="rgba(74,184,63,0.06)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.2)"; }}>
-                            <LuDownload size={14} /> Télécharger
-                          </button>
+                          <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
                         </div>
                       )}
                     </div>

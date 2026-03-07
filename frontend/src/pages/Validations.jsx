@@ -5,11 +5,12 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
+import DownloadMenu from "../components/DownloadMenu";
 import {
   LuRefreshCw, LuCircleCheck, LuCircleX, LuClock,
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2, LuTriangleAlert,
   LuUser, LuInbox, LuLock, LuClipboardCheck, LuArchive, LuFile, LuFileText,
-  LuExternalLink, LuX, LuDownload, LuCalendar, LuTag, LuFolder, LuHistory, LuArrowLeftRight, LuZap,
+  LuExternalLink, LuX, LuCalendar, LuTag, LuFolder, LuHistory, LuArrowLeftRight, LuZap,
 } from "react-icons/lu";
 import { API, BACKEND } from "../config";
 
@@ -101,18 +102,6 @@ function DocDetailModal({ docId, onClose }) {
     fetchAll();
   }, [docId]);
 
-  const handleDownload = async (filename) => {
-    try {
-      const response = await fetch(`${BACKEND}/download/${encodeURIComponent(filename)}`);
-      if (!response.ok) throw new Error();
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url; link.download = filename;
-      document.body.appendChild(link); link.click();
-      document.body.removeChild(link); URL.revokeObjectURL(url);
-    } catch { toast.error("Impossible de télécharger."); }
-  };
 
   const s  = doc ? statusCfg(doc.status_name) : null;
   const SI = s?.Icon;
@@ -278,7 +267,12 @@ function DocDetailModal({ docId, onClose }) {
                     <LuHistory size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
                     <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune version enregistrée.</p>
                   </div>
-                ) : versions.map((v, idx) => (
+                ) : versions.map((v, idx) => {
+                  const isLockedDoc = ["Validé","Diffusé","Obsolète","Archivé"].includes(doc?.status_name);
+                  const isFirst = v.version_letter === "-";
+                  const isCurrent = idx === versions.length - 1;
+                  const canInteract = !isLockedDoc || isFirst || isCurrent;
+                  return (
                   <div key={v.id} className="rounded-xl border overflow-hidden"
                     style={{ background:"rgba(255,255,255,0.02)", borderColor: idx === versions.length - 1 ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.07)" }}>
                     <div className="px-5 py-4 flex items-center gap-4">
@@ -299,7 +293,7 @@ function DocDetailModal({ docId, onClose }) {
                           {v.file_size > 0 && <span>· {(v.file_size/1024).toFixed(0)} Ko</span>}
                         </p>
                       </div>
-                      {v.file_path && (
+                      {v.file_path && canInteract && (
                         <div className="flex gap-2 flex-shrink-0">
                           <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
@@ -308,18 +302,13 @@ function DocDetailModal({ docId, onClose }) {
                             onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
                             <LuEye size={14} /> Consulter
                           </button>
-                          <button onClick={() => handleDownload(v.file_path.split("/").pop() || v.file_path)}
-                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
-                            style={{ background:"rgba(74,184,63,0.06)", borderColor:"rgba(74,184,63,0.2)", color:"#4ab83f", cursor:"pointer" }}
-                            onMouseEnter={e => { e.currentTarget.style.background="rgba(74,184,63,0.15)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.4)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background="rgba(74,184,63,0.06)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.2)"; }}>
-                            <LuDownload size={14} /> Télécharger
-                          </button>
+                          <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -493,7 +482,6 @@ function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded })
   const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [comment,    setComment]    = useState("");
-  const [decision,   setDecision]   = useState("APPROUVÉ");
   const [error,      setError]      = useState(null);
   const [success,    setSuccess]    = useState(null);
 
@@ -529,14 +517,17 @@ function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded })
     } finally { setSubmitting(false); }
   };
 
-  const handleValidationSubmit = async (e) => {
-    e.preventDefault(); setError(null); setSuccess(null); setSubmitting(true);
+  const handleValidationAction = async (nextStatus) => {
+    const d = nextStatus === "Validé" ? "APPROUVÉ" : "REJETÉ";
+    setError(null); setSuccess(null); setSubmitting(true);
     try {
-      await axios.post(`${API}/validations/document/${doc.id}`, { comment, decision });
-      setSuccess("Validation enregistrée.");
-      setComment(""); setDecision("APPROUVÉ");
+      await axios.post(`${API}/validations/document/${doc.id}`, { comment, decision: d });
+      await axios.patch(`${API}/documents/${doc.id}/status`, { newStatus: nextStatus });
+      setSuccess(`Statut mis à jour : "${nextStatus}".`);
+      setComment("");
       await loadHistory(); onValidationAdded();
-    } catch (err) { setError(err.response?.data?.debug || err.response?.data?.error || "Erreur."); }
+      setTimeout(onClose, 1200);
+    } catch (err) { setError(err.response?.data?.error || "Erreur."); }
     finally { setSubmitting(false); }
   };
 
@@ -627,32 +618,13 @@ function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded })
                 </button>
               </div>
             ) : isValidation ? (
-              <form onSubmit={handleValidationSubmit} className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-3.5">
                 <div className="rounded-xl px-3.5 py-3 border"
                   style={{ background:"rgba(165,180,252,0.06)", borderColor:"rgba(165,180,252,0.2)" }}>
                   <p className="m-0 text-xs font-bold uppercase tracking-wider mb-1" style={{ color:"#a5b4fc" }}>Validation finale</p>
                   <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.6)" }}>
                     Approuvez ou rejetez pour déclencher la transition vers "Validé".
                   </p>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5"
-                    style={{ color:"rgba(168,191,212,0.5)" }}>Décision *</label>
-                  <div className="flex flex-col gap-1.5">
-                    {[
-                      { value:"APPROUVÉ", cfg:DECISION_CFG["APPROUVÉ"] },
-                      { value:"REJETÉ",   cfg:DECISION_CFG["REJETÉ"]   },
-                    ].map(({ value, cfg }) => {
-                      const DI = cfg.Icon;
-                      return (
-                        <button type="button" key={value} onClick={() => setDecision(value)}
-                          className="px-3 py-2.5 rounded-lg text-sm font-semibold text-left flex items-center gap-2 cursor-pointer border transition-all"
-                          style={{ background:decision===value?cfg.bg:"rgba(255,255,255,0.04)", color:decision===value?cfg.text:"rgba(168,191,212,0.55)", borderColor:decision===value?cfg.border:"rgba(255,255,255,0.08)" }}>
-                          <DI size={14} /> {cfg.label}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5"
@@ -664,12 +636,17 @@ function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded })
                 </div>
                 {error   && <p className="m-0 text-xs rounded-lg px-3 py-2 border" style={{ color:"#f87171", background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.2)" }}>{error}</p>}
                 {success && <p className="m-0 text-xs rounded-lg px-3 py-2 border" style={{ color:"#4ade80", background:"rgba(74,222,128,0.08)", borderColor:"rgba(74,222,128,0.2)" }}>{success}</p>}
-                <button type="submit" disabled={submitting}
-                  className="w-full py-2.5 rounded-lg font-bold text-sm border-none transition-all"
-                  style={{ background:submitting?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#4ab83f,#3da333)", color:submitting?"rgba(168,191,212,0.4)":"white", boxShadow:submitting?"none":"0 4px 16px rgba(74,184,63,0.35)", cursor:submitting?"not-allowed":"pointer" }}>
-                  {submitting ? "Enregistrement…" : "Enregistrer la validation"}
+                <button onClick={() => handleValidationAction("En correction")} disabled={submitting}
+                  className="w-full py-2.5 rounded-lg font-bold text-sm border transition-all flex items-center justify-center gap-2"
+                  style={{ background:"rgba(249,115,22,0.12)", borderColor:"rgba(249,115,22,0.3)", color:"#f97316", cursor:submitting?"not-allowed":"pointer" }}>
+                  <LuCircleX size={14} /> Rejeter
                 </button>
-              </form>
+                <button onClick={() => handleValidationAction("Validé")} disabled={submitting}
+                  className="w-full py-2.5 rounded-lg font-bold text-sm border-none transition-all flex items-center justify-center gap-2"
+                  style={{ background:submitting?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#4ab83f,#3da333)", color:"white", boxShadow:submitting?"none":"0 4px 16px rgba(74,184,63,0.35)", cursor:submitting?"not-allowed":"pointer" }}>
+                  <LuCircleCheck size={14} /> Approuver
+                </button>
+              </div>
             ) : null}
           </div>
 
@@ -732,7 +709,7 @@ export default function Validations() {
   const [allHistory,  setAllHistory]  = useState([]);
   const [stats,       setStats]       = useState(null);
   const [loading,     setLoading]     = useState(true);
-  const [activeTab,   setActiveTab]   = useState("history");
+  const [activeTab,   setActiveTab]   = useState("validation");
   const [selectedDoc,   setSelectedDoc]   = useState(null);
   const [selectedDocId, setSelectedDocId] = useState(null);
 
@@ -753,11 +730,27 @@ export default function Validations() {
 
   useEffect(() => { load(); }, [load]);
 
-  const relectureDocs  = pendingDocs.filter(d => d.status_name === "En relecture");
   const validationDocs = pendingDocs.filter(d => d.status_name === "En validation");
 
+  const [inlineSubmitting, setInlineSubmitting] = useState({});
+  const [pendingAction,    setPendingAction]    = useState(null); // { doc, nextStatus, comment }
+
+  const handleInlineValidation = async (doc, nextStatus, comment = "") => {
+    const decision = nextStatus === "Validé" ? "APPROUVÉ" : "REJETÉ";
+    setPendingAction(null);
+    setInlineSubmitting(s => ({ ...s, [doc.id]: nextStatus }));
+    try {
+      await axios.post(`${API}/validations/document/${doc.id}`, { decision, comment });
+      await axios.patch(`${API}/documents/${doc.id}/status`, { newStatus: nextStatus });
+      await load();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setInlineSubmitting(s => ({ ...s, [doc.id]: null }));
+    }
+  };
+
   const tabs = [
-    { id:"relecture",  Icon:LuEye,           label:"En relecture",        count:relectureDocs.length,  accent:"#60a5fa" },
     { id:"validation", Icon:LuClipboardCheck,label:"En validation",       count:validationDocs.length, accent:"#a5b4fc" },
     { id:"history",    Icon:LuCircleCheck,   label:"Historique",          count:allHistory.length,     accent:"#4ade80" },
   ];
@@ -770,7 +763,6 @@ export default function Validations() {
       <div className="rounded-xl px-3 py-2.5 border"
         style={{ background:"rgba(74,184,63,0.08)", borderColor:"rgba(74,184,63,0.2)" }}>
         <p className="m-0 text-[10px] uppercase tracking-[1px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>Workflow</p>
-        <p className="m-0 font-black text-xl" style={{ color:"#60a5fa" }}>{relectureDocs.length} relecture</p>
         <p className="m-0 font-black text-xl" style={{ color:"#a5b4fc" }}>{validationDocs.length} validation</p>
       </div>
     </>
@@ -802,7 +794,6 @@ export default function Validations() {
               </h1>
               <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
                 Décisions de validation · Traçabilité complète
-                {activeTab === "relecture"  && <span style={{ color:"#60a5fa" }}> · {relectureDocs.length} en relecture</span>}
                 {activeTab === "validation" && <span style={{ color:"#a5b4fc" }}> · {validationDocs.length} en validation</span>}
                 {activeTab === "history"    && <span style={{ color:"#4ade80" }}> · {allHistory.length} entrées</span>}
               </p>
@@ -822,7 +813,6 @@ export default function Validations() {
           {/* ── Stats ──────────────────────────────────────────── */}
           {stats && (
             <div className="flex gap-4 mb-6 flex-wrap">
-              <StatCard Icon={LuEye}            label="En relecture"      value={relectureDocs.length}                      accent="#60a5fa" />
               <StatCard Icon={LuClock}          label="En validation"     value={validationDocs.length}                     accent="#a5b4fc" />
               <StatCard Icon={LuCircleCheck}    label="Approuvées"        value={stats.decisions?.["APPROUVÉ"] ?? 0}        accent="#4ade80" />
               <StatCard Icon={LuCircleX}        label="Rejetées"          value={stats.decisions?.["REJETÉ"] ?? 0}          accent="#f87171" />
@@ -861,72 +851,6 @@ export default function Validations() {
             </div>
           ) : (
             <>
-              {/* ── En relecture tab ──────────────────────────── */}
-              {activeTab === "relecture" && (
-                relectureDocs.length === 0 ? (
-                  <div className="flex flex-col items-center py-16 gap-3">
-                    <LuEye size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>
-                      Aucun document en cours de relecture.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl overflow-hidden border"
-                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(96,165,250,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
-                    {/* banner */}
-                    <div className="px-5 py-2.5 border-b"
-                      style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.15)" }}>
-                      <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#60a5fa" }}>
-                        Relecture en cours — lire sur SharePoint puis enregistrer la décision
-                      </p>
-                    </div>
-                    {/* header row */}
-                    <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 120px 110px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
-                      {["Référence","Titre","Responsable","Type","Version","SharePoint","Action"].map(h => (
-                        <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
-                          style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
-                      ))}
-                    </div>
-                    {/* rows */}
-                    {relectureDocs.map((doc, i) => (
-                      <div key={doc.id} className="val-row grid px-5 py-3 items-center transition-all duration-150"
-                        style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 120px 110px", borderBottom: i < relectureDocs.length-1 ? ROW_BORDER : "none", background:"transparent" }}
-                        onClick={() => setSelectedDoc(doc)}>
-                        <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
-                        <div className="overflow-hidden pr-3">
-                          <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
-                          {doc.process_name && <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.process_name}</p>}
-                        </div>
-                        <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
-                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
-                          style={{ background:"rgba(96,165,250,0.1)", color:"#60a5fa", borderColor:"rgba(96,165,250,0.2)" }}>
-                          {doc.type_code}
-                        </span>
-                        <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.7)" }}>
-                          {doc.version_letter && doc.version_letter !== "-" ? `v${doc.version_letter}` : "—"}
-                        </span>
-                        <div onClick={e => e.stopPropagation()}>
-                          {doc.sharepoint_link
-                            ? <a href={doc.sharepoint_link} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg border no-underline"
-                                style={{ background:"rgba(0,120,212,0.12)", borderColor:"rgba(0,120,212,0.3)", color:"#60a5fa" }}>
-                                <LuExternalLink size={10} /> Ouvrir
-                              </a>
-                            : <span className="text-xs" style={{ color:"rgba(168,191,212,0.3)" }}>—</span>
-                          }
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); setSelectedDoc(doc); }}
-                          className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-sm font-semibold text-white border-none w-fit"
-                          style={{ background:"linear-gradient(135deg,#3b82f6,#2563eb)", boxShadow:"0 3px 12px rgba(59,130,246,0.35)", cursor:"pointer" }}>
-                          <LuEye size={13} /> Relire
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )
-              )}
-
               {/* ── En validation tab ─────────────────────────── */}
               {activeTab === "validation" && (
                 validationDocs.length === 0 ? (
@@ -948,43 +872,165 @@ export default function Validations() {
                     </div>
                     {/* header row */}
                     <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 140px 110px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
-                      {["Référence","Titre","Responsable","Type","Version","Dernière décision","Action"].map(h => (
+                      style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 140px 200px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      {["Référence","Titre","Responsable","Type","Version","Dernière décision","Actions"].map(h => (
                         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
                           style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
                       ))}
                     </div>
                     {/* rows */}
-                    {validationDocs.map((doc, i) => (
-                      <div key={doc.id} className="val-row grid px-5 py-3 items-center transition-all duration-150"
-                        style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 140px 110px", borderBottom: i < validationDocs.length-1 ? ROW_BORDER : "none", background:"transparent" }}
-                        onClick={() => setSelectedDoc(doc)}>
-                        <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
-                        <div className="overflow-hidden pr-3">
-                          <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
-                          {doc.process_name && <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.process_name}</p>}
+                    {validationDocs.map((doc, i) => {
+                      const busy      = inlineSubmitting[doc.id];
+                      const isPending = pendingAction?.doc?.id === doc.id;
+                      const isApprove = isPending && pendingAction.nextStatus === "Validé";
+                      const commentOk = !isPending || isApprove || !!pendingAction.comment.trim();
+                      return (
+                      <div key={doc.id} style={{ borderBottom: i < validationDocs.length-1 ? ROW_BORDER : "none" }}>
+                        {/* Normal row */}
+                        <div className="val-row grid px-5 py-3 items-center transition-all duration-150"
+                          style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 140px 200px", background:"transparent", opacity: isPending ? 0.45 : 1 }}
+                          onClick={() => !isPending && setSelectedDoc(doc)}>
+                          <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
+                          <div className="overflow-hidden pr-3">
+                            <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
+                            {doc.process_name && <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.process_name}</p>}
+                          </div>
+                          <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
+                          <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
+                            style={{ background:"rgba(165,180,252,0.1)", color:"#a5b4fc", borderColor:"rgba(165,180,252,0.2)" }}>
+                            {doc.type_code}
+                          </span>
+                          <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.7)" }}>
+                            {doc.version_letter && doc.version_letter !== "-" ? `v${doc.version_letter}` : "—"}
+                          </span>
+                          <div>
+                            {doc.last_decision
+                              ? <DecisionBadge decision={doc.last_decision} />
+                              : <span className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune</span>
+                            }
+                          </div>
+                          <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
+                            {can("validation:create") ? (
+                              <>
+                                <button disabled={!!busy || isPending}
+                                  onClick={() => setPendingAction({ doc, nextStatus:"En correction", comment:"" })}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                                  style={{ background:"rgba(249,115,22,0.12)", borderColor:"rgba(249,115,22,0.3)", color:(busy||isPending)?"rgba(168,191,212,0.3)":"#f97316", cursor:(busy||isPending)?"not-allowed":"pointer" }}>
+                                  <LuCircleX size={12} /> {busy==="En correction"?"…":"Rejeter"}
+                                </button>
+                                <button disabled={!!busy || isPending}
+                                  onClick={() => setPendingAction({ doc, nextStatus:"Validé", comment:"" })}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border-none transition-all"
+                                  style={{ background:(busy||isPending)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#4ab83f,#3da333)", color:(busy||isPending)?"rgba(168,191,212,0.3)":"white", boxShadow:(busy||isPending)?"none":"0 3px 10px rgba(74,184,63,0.3)", cursor:(busy||isPending)?"not-allowed":"pointer" }}>
+                                  <LuCircleCheck size={12} /> {busy==="Validé"?"…":"Approuver"}
+                                </button>
+                              </>
+                            ) : (
+                              <span className="flex items-center gap-1 text-xs" style={{ color:"rgba(168,191,212,0.35)" }}>
+                                <LuLock size={11} /> Accès refusé
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
-                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
-                          style={{ background:"rgba(165,180,252,0.1)", color:"#a5b4fc", borderColor:"rgba(165,180,252,0.2)" }}>
-                          {doc.type_code}
-                        </span>
-                        <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.7)" }}>
-                          {doc.version_letter && doc.version_letter !== "-" ? `v${doc.version_letter}` : "—"}
-                        </span>
-                        <div>
-                          {doc.last_decision
-                            ? <DecisionBadge decision={doc.last_decision} />
-                            : <span className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune</span>
-                          }
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); setSelectedDoc(doc); }}
-                          className="flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-sm font-semibold text-white border-none w-fit"
-                          style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 3px 12px rgba(74,184,63,0.35)", cursor:"pointer" }}>
-                          <LuClipboardCheck size={13} /> Valider
-                        </button>
+
+                        {/* ── Confirmation panel ──────────────────── */}
+                        {isPending && (
+                          <div className="px-5 pb-5 border-t" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+                            <div className="rounded-2xl border p-5 mt-1"
+                              style={{
+                                background: isApprove ? "rgba(74,184,63,0.06)" : "rgba(249,115,22,0.06)",
+                                borderColor: isApprove ? "rgba(74,184,63,0.25)" : "rgba(249,115,22,0.25)",
+                                boxShadow: isApprove ? "0 8px 30px rgba(74,184,63,0.08)" : "0 8px 30px rgba(249,115,22,0.08)",
+                              }}>
+                              {/* Panel header */}
+                              <div className="flex items-start gap-3 mb-4">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                  style={{ background: isApprove ? "rgba(74,184,63,0.15)" : "rgba(249,115,22,0.15)", border:`1.5px solid ${isApprove?"rgba(74,184,63,0.35)":"rgba(249,115,22,0.35)"}` }}>
+                                  {isApprove
+                                    ? <LuCircleCheck size={17} style={{ color:"#4ab83f" }} />
+                                    : <LuCircleX     size={17} style={{ color:"#f97316" }} />
+                                  }
+                                </div>
+                                <div>
+                                  <p className="m-0 font-bold text-sm" style={{ color: isApprove ? "#4ab83f" : "#f97316" }}>
+                                    {isApprove ? "Confirmer l'approbation" : "Confirmer le rejet"}
+                                  </p>
+                                  <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                    {isApprove
+                                      ? `"${doc.title}" sera marqué Validé.`
+                                      : `"${doc.title}" sera renvoyé En correction.`}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Comment field */}
+                              <div className="mb-4">
+                                <label className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5"
+                                  style={{ color:"rgba(168,191,212,0.55)" }}>
+                                  Commentaire
+                                  {!isApprove && <span style={{ color:"#f87171" }}>*</span>}
+                                  {isApprove && <span className="normal-case font-normal tracking-normal ml-1" style={{ color:"rgba(168,191,212,0.35)" }}>(optionnel)</span>}
+                                </label>
+                                <textarea
+                                  rows={3}
+                                  autoFocus
+                                  value={pendingAction.comment}
+                                  onChange={e => setPendingAction(prev => ({ ...prev, comment: e.target.value }))}
+                                  placeholder={isApprove
+                                    ? "Observations, remarques positives…"
+                                    : "Motif du rejet, corrections à apporter… (obligatoire)"}
+                                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm resize-none outline-none transition-all"
+                                  style={{
+                                    background:"rgba(255,255,255,0.04)",
+                                    borderColor: pendingAction.comment.trim()
+                                      ? (isApprove ? "rgba(74,184,63,0.4)" : "rgba(249,115,22,0.4)")
+                                      : "rgba(255,255,255,0.1)",
+                                    color:"rgba(255,255,255,0.85)",
+                                    minHeight:80,
+                                  }}
+                                />
+                                {!isApprove && !pendingAction.comment.trim() && (
+                                  <p className="m-0 mt-1.5 text-xs flex items-center gap-1" style={{ color:"rgba(248,113,113,0.7)" }}>
+                                    <LuTriangleAlert size={11} /> Un commentaire est obligatoire pour un rejet.
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex items-center justify-end gap-2.5">
+                                <button onClick={() => setPendingAction(null)}
+                                  className="px-4 py-2 rounded-xl text-sm font-semibold border transition-all"
+                                  style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)", cursor:"pointer" }}
+                                  onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(168,191,212,0.3)"; e.currentTarget.style.color="#fff"; }}
+                                  onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.6)"; }}>
+                                  Annuler
+                                </button>
+                                <button
+                                  disabled={!commentOk}
+                                  onClick={() => handleInlineValidation(pendingAction.doc, pendingAction.nextStatus, pendingAction.comment)}
+                                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold border-none transition-all"
+                                  style={{
+                                    background: !commentOk
+                                      ? "rgba(255,255,255,0.06)"
+                                      : isApprove
+                                        ? "linear-gradient(135deg,#4ab83f,#3da333)"
+                                        : "linear-gradient(135deg,#f97316,#ea6c0a)",
+                                    color: !commentOk ? "rgba(168,191,212,0.3)" : "white",
+                                    boxShadow: !commentOk ? "none" : isApprove ? "0 4px 16px rgba(74,184,63,0.35)" : "0 4px 16px rgba(249,115,22,0.35)",
+                                    cursor: !commentOk ? "not-allowed" : "pointer",
+                                  }}>
+                                  {isApprove
+                                    ? <><LuCircleCheck size={14} /> Approuver</>
+                                    : <><LuCircleX     size={14} /> Confirmer le rejet</>
+                                  }
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}

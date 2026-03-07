@@ -8,6 +8,7 @@ import { useUser } from "../context/UserContext";
 import useRoleCheck from "../hooks/useRoleCheck";
 import { AccessDeniedMessage, DocumentAccessStatus, DocumentRolePermissionsMatrix, RoleInfoBadge } from "../components/RoleBasedAccess";
 import AppSidebar from "../components/AppSidebar";
+import DownloadMenu from "../components/DownloadMenu";
 import {
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2,
   LuTriangleAlert, LuCircleHelp, LuCheck, LuClock, LuRefreshCw,
@@ -306,14 +307,19 @@ export default function DocumentList() {
     finally { setStatusChanging(false); }
   };
 
-  const handleDownload = async (filename) => {
+  const handleDownloadAs = async (filename, ext) => {
     try {
-      const response = await fetch(`${BACKEND}/download/${encodeURIComponent(filename)}`);
-      if (!response.ok) throw new Error("Erreur serveur");
-      const blob = await response.blob(); const url = URL.createObjectURL(blob);
-      const link = document.createElement("a"); link.href=url; link.download=filename;
-      document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
-    } catch { toast.error("Impossible de télécharger le fichier."); }
+      const srcExt = filename.split(".").pop()?.toLowerCase();
+      const url = srcExt === ext
+        ? `${BACKEND}/download/${encodeURIComponent(filename)}`
+        : `${BACKEND}/convert/${encodeURIComponent(filename)}?to=${ext}`;
+      const response = await fetch(url);
+      if (!response.ok) { const err = await response.json().catch(()=>({})); throw new Error(err.error||"Erreur serveur"); }
+      const blob = await response.blob(); const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl; link.download = filename.replace(/\.[^/.]+$/, "") + "." + ext;
+      document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(blobUrl);
+    } catch(e) { toast.error(e.message || "Erreur de téléchargement"); }
   };
 
   const handleNewVersion = async (e) => {
@@ -325,7 +331,7 @@ export default function DocumentList() {
       const form = new FormData();
       form.append("file", newFile);
       form.append("change_summary", summary.trim());
-      if (spLink.trim()) form.append("sharepoint_link", spLink.trim());
+      form.append("sharepoint_link", spLink.trim());
       const res = await axios.put(`${API}/documents/${selected.id}`, form, { headers:{ "Content-Type":"multipart/form-data" } });
       const [docRes, verRes] = await Promise.all([axios.get(`${API}/documents/${selected.id}`), axios.get(`${API}/documents/${selected.id}/versions`)]);
       setSelected(docRes.data); setVersions(verRes.data);
@@ -677,40 +683,43 @@ export default function DocumentList() {
                     </button>
                     <div className="relative flex-1" ref={downloadRef}>
                       <button
-                        onClick={() => versions.length > 1 ? setDownloadOpen(o => !o) : handleDownload(selected.file_name)}
+                        onClick={() => setDownloadOpen(o => !o)}
                         className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border transition-all"
                         style={{ background:"rgba(255,255,255,0.06)", borderColor:"rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.8)" }}>
                         <LuDownload size={14} /> Télécharger
                       </button>
-                      {downloadOpen && versions.length > 1 && (
+                      {downloadOpen && (
                         <div className="absolute bottom-[calc(100%+6px)] left-0 right-0 rounded-xl overflow-hidden z-20 border"
-                          style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.55)" }}>
+                          style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.55)", minWidth:"260px" }}>
                           <p className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider border-b m-0"
                             style={{ color:"rgba(168,191,212,0.45)", borderColor:"rgba(255,255,255,0.07)" }}>
-                            Choisir une version
+                            {versions.length > 1 ? "Version · Format" : "Format de téléchargement"}
                           </p>
                           {versions.map(v => (
-                            <button key={v.id}
-                              onClick={() => { handleDownload(v.file_name); setDownloadOpen(false); }}
-                              className="flex items-center justify-between w-full px-3.5 py-2.5 text-sm text-left border-b transition-all"
-                              style={{ borderColor:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.8)", background:"transparent", cursor:"pointer" }}
-                              onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.06)"}
-                              onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                              <span className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded" style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f" }}>
+                            <div key={v.id} className="flex items-center justify-between px-3.5 py-2.5 border-b"
+                              style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+                              <span className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f" }}>
                                   v{v.version_letter}
                                 </span>
-                                <span style={{ color:"rgba(168,191,212,0.55)" }}>
+                                <span className="text-xs truncate" style={{ color:"rgba(168,191,212,0.45)" }}>
                                   {v.created_at ? new Date(v.created_at).toLocaleDateString("fr-FR") : "—"}
+                                  {v.change_summary ? ` — ${v.change_summary}` : ""}
                                 </span>
-                                {v.change_summary && (
-                                  <span className="text-xs truncate max-w-[100px]" style={{ color:"rgba(168,191,212,0.4)" }}>
-                                    — {v.change_summary}
-                                  </span>
-                                )}
                               </span>
-                              <LuDownload size={12} style={{ color:"#4ab83f", flexShrink:0 }} />
-                            </button>
+                              <div className="flex gap-1 flex-shrink-0 ml-2">
+                                {[{ext:"pdf",color:"#f87171"},{ext:"docx",label:"Word",color:"#60a5fa"},{ext:"xlsx",label:"Excel",color:"#4ab83f"}].map(({ext,color}) => (
+                                  <button key={ext}
+                                    onClick={() => { handleDownloadAs(v.file_name, ext); setDownloadOpen(false); }}
+                                    className="px-2 py-0.5 rounded text-[10px] font-bold border transition-all"
+                                    style={{ background:"rgba(255,255,255,0.04)", borderColor:`${color}40`, color, cursor:"pointer" }}
+                                    onMouseEnter={e => { e.currentTarget.style.background=`${color}22`; e.currentTarget.style.borderColor=color; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor=`${color}40`; }}>
+                                    {ext === "docx" ? "Word" : ext === "xlsx" ? "Excel" : "PDF"}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -733,23 +742,26 @@ export default function DocumentList() {
               {versions.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>🕐 Historique versions</p></div>
-                  {versions.map(v => (
+                  {versions.map((v) => {
+                    const isLockedDoc = ["Validé","Diffusé","Obsolète","Archivé"].includes(selected?.status_name);
+                    const isFirst = v.version_letter === "-";
+                    const isCurrent = v.version_letter === selected?.current_version;
+                    const canInteract = !isLockedDoc || isFirst || isCurrent;
+                    return (
                     <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex justify-between items-center gap-2">
                         <span className="font-mono font-bold text-sm text-white">v{v.version_letter}</span>
                         <span className="text-sm flex-1" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
-                        <div className="flex gap-1.5">
-                          <button onClick={() => { setPreviewFile(v.file_name); setPreviewOpen(true); }}
-                            className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
-                            style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
-                            <LuEye size={12} /> Consulter
-                          </button>
-                          <button onClick={() => handleDownload(v.file_name)}
-                            className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
-                            style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
-                            <LuDownload size={12} /> Télécharger
-                          </button>
-                        </div>
+                        {canInteract && (
+                          <div className="flex gap-1.5">
+                            <button onClick={() => { setPreviewFile(v.file_name); setPreviewOpen(true); }}
+                              className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
+                              style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
+                              <LuEye size={12} /> Consulter
+                            </button>
+                            <DownloadMenu filename={v.file_name} size="small" />
+                          </div>
+                        )}
                       </div>
                       {v.change_summary && <p className="m-0 mt-1 text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>{v.change_summary}</p>}
                       {v.sharepoint_link && (
@@ -760,7 +772,8 @@ export default function DocumentList() {
                         </a>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -824,8 +837,8 @@ export default function DocumentList() {
                 style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Lien SharePoint <span style={{ color:"rgba(168,191,212,0.35)", fontWeight:400 }}>(optionnel)</span></label>
-              <input type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
+              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Lien SharePoint <span style={{ color:"#ef4444" }}>*</span></label>
+              <input required type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
                 className="w-full px-3 py-1.5 rounded-lg border text-sm outline-none"
                 style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>

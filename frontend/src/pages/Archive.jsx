@@ -5,10 +5,11 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
+import DownloadMenu from "../components/DownloadMenu";
 import {
   LuRefreshCw, LuZap, LuShare2, LuTriangleAlert, LuCircleCheckBig,
   LuFolder, LuInbox, LuLock, LuArrowLeftRight, LuFile, LuFileText, LuArchive,
-  LuX, LuUser, LuClock, LuDownload, LuCalendar, LuTag, LuHistory,
+  LuX, LuUser, LuClock, LuCalendar, LuTag, LuHistory,
   LuCircleCheck, LuCircleX, LuEye,
 } from "react-icons/lu";
 import { toast } from "sonner";
@@ -78,18 +79,6 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
     fetchAll();
   }, [docId]);
 
-  const handleDownload = async (filename) => {
-    try {
-      const response = await fetch(`${BACKEND}/download/${encodeURIComponent(filename)}`);
-      if (!response.ok) throw new Error();
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url; link.download = filename;
-      document.body.appendChild(link); link.click();
-      document.body.removeChild(link); URL.revokeObjectURL(url);
-    } catch { toast.error("Impossible de télécharger."); }
-  };
 
   const s  = doc ? statusCfg(doc.status_name) : null;
   const SI = s?.Icon;
@@ -294,13 +283,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                             onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
                             <LuEye size={14} /> Consulter
                           </button>
-                          <button onClick={() => handleDownload(v.file_path.split("/").pop() || v.file_path)}
-                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
-                            style={{ background:"rgba(74,184,63,0.06)", borderColor:"rgba(74,184,63,0.2)", color:"#4ab83f", cursor:"pointer" }}
-                            onMouseEnter={e => { e.currentTarget.style.background="rgba(74,184,63,0.15)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.4)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background="rgba(74,184,63,0.06)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.2)"; }}>
-                            <LuDownload size={14} /> Télécharger
-                          </button>
+                          <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
                         </div>
                       )}
                     </div>
@@ -520,7 +503,6 @@ export default function Archive() {
   const ROW_BORDER = "1px solid rgba(255,255,255,0.05)";
 
   const tabs = [
-    { id:"candidates", Icon:LuTriangleAlert, label:"Candidats",       count:expiredDiffuse.length + obsoletes.length, accent:"#fb923c" },
     { id:"archived",   Icon:LuArchive,       label:"Archivés",        count:archived.length,                          accent:"#94a3b8" },
     { id:"history",    Icon:LuRefreshCw,     label:"Historique", count:history.length,                           accent:"#4ab83f" },
   ];
@@ -622,7 +604,7 @@ export default function Archive() {
               <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
                 Documents obsolètes · Aucune suppression définitive
                 {activeTab === "archived"   && <span style={{ color:"#94a3b8" }}> · {archived.length} archivés</span>}
-                {activeTab === "candidates" && <span style={{ color:"#fb923c" }}> · {expiredDiffuse.length + obsoletes.length} en attente</span>}
+
                 {activeTab === "history"    && <span style={{ color:"#4ab83f" }}> · {history.length} opérations</span>}
               </p>
             </div>
@@ -677,51 +659,6 @@ export default function Archive() {
             </div>
           ) : (
             <>
-              {/* ── Candidates tab ──────────────────────────── */}
-              {activeTab === "candidates" && (
-                expiredDiffuse.length === 0 && obsoletes.length === 0 ? (
-                  <div className="flex flex-col items-center py-16 gap-3">
-                    <LuCircleCheckBig size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>Aucun document en attente d'archivage.</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-5">
-                    {expiredDiffuse.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="inline-block w-[3px] h-4 rounded-full" style={{ background:"#f87171" }} />
-                          <p className="m-0 text-white font-semibold text-sm">Documents diffusés expirés</p>
-                          <span className="ml-1 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{expiredDiffuse.length} document(s) dont la date de révision est dépassée</span>
-                        </div>
-                        <div className="rounded-2xl overflow-hidden border"
-                          style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(248,113,113,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
-                          <TableHeader lastCol="Retard (j)" />
-                          {expiredDiffuse.map((doc, i) => (
-                            <DocRow key={doc.id} doc={doc} i={i} total={expiredDiffuse.length} showDaysOverdue />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {obsoletes.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="inline-block w-[3px] h-4 rounded-full" style={{ background:"#fb923c" }} />
-                          <p className="m-0 text-white font-semibold text-sm">Documents obsolètes — en attente d'archivage</p>
-                          <span className="ml-1 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{obsoletes.length} document(s) à archiver manuellement</span>
-                        </div>
-                        <div className="rounded-2xl overflow-hidden border"
-                          style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(251,146,60,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
-                          <TableHeader lastCol="Action" />
-                          {obsoletes.map((doc, i) => (
-                            <DocRow key={doc.id} doc={doc} i={i} total={obsoletes.length} showArchiveBtn />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
-
               {/* ── Archived tab ────────────────────────────── */}
               {activeTab === "archived" && (
                 archived.length === 0 ? (

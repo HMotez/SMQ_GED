@@ -19,9 +19,12 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const allowed = [
       "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/msword",                                                        // .doc
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",        // .xlsx
+      "application/vnd.ms-excel",                                                  // .xls
     ];
-    if (!allowed.includes(file.mimetype)) return cb(new Error("Only PDF/DOCX"));
+    if (!allowed.includes(file.mimetype)) return cb(new Error("Only PDF/DOCX/XLSX"));
     cb(null, true);
   },
 });

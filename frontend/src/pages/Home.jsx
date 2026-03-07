@@ -921,12 +921,12 @@ export default function Home() {
               <p className="text-sm m-0 mt-2" style={{ color: "rgba(168,191,212,0.6)" }}>Système de gestion documentaire certifié — Traçabilité, sécurité et archivage normalisés</p>
             </div>
             <div className="flex gap-4 flex-wrap">
-              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
-              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
-              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
-              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
-              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
-              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="3 rôles : Admin, Ing. Qualité, Reviewer. Contrôle d'accès granulaire par rôle et permission." />
+              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="10 statuts documentaires : Brouillon → En rédaction → Appel en relecture → En relecture → En correction → En validation → Validé → Diffusé → Obsolète → Archivé." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"  desc="Reviewer approuve ou rejette les documents. Ing. Qualité soumet et corrige. Chaque décision est horodatée et tracée." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"      desc="Audit trail complet par document. Chaque action (création, modification, validation, archivage) est horodatée et enregistrée." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"        desc="Archivage réservé à l'Admin. Documents Obsolètes archivés manuellement ou automatiquement. Historique conservé indéfiniment." />
+              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres par type, statut, référence, titre et date. Consultation et téléchargement des versions disponibles selon le rôle." />
+              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="Admin : accès complet. Ing. Qualité : création et modification. Reviewer : lecture et validation uniquement." />
             </div>
           </div>
 
