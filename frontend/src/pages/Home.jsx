@@ -20,6 +20,7 @@ import {
 } from "react-icons/lu";
 import { API } from "../config";
 import LoginModal from "../components/LoginModal";
+import DocDetailModal from "../components/DocDetailModal";
 
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
@@ -563,6 +564,7 @@ export default function Home() {
   const [recentDocs, setRecentDocs]     = useState([]);
   const [pending, setPending]           = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [selectedDoc, setSelectedDoc]   = useState(null);
 
   /* Quick-login from the public demo section */
   const handleDemoLogin = async (role) => {
@@ -723,8 +725,8 @@ export default function Home() {
           <div className="flex gap-3.5 flex-wrap">
             <StatCard icon={LuFileText}    label="Total documents" value={loadingStats ? "…" : totalDocs} sub="dans le système"     accent="#60a5fa" onClick={() => navigate("/list")}        />
             <StatCard icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate("/validations")} />
-            <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list")}        />
-            <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate("/list")} />
+            <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list?statusName=Validé")}        />
+            <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate("/list?overdue=true")} />
             <StatCard icon={LuArchive}     label="Archivés"        value={loadingStats ? "…" : archived}   sub="archivage définitif" accent="#94a3b8" onClick={() => navigate("/archive")}    />
           </div>
         </div>
@@ -747,7 +749,7 @@ export default function Home() {
                 return (
                   <div
                     key={label}
-                    onClick={() => navigate("/list")}
+                    onClick={() => navigate(`/list?statusName=${encodeURIComponent(label)}`)}
                     className="flex-1 min-w-[80px] cursor-pointer group"
                   >
                     <div
@@ -871,7 +873,7 @@ export default function Home() {
                   {recentDocs.map((doc) => (
                     <div
                       key={doc.id}
-                      onClick={() => navigate("/list")}
+                      onClick={() => setSelectedDoc(doc.id)}
                       className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-150"
                       style={{
                         background: "rgba(255,255,255,0.03)",
@@ -921,12 +923,12 @@ export default function Home() {
               <p className="text-sm m-0 mt-2" style={{ color: "rgba(168,191,212,0.6)" }}>Système de gestion documentaire certifié — Traçabilité, sécurité et archivage normalisés</p>
             </div>
             <div className="flex gap-4 flex-wrap">
-              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="10 statuts documentaires : Brouillon → En rédaction → Appel en relecture → En relecture → En correction → En validation → Validé → Diffusé → Obsolète → Archivé." />
-              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"  desc="Reviewer approuve ou rejette les documents. Ing. Qualité soumet et corrige. Chaque décision est horodatée et tracée." />
-              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"      desc="Audit trail complet par document. Chaque action (création, modification, validation, archivage) est horodatée et enregistrée." />
-              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"        desc="Archivage réservé à l'Admin. Documents Obsolètes archivés manuellement ou automatiquement. Historique conservé indéfiniment." />
-              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres par type, statut, référence, titre et date. Consultation et téléchargement des versions disponibles selon le rôle." />
-              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="Admin : accès complet. Ing. Qualité : création et modification. Reviewer : lecture et validation uniquement." />
+              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"        desc="Maîtrise complète du cycle documentaire conforme à la norme ISO 9001. Chaque document suit un workflow structuré garantissant la revue, l'approbation et la mise en circulation selon les exigences qualité en vigueur." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"            desc="Processus d'approbation formalisé avec séparation stricte des responsabilités. Chaque décision est horodatée, signée numériquement et conservée dans un registre immuable pour assurer la conformité réglementaire." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"           desc="Journal d'audit exhaustif et infalsifiable pour chaque document. Toutes les actions — création, modification, approbation et archivage — sont enregistrées avec horodatage et identité de l'auteur." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"             desc="Conservation sécurisée et pérenne des documents selon les exigences légales et normatives. L'archivage définitif garantit l'intégrité des données et la disponibilité permanente des versions historiques." />
+              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Accès rapide et ciblé à l'ensemble du référentiel documentaire grâce à des filtres multicritères. Recherche par type, statut, référence ou processus, avec consultation selon les habilitations attribuées." />
+              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="Contrôle d'accès granulaire fondé sur trois profils : Admin (accès complet), Ing. Qualité (rédaction et soumission) et Reviewer (validation). Chaque rôle dispose de permissions spécifiques garantissant la sécurité des données et la conformité aux politiques de gouvernance documentaire." />
             </div>
           </div>
 
@@ -977,12 +979,12 @@ export default function Home() {
               </p>
             </div>
             <div className="flex gap-4 flex-wrap">
-              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"      desc="Workflow complet : Brouillon → Rédaction → Relecture → Validation → Diffusion → Obsolescence → Archivage." />
-              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"  desc="Séparation des rôles Rédacteur ≠ Validateur. Signature numérique SHA-256. Immuabilité garantie." />
-              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"      desc="Audit trail complet et infalsifiable. Chaque action est horodatée et enregistrée avec preuve cryptographique." />
-              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"        desc="Archivage automatique des documents expirés. Historique conservé indéfiniment, aucune suppression physique." />
-              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Filtres multicritères : type, statut, responsable, mot-clé, processus, date. Pagination côté serveur." />
-              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="3 rôles : Admin, Ing. Qualité, Reviewer. Contrôle d'accès granulaire par rôle et permission." />
+              <FeatureCard icon={LuRefreshCw}      accent="#60a5fa" title="Cycle de vie ISO"        desc="Maîtrise complète du cycle documentaire conforme à la norme ISO 9001. Chaque document suit un workflow structuré garantissant la revue, l'approbation et la mise en circulation selon les exigences qualité en vigueur." />
+              <FeatureCard icon={LuCircleCheckBig} accent="#4ade80" title="Validation"            desc="Processus d'approbation formalisé avec séparation stricte des responsabilités. Chaque décision est horodatée, signée numériquement et conservée dans un registre immuable pour assurer la conformité réglementaire." />
+              <FeatureCard icon={LuShieldCheck}    accent="#a78bfa" title="Traçabilité"           desc="Journal d'audit exhaustif et infalsifiable pour chaque document. Toutes les actions — création, modification, approbation et archivage — sont enregistrées avec horodatage et identité de l'auteur." />
+              <FeatureCard icon={LuArchive}        accent="#fbbf24" title="Archivage"             desc="Conservation sécurisée et pérenne des documents selon les exigences légales et normatives. L'archivage définitif garantit l'intégrité des données et la disponibilité permanente des versions historiques." />
+              <FeatureCard icon={LuSearch}         accent="#2dd4bf" title="Recherche avancée"     desc="Accès rapide et ciblé à l'ensemble du référentiel documentaire grâce à des filtres multicritères. Recherche par type, statut, référence ou processus, avec consultation selon les habilitations attribuées." />
+              <FeatureCard icon={LuUsers}          accent="#fb923c" title="Gestion des rôles"     desc="Contrôle d'accès granulaire fondé sur trois profils : Admin (accès complet), Ing. Qualité (rédaction et soumission) et Reviewer (validation). Chaque rôle dispose de permissions spécifiques garantissant la sécurité des données et la conformité aux politiques de gouvernance documentaire." />
             </div>
           </div>
 
@@ -1172,6 +1174,9 @@ export default function Home() {
           infoOnly
         />
       )}
+
+      {/* ── Document Detail Modal ────────────────────── */}
+      {selectedDoc && <DocDetailModal docId={selectedDoc} onClose={() => setSelectedDoc(null)} />}
     </div>
   );
 }

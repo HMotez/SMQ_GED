@@ -3,7 +3,7 @@
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import useRoleCheck from "../hooks/useRoleCheck";
 import { AccessDeniedMessage, DocumentAccessStatus, DocumentRolePermissionsMatrix, RoleInfoBadge } from "../components/RoleBasedAccess";
@@ -213,6 +213,7 @@ const SIDEBAR_OVERRIDE_STYLES = `
 export default function DocumentList() {
   const { can, currentUser } = useUser();
   const { canPerformAction, getBlockReason, canTransitionStatus } = useRoleCheck();
+  const location = useLocation();
 
   const [documents,    setDocuments]    = useState([]);
   const [pagination,   setPagination]   = useState({ total:0,page:1,limit:15,totalPages:1 });
@@ -221,7 +222,16 @@ export default function DocumentList() {
   const [filterOpts,   setFilterOpts]   = useState({ responsables:[],processes:[] });
   const [folderTree,   setFolderTree]   = useState([]); // [{id, name, children:[{id,name}]}]
   const [loading,      setLoading]      = useState(true);
-  const [filters, setFilters] = useState({ keyword:"",docCode:"",typeId:"",statusName:"",processId:"",responsible:"",overdue:false });
+
+  const initialFilters = (() => {
+    const p = new URLSearchParams(location.search);
+    return {
+      keyword: "", docCode: "", typeId: "", processId: "", responsible: "",
+      statusName: p.get("statusName") || "",
+      overdue: p.get("overdue") === "true",
+    };
+  })();
+  const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
   const LIMIT = 15;
 
