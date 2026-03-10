@@ -621,6 +621,17 @@ export default function DocumentList() {
                   <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune transition disponible.</p>
                 ) : (
                   <div className="flex flex-col gap-2">
+                    {selected.status_name === "En validation" && (
+                      <div className="rounded-xl px-3 py-2.5 border flex items-start gap-2 mb-1"
+                        style={{ background:"rgba(165,180,252,0.08)", borderColor:"rgba(165,180,252,0.25)" }}>
+                        <LuClipboardCheck size={14} style={{ color:"#a5b4fc", flexShrink:0, marginTop:1 }} />
+                        <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.75)" }}>
+                          Pour valider ce document, utilisez la page{" "}
+                          <NavLink to="/validations" className="font-bold no-underline" style={{ color:"#a5b4fc" }}>Validations</NavLink>
+                          {" "}pour approuver ou rejeter.
+                        </p>
+                      </div>
+                    )}
                     {nextSteps(selected.status_name).map(next => {
                       const cfg = sCfg(next);
                       const NI = cfg.Icon;

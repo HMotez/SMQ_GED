@@ -273,14 +273,33 @@ async function runExpirationNotificationsJob() {
         "expiration"
       );
     }
-    for (const doc of expired.rows) {
-      publishEvent("smq.document.expiring", {
-        docCode: doc.doc_code, title: doc.title,
-        reviewDate: fmtDate(doc.next_review_date),
-      }, doc.id).catch(() => {});
-    }
     if (expired.rows.length) {
-      console.log(`[Notif-CRON] ${expired.rows.length} document(s) expirés.`);
+      // Send one email listing all expired documents to Admin + Ing. Qualité
+      const adminEmails = await emailsByRoles(["Admin", "Ing. Qualité"]);
+      const expiredList = expired.rows.map(d =>
+        `• [${d.doc_code}] ${d.title} — prévu le ${fmtDate(d.next_review_date)} (+${Math.floor((Date.now() - new Date(d.next_review_date).getTime()) / 86400000)}j)`
+      ).join("\n");
+
+      // Send individual email per document
+      for (const doc of expired.rows) {
+        await emailService.sendExpiringDocumentEmail({
+          to: adminEmails,
+          docCode:    doc.doc_code,
+          title:      doc.title,
+          docType:    doc.status_name || "—",
+          reviewDate: fmtDate(doc.next_review_date),
+        }).catch(err => console.error(`[Notif-CRON] Email expiration failed for ${doc.doc_code}:`, err.message));
+      }
+
+      console.log(`[Notif-CRON] ${expired.rows.length} document(s) expirés — emails envoyés:\n${expiredList}`);
+
+      // Also publish to Kafka (best-effort, non-blocking)
+      for (const doc of expired.rows) {
+        publishEvent("smq.document.expiring", {
+          docCode: doc.doc_code, title: doc.title,
+          reviewDate: fmtDate(doc.next_review_date),
+        }, doc.id).catch(() => {});
+      }
     }
 
     // 2. Documents inactifs depuis 6 mois (Validé ou Diffusé)
@@ -300,14 +319,27 @@ async function runExpirationNotificationsJob() {
         "inactivite"
       );
     }
-    for (const doc of inactive.rows) {
-      publishEvent("smq.document.inactive", {
-        docCode: doc.doc_code, title: doc.title,
-        lastModified: fmtDate(doc.updated_at),
-      }, doc.id).catch(() => {});
-    }
+
     if (inactive.rows.length) {
-      console.log(`[Notif-CRON] ${inactive.rows.length} document(s) inactifs.`);
+      const adminEmails = await emailsByRoles(["Admin", "Ing. Qualité"]);
+      for (const doc of inactive.rows) {
+        await emailService.sendInactiveDocumentEmail({
+          to: adminEmails,
+          docCode:      doc.doc_code,
+          title:        doc.title,
+          docType:      doc.status_name,
+          lastModified: fmtDate(doc.updated_at),
+        }).catch(err => console.error(`[Notif-CRON] Email inactivité failed for ${doc.doc_code}:`, err.message));
+      }
+
+      console.log(`[Notif-CRON] ${inactive.rows.length} document(s) inactifs — emails envoyés.`);
+
+      for (const doc of inactive.rows) {
+        publishEvent("smq.document.inactive", {
+          docCode: doc.doc_code, title: doc.title,
+          lastModified: fmtDate(doc.updated_at),
+        }, doc.id).catch(() => {});
+      }
     }
   } catch (err) {
     console.error("[Notif-CRON] error:", err.message);
@@ -397,6 +429,21 @@ async function markAllAsRead(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/notifications/trigger-expiration — Admin only
+// Déclenche manuellement le job d'expiration (pour test)
+// ─────────────────────────────────────────────────────────────
+async function triggerExpirationJob(req, res) {
+  const role = req.currentUser?.role;
+  if (role !== "Admin") return res.status(403).json({ error: "Réservé aux administrateurs." });
+  try {
+    await runExpirationNotificationsJob();
+    return res.json({ success: true, message: "Job d'expiration exécuté avec succès." });
+  } catch (err) {
+    return res.status(500).json({ error: "Erreur lors de l'exécution du job.", detail: err.message });
+  }
+}
+
 module.exports = {
   ensureNotificationsTable,
   createNotification,
@@ -404,6 +451,7 @@ module.exports = {
   triggerStatusNotification,
   triggerNewVersionNotification,
   runExpirationNotificationsJob,
+  triggerExpirationJob,
   getUserNotifications,
   getUnreadCount,
   markAsRead,

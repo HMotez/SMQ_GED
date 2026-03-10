@@ -18,6 +18,9 @@ router.get("/", ctrl.getUserNotifications);
 // PATCH /api/notifications/read-all  (avant /:id/read)
 router.patch("/read-all", ctrl.markAllAsRead);
 
+// POST /api/notifications/trigger-expiration  (Admin — test manuel)
+router.post("/trigger-expiration", ctrl.triggerExpirationJob);
+
 // PATCH /api/notifications/:id/read
 router.patch("/:id/read", ctrl.markAsRead);
 

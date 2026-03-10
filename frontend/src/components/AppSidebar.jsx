@@ -70,6 +70,7 @@ const NAV_ITEMS_VISITOR = [
   { icon: LuFileText,       label: "Liste documents",  href: "/list",        end: false },
   { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
   { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
+  { icon: LuGitBranch,      label: "Workflow",         href: "/workflow",    end: false },
   { icon: LuCpu,            label: "Assistant IA",     href: "/ai",          end: false },
 ];
 

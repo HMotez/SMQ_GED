@@ -22,7 +22,7 @@ const ROLE_PERMISSIONS = {
   ],
   "Ing. Qualité": [
     "document:read", "document:create", "document:update",
-    "document:status",
+    "document:status", "validation:create",
   ],
   "Reviewer": [
     "document:read", "validation:create",
@@ -37,7 +37,8 @@ const TRANSITION_ROLE_MAP = {
   "En relecture→En correction":             ["Admin", "Reviewer"],
   "En relecture→En validation":             ["Admin", "Reviewer"],
   "En correction→Appel en relecture":       ["Admin", "Ing. Qualité"],
-  "En validation→Validé":                   ["Admin", "Reviewer"],
+  "En validation→Validé":                   ["Admin", "Reviewer", "Ing. Qualité"],
+  "En validation→En correction":            ["Admin", "Reviewer", "Ing. Qualité"],
   "Validé→Diffusé":                         ["Admin"],
   "Diffusé→Obsolète":                       ["Admin"],
   "Obsolète→Archivé":                       ["Admin"],

@@ -24,6 +24,9 @@ const uploadDir = process.env.UPLOAD_DIR
 // ── Servir les fichiers uploadés ─────────────────────────────
 app.use("/files", express.static(uploadDir));
 
+// ── Servir les assets publics (logo, etc.) ───────────────────
+app.use("/public", express.static(path.join(__dirname, "../public")));
+
 // ── Download route (gère les noms avec espaces/accents) ──────
 app.get("/files/:filename", (req, res) => {
   const filename = decodeURIComponent(req.params.filename);

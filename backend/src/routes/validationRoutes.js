@@ -22,7 +22,7 @@ router.get(  "/",                       ctrl.getAllValidations);
 // ISO Constraint: validator_id est OBLIGATOIRE et ≠ document responsible
 router.post( "/document/:docId",
   loadUser,
-  requireRole("Admin", "Reviewer"),
+  requireRole("Admin", "Reviewer", "Ing. Qualité"),
   ctrl.createValidation
 );
 

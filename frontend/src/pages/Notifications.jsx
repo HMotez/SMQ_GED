@@ -10,7 +10,7 @@ import {
   LuClipboardCheck, LuFileWarning, LuFilePlus, LuArchive,
   LuCircleCheckBig, LuCircleAlert,
   LuX, LuCalendar, LuFolder, LuTag, LuUser,
-  LuFileText, LuLayers, LuHistory, LuShieldCheck,
+  LuFileText, LuLayers, LuHistory, LuShieldCheck, LuTriangleAlert,
 } from "react-icons/lu";
 
 import { API } from "../config";
@@ -300,11 +300,18 @@ function DocumentModal({ doc, loading, onClose }) {
 /* ════════════════════════════════════════════════════════════ */
 export default function Notifications() {
   const { currentUser, token, logout } = useUser();
+  const userRole = currentUser?.role;
 
   const [notifications, setNotifications] = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [filter,        setFilter]        = useState("all");
   const [toast,         setToast]         = useState({ msg: "", type: "" });
+  const [triggerLoading, setTriggerLoading] = useState(false);
+
+  // Expired documents section
+  const [expiredDocs,      setExpiredDocs]      = useState([]);
+  const [loadingExpired,   setLoadingExpired]   = useState(true);
+  const [expiredExpanded,  setExpiredExpanded]  = useState(true);
 
   // Document modal state
   const [selectedDoc,  setSelectedDoc]  = useState(null);
@@ -333,6 +340,47 @@ export default function Notifications() {
   }, [token]);
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
+  /* ── Fetch expired documents ────────────────────────────── */
+  const fetchExpiredDocs = useCallback(async () => {
+    setLoadingExpired(true);
+    try {
+      const res = await fetch(`${API}/documents?overdue=true&limit=50`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setExpiredDocs(Array.isArray(data) ? data : data.documents || []);
+    } catch {
+      setExpiredDocs([]);
+    } finally {
+      setLoadingExpired(false);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchExpiredDocs(); }, [fetchExpiredDocs]);
+
+  /* ── Trigger expiration job (Admin only) ────────────────── */
+  const triggerExpirationJob = async () => {
+    setTriggerLoading(true);
+    try {
+      const res = await fetch(`${API}/notifications/trigger-expiration`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Job exécuté. Notifications générées.", "success");
+        setTimeout(() => { fetchNotifications(); fetchExpiredDocs(); }, 800);
+      } else {
+        showToast(data.error || "Erreur lors de l'exécution.", "error");
+      }
+    } catch {
+      showToast("Impossible de contacter le serveur.", "error");
+    } finally {
+      setTriggerLoading(false);
+    }
+  };
 
   /* ── Open document modal ────────────────────────────────── */
   const openDocModal = async (docId) => {
@@ -423,8 +471,18 @@ export default function Notifications() {
           </div>
 
           <div className="flex items-center gap-2">
+            {userRole === "Admin" && (
+              <button
+                onClick={triggerExpirationJob}
+                disabled={triggerLoading}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border cursor-pointer"
+                style={{ background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
+                <LuFileWarning size={13} className={triggerLoading ? "animate-spin" : ""} />
+                {triggerLoading ? "Exécution…" : "Tester expiration"}
+              </button>
+            )}
             <button
-              onClick={fetchNotifications}
+              onClick={() => { fetchNotifications(); fetchExpiredDocs(); }}
               disabled={loading}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border cursor-pointer"
               style={{ background: "rgba(255,255,255,0.05)", color: "rgba(168,191,212,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -460,6 +518,121 @@ export default function Notifications() {
               <div className="text-[11px] font-semibold mt-0.5" style={{ color: "rgba(168,191,212,0.5)" }}>{stat.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* ── Expired documents section ──────────────────── */}
+        <div className="mb-5 rounded-2xl overflow-hidden border"
+          style={{ border: "1px solid rgba(248,113,113,0.2)", background: "rgba(248,113,113,0.04)" }}>
+          {/* Section header */}
+          <button
+            className="w-full flex items-center justify-between px-5 py-3.5 cursor-pointer"
+            style={{ background: "transparent" }}
+            onClick={() => setExpiredExpanded(v => !v)}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)" }}>
+                <LuTriangleAlert size={14} style={{ color: "#f87171" }} />
+              </div>
+              <span className="text-[13px] font-bold" style={{ color: "#f87171" }}>
+                Documents expirés
+              </span>
+              {!loadingExpired && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
+                  {expiredDocs.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] font-semibold" style={{ color: "rgba(248,113,113,0.5)" }}>
+              {expiredExpanded ? "Réduire ▲" : "Afficher ▼"}
+            </span>
+          </button>
+
+          {expiredExpanded && (
+            loadingExpired ? (
+              <div className="flex items-center justify-center py-8">
+                <span style={{ width: 22, height: 22, border: "2px solid rgba(248,113,113,0.15)", borderTopColor: "#f87171", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+              </div>
+            ) : expiredDocs.length === 0 ? (
+              <div className="flex items-center justify-center py-8 gap-2"
+                style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
+                <LuCircleCheckBig size={16} style={{ color: "rgba(74,222,128,0.5)" }} />
+                <p className="text-[13px] font-semibold m-0" style={{ color: "rgba(168,191,212,0.4)" }}>
+                  Aucun document expiré
+                </p>
+              </div>
+            ) : (
+              <div style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
+                {expiredDocs.map((doc, idx) => {
+                  const daysOverdue = doc.next_review_date
+                    ? Math.floor((Date.now() - new Date(doc.next_review_date).getTime()) / 86400000)
+                    : null;
+                  return (
+                    <div
+                      key={doc.id}
+                      onClick={() => openDocModal(doc.id)}
+                      className="flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors duration-150"
+                      style={{
+                        borderBottom: idx < expiredDocs.length - 1 ? "1px solid rgba(248,113,113,0.07)" : "none",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.07)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      {/* Icon */}
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                        <LuFileWarning size={14} style={{ color: "#f87171" }} />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-[12px] font-bold" style={{ color: "#f87171" }}>
+                            {doc.doc_code}
+                          </span>
+                          <span className="text-[13px] font-semibold truncate" style={{ color: "rgba(255,255,255,0.8)" }}>
+                            {doc.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(168,191,212,0.5)" }}>
+                            <LuCalendar size={10} />
+                            Révision : {fmtDate(doc.next_review_date)}
+                          </span>
+                          {doc.status_name && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                              style={{ background: (STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).bg, color: (STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).color, border: `1px solid ${(STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).border}` }}>
+                              {doc.status_name}
+                            </span>
+                          )}
+                          {doc.responsible && (
+                            <span className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(168,191,212,0.45)" }}>
+                              <LuUser size={10} />
+                              {doc.responsible}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Days overdue badge */}
+                      {daysOverdue !== null && (
+                        <div className="flex-shrink-0 text-right">
+                          <span className="text-[11px] font-bold px-2 py-1 rounded-lg"
+                            style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
+                            +{daysOverdue}j
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Arrow */}
+                      <span className="text-[11px] flex-shrink-0" style={{ color: "rgba(248,113,113,0.4)" }}>→</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          )}
         </div>
 
         {/* ── Filter tabs ────────────────────────────────── */}

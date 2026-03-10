@@ -29,7 +29,7 @@ const ALLOWED_TRANSITIONS = {
   "Appel en relecture":  ["En relecture"],
   "En relecture":        ["En correction", "En validation"],
   "En correction":       ["Appel en relecture"],
-  "En validation":       ["Validé"],
+  "En validation":       ["Validé", "En correction"],
   "Validé":              ["Diffusé", "En rédaction"],
   "Diffusé":             ["Obsolète"],
   "Obsolète":            ["Archivé"],
@@ -612,28 +612,8 @@ const changeStatus = async (req, res) => {
       });
     }
 
-    // 3c. CONSTRAINT ISO EF05: Si transition vers "Validé", auto-approuver + vérifier
+    // 3c. CONSTRAINT ISO EF05: Si transition vers "Validé", vérifier qu'une approbation existe
     if (newStatus === "Validé") {
-      const currentUserId = req.currentUser?.id || (userId ? parseInt(userId) : null);
-
-      // Auto-insérer une approbation pour l'utilisateur courant s'il n'en a pas encore
-      if (currentUserId) {
-        const existing = await client.query(
-          `SELECT id FROM validations
-           WHERE document_id = $1 AND validator_id = $2 AND decision = 'APPROUVÉ'
-           LIMIT 1`,
-          [docId, currentUserId]
-        );
-        if (!existing.rows.length) {
-          const validatorName = req.currentUser?.name || req.currentUser?.email || "Validateur";
-          await client.query(
-            `INSERT INTO validations
-               (document_id, validator_id, validator_name, comment, decision, is_locked)
-             VALUES ($1, $2, $3, 'Validation lors du changement de statut', 'APPROUVÉ', TRUE)`,
-            [docId, currentUserId, validatorName]
-          );
-        }
-      }
 
       // Vérification : seule la décision la plus récente compte
       const valCheck = await client.query(

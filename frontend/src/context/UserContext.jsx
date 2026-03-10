@@ -10,7 +10,7 @@ import { API } from "../config";
 // ── Permissions par rôle (miroir backend) ─────────────────────
 export const ROLE_PERMISSIONS = {
   "Admin":        ["document:read","document:create","document:update","document:status","validation:create","archive:manage","user:manage"],
-  "Ing. Qualité": ["document:read","document:create","document:update","document:status"],
+  "Ing. Qualité": ["document:read","document:create","document:update","document:status","validation:create"],
   "Reviewer":     ["document:read","validation:create"],
 };
 
@@ -18,7 +18,8 @@ export const TRANSITION_ROLE_MAP = {
   "Brouillon→En rédaction":     ["Admin","Ing. Qualité"],
   "En rédaction→En relecture":  ["Admin","Ing. Qualité"],
   "En relecture→En validation": ["Admin","Ing. Qualité"],
-  "En validation→Validé":       ["Admin","Reviewer"],
+  "En validation→Validé":       ["Admin","Reviewer","Ing. Qualité"],
+  "En validation→En correction":["Admin","Reviewer","Ing. Qualité"],
   "Validé→Diffusé":             ["Admin"],
   "Diffusé→Obsolète":           ["Admin"],
   "Obsolète→Archivé":           ["Admin"],

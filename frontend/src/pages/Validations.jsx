@@ -583,7 +583,7 @@ function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded })
                 <div>
                   <p className="m-0 mb-0.5 text-xs font-semibold" style={{ color:"#f87171" }}>Accès refusé</p>
                   <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.55)" }}>
-                    Seuls Reviewer et Admin peuvent enregistrer une décision.
+                    Seuls Reviewer, Ing. Qualité et Admin peuvent enregistrer une décision.
                   </p>
                 </div>
               </div>

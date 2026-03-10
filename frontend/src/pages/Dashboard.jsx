@@ -13,7 +13,11 @@ import {
   LuClipboardCheck, LuClock, LuCircleAlert, LuCircleCheck,
   LuTriangleAlert, LuRefreshCw, LuArrowRight,
   LuLogOut, LuPlus, LuUser,
+<<<<<<< HEAD
   LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuCpu,
+=======
+  LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuCpu, LuGitBranch,
+>>>>>>> d9df6fe (Update notification email message format in form submission)
 } from "react-icons/lu";
 
 import { API } from "../config";
@@ -63,6 +67,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/workflow",    label: "Workflow",                   Icon: LuGitBranch       },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Ing. Qualité": [
@@ -71,6 +76,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/workflow",    label: "Workflow",                   Icon: LuGitBranch       },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Reviewer": [
@@ -79,6 +85,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/workflow",    label: "Workflow",                   Icon: LuGitBranch       },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
 };

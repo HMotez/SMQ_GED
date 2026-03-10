@@ -15,7 +15,7 @@ import {
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig,
   LuRefreshCw, LuShieldCheck, LuSearch, LuUsers,
   LuPlus, LuArrowRight, LuLogOut, LuInbox, LuUser, LuZap, LuAward,
-  LuHouse, LuLayoutDashboard, LuBell, LuCpu,
+  LuHouse, LuLayoutDashboard, LuBell, LuCpu, LuGitBranch,
   LuCrown, LuWrench, LuChevronDown, LuShield, LuLock,
 } from "react-icons/lu";
 import { API } from "../config";
@@ -48,6 +48,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/workflow",    label: "Workflow",                   Icon: LuGitBranch       },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Ing. Qualité": [
@@ -56,6 +57,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/workflow",    label: "Workflow",                   Icon: LuGitBranch       },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Reviewer": [
@@ -64,6 +66,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
+    { to: "/workflow",    label: "Workflow",                   Icon: LuGitBranch       },
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
 };
@@ -402,6 +405,7 @@ function Navbar({ onOpenLogin = () => {} }) {
                 <NavItem to="/list"        label="Documents"                 icon={LuFileText}        />
                 <NavItem to="/validations" label="Validations"               icon={LuClipboardCheck}  />
                 <NavItem to="/archive"     label="Archivage"                 icon={LuArchive}         />
+                <NavItem to="/workflow"    label="Workflow"                  icon={LuGitBranch}       />
                 <NavItem to="/ai"          label="Assistant IA"              icon={LuCpu}             />
               </>
             )}
