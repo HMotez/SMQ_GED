@@ -51,7 +51,7 @@ async function allActiveEmails() {
 async function handleDocumentCreated(payload) {
   const { docId, docCode, title, docType, createdBy } = payload;
   const emails = await emailsByRoles(["Admin GED", "Admin", "Ing. Qualité"]);
-  await emailService.sendDocumentCreatedEmail({ to: emails, docCode, title, docType, createdBy });
+  await emailService.sendDocumentCreatedEmail({ to: emails, docId, docCode, title, docType, createdBy });
 }
 
 async function handleStatusChanged(payload) {
@@ -68,25 +68,25 @@ async function handleStatusChanged(payload) {
     emails = await emailsByRoles(["Admin GED", "Admin"]);
   }
 
-  await emailService.sendStatusChangedEmail({ to: emails, docCode, title, docType, fromStatus, toStatus, actor });
+  await emailService.sendStatusChangedEmail({ to: emails, docId, docCode, title, docType, fromStatus, toStatus, actor });
 }
 
 async function handleVersionAdded(payload) {
   const { docId, docCode, title, docType, version, uploadedBy } = payload;
   const emails = await emailsByRoles(["Admin GED", "Admin", "Ing. Qualité"]);
-  await emailService.sendNewVersionEmail({ to: emails, docCode, title, docType, version, uploadedBy });
+  await emailService.sendNewVersionEmail({ to: emails, docId, docCode, title, docType, version, uploadedBy });
 }
 
 async function handleExpiring(payload) {
-  const { docCode, title, docType, reviewDate } = payload;
+  const { docId, docCode, title, docType, reviewDate } = payload;
   const emails = await emailsByRoles(["Admin GED", "Admin"]);
-  await emailService.sendExpiringDocumentEmail({ to: emails, docCode, title, docType, reviewDate });
+  await emailService.sendExpiringDocumentEmail({ to: emails, docId, docCode, title, docType, reviewDate });
 }
 
 async function handleInactive(payload) {
-  const { docCode, title, docType, lastModified } = payload;
+  const { docId, docCode, title, docType, lastModified } = payload;
   const emails = await emailsByRoles(["Admin GED", "Admin"]);
-  await emailService.sendInactiveDocumentEmail({ to: emails, docCode, title, docType, lastModified });
+  await emailService.sendInactiveDocumentEmail({ to: emails, docId, docCode, title, docType, lastModified });
 }
 
 const HANDLERS = {

@@ -272,9 +272,10 @@ function alertBox(message, color) {
 }
 
 // ── CTA button ─────────────────────────────────────────────────
-function ctaButton(label, accent) {
-  const ac  = accent || "#4ab83f";
-  const url = process.env.APP_URL || "http://localhost";
+function ctaButton(label, accent, path) {
+  const ac   = accent || "#4ab83f";
+  const base = (process.env.APP_URL || "http://localhost").replace(/\/$/, "");
+  const url  = path ? `${base}${path}` : base;
   return `
   <div style="text-align:center;margin:24px 0 8px;">
     <a href="${url}" style="display:inline-block;background:linear-gradient(135deg,${ac},${ac}cc);color:#ffffff;font-size:13px;font-weight:700;padding:12px 32px;border-radius:10px;text-decoration:none;letter-spacing:0.3px;box-shadow:0 4px 14px ${ac}44;">
@@ -287,9 +288,10 @@ function ctaButton(label, accent) {
 // Email senders
 // ═══════════════════════════════════════════════════════════════
 
-async function sendDocumentCreatedEmail({ to, docCode, title, docType, createdBy }) {
+async function sendDocumentCreatedEmail({ to, docId, docCode, title, docType, createdBy }) {
   const accent = "#4ab83f";
   const subject = `[SMQ GED] Nouveau document créé — ${docCode}`;
+  const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
     ${sectionLabel("Création de document", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
@@ -301,15 +303,27 @@ async function sendDocumentCreatedEmail({ to, docCode, title, docType, createdBy
       infoRow("Date de création", new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" }))
     )}
     ${alertBox("Connectez-vous à <strong>SMQ GED</strong> pour consulter, compléter ou soumettre ce document au flux de validation.", accent)}
-    ${ctaButton("Voir le document", accent)}`;
+    ${ctaButton("Voir le document", accent, docPath)}`;
   await sendMail(to, subject, baseHtml("Nouveau document créé", accent, "135deg,#14532d 0%,#15803d 60%,#16a34a 100%", "file", content));
 }
 
-async function sendStatusChangedEmail({ to, docCode, title, docType, fromStatus, toStatus, actor }) {
+const STATUS_ROUTE = {
+  "Appel en relecture": "/workflow",
+  "En relecture":       "/workflow",
+  "En correction":      "/workflow",
+  "En validation":      "/validations",
+  "Validé":             "/list",
+  "Diffusé":            "/list",
+  "Obsolète":           "/list",
+  "Archivé":            "/archive",
+};
+
+async function sendStatusChangedEmail({ to, docId, docCode, title, docType, fromStatus, toStatus, actor }) {
   const cfg     = STATUS_CFG[toStatus] || { color: "#4ab83f", bg: "#f0fdf4", border: "#bbf7d0", svgKey: "check", grad: "135deg,#14532d,#15803d" };
   const ctx     = STATUS_CONTEXT[toStatus] || {};
   const accent  = cfg.color;
   const subject = `[SMQ GED] ${docCode} — Statut : ${toStatus}`;
+  const docPath = docId ? `/list?docId=${docId}` : (STATUS_ROUTE[toStatus] || "/dashboard");
   const content = `
     ${sectionLabel("Changement de statut", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
@@ -322,13 +336,14 @@ async function sendStatusChangedEmail({ to, docCode, title, docType, fromStatus,
       infoRow("Date",         new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" }))
     )}
     ${ctx.detail ? alertBox(ctx.detail, accent) : ""}
-    ${ctaButton("Voir dans SMQ GED", accent)}`;
+    ${ctaButton("Voir dans SMQ GED", accent, docPath)}`;
   await sendMail(to, subject, baseHtml(`Statut : ${toStatus}`, accent, cfg.grad, cfg.svgKey, content));
 }
 
-async function sendNewVersionEmail({ to, docCode, title, docType, version, uploadedBy }) {
+async function sendNewVersionEmail({ to, docId, docCode, title, docType, version, uploadedBy }) {
   const accent  = "#1d4ed8";
   const subject = `[SMQ GED] Nouvelle version — ${docCode} v${version}`;
+  const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
     ${sectionLabel("Mise à jour de version", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
@@ -341,13 +356,14 @@ async function sendNewVersionEmail({ to, docCode, title, docType, version, uploa
       infoRow("Date",             new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" }))
     )}
     ${alertBox("Si vous êtes relecteur ou validateur, vérifiez que les modifications sont conformes aux exigences en vigueur.", accent)}
-    ${ctaButton("Consulter la version", accent)}`;
+    ${ctaButton("Consulter la version", accent, docPath)}`;
   await sendMail(to, subject, baseHtml(`Nouvelle version v${version}`, accent, "135deg,#1e3a8a 0%,#1d4ed8 60%,#3b82f6 100%", "version", content));
 }
 
-async function sendExpiringDocumentEmail({ to, docCode, title, docType, reviewDate }) {
+async function sendExpiringDocumentEmail({ to, docId, docCode, title, docType, reviewDate }) {
   const accent  = "#dc2626";
   const subject = `[SMQ GED] ACTION REQUISE — Révision en retard : ${docCode}`;
+  const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
     ${sectionLabel("Alerte — Révision en retard", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
@@ -359,13 +375,14 @@ async function sendExpiringDocumentEmail({ to, docCode, title, docType, reviewDa
       infoRow("Statut actuel",           statusPill(docType || "—"))
     )}
     ${alertBox("Ce document doit impérativement être révisé ou passé en statut <strong>Obsolète</strong> pour rester conforme au référentiel qualité.", accent)}
-    ${ctaButton("Traiter maintenant", accent)}`;
+    ${ctaButton("Traiter maintenant", accent, docPath)}`;
   await sendMail(to, subject, baseHtml("Révision en retard", accent, "135deg,#7f1d1d 0%,#b91c1c 60%,#dc2626 100%", "warning", content));
 }
 
-async function sendInactiveDocumentEmail({ to, docCode, title, docType, lastModified }) {
+async function sendInactiveDocumentEmail({ to, docId, docCode, title, docType, lastModified }) {
   const accent  = "#d97706";
   const subject = `[SMQ GED] Document inactif depuis 6 mois — ${docCode}`;
+  const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
     ${sectionLabel("Avertissement — Document inactif", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
@@ -377,7 +394,7 @@ async function sendInactiveDocumentEmail({ to, docCode, title, docType, lastModi
       infoRow("Inactif depuis",        "+ de 6 mois")
     )}
     ${alertBox("Veuillez vérifier si ce document est toujours applicable. S'il est obsolète, merci de le marquer comme tel dans le système GED.", accent)}
-    ${ctaButton("Vérifier le document", accent)}`;
+    ${ctaButton("Vérifier le document", accent, docPath)}`;
   await sendMail(to, subject, baseHtml("Document inactif (6 mois)", accent, "135deg,#78350f 0%,#d97706 60%,#f59e0b 100%", "clock", content));
 }
 

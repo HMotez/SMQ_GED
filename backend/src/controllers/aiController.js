@@ -203,6 +203,13 @@ const INTENT_PATTERNS = [
     label: "Aide",
     roles: ["*"],
   },
+  // Conseils / questions ouvertes (amélioration, bonnes pratiques, explications)
+  {
+    regex: /comment.*(am[eé]liorer|optimiser|g[eé]rer|organiser|assurer|garantir|mettre\s+en\s+place)|bonnes?\s+pratiques?|quelles?\s+sont\s+les|expliqu|pourquoi|avantages?|inconv[eé]nients?|recommandation|conseil|diff[eé]rence\s+entre|c'est\s+quoi|qu'est.ce|que\s+signifie|d[eé]finition|important|utile|meilleure?\s+fa[çc]on|am[eé]lioration\s+continue|versionn|gestion.*qualit|iso\s*9001|norme|proc[eé]dure.*qualit/i,
+    intent: "general_advice",
+    label: "Conseil qualité",
+    roles: ["*"],
+  },
 ];
 
 // ─── Cache des types documentaires (chargé depuis la DB) ─────
@@ -692,6 +699,14 @@ async function buildSQLForIntent(intent, entities, role) {
         message: "Je peux répondre à vos questions sur le GED ACTIA ES : documents expirés, en validation, archivés, statistiques, dates de création/révision, recherche par code ou type, processus, responsable, et bien plus. Posez votre question en français.",
       };
 
+    case "general_advice":
+      return {
+        sql: null,
+        params: [],
+        message: null,
+        is_advice: true,
+      };
+
     default: {
       const searchTerm = entities.doc_code || entities.type_code || entities.process_keyword || entities.person_name;
       if (!searchTerm) {
@@ -719,50 +734,49 @@ async function buildSQLForIntent(intent, entities, role) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// GEMINI LLM — Helpers (Google AI — OpenAI-compatible endpoint)
+// OPENAI LLM — Helper
 // ─────────────────────────────────────────────────────────────
-const https = require("https");
+const OpenAI = require("openai");
 
-async function callGeminiLLM(systemPrompt, userQuery) {
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === "your_gemini_api_key_here") return null;
+let _openaiClient = null;
+function getOpenAIClient() {
+  if (!_openaiClient) {
+    const config = { apiKey: process.env.OPENAI_API_KEY };
+    // Support alternative providers (Groq, Together, etc.) via OPENAI_BASE_URL
+    if (process.env.OPENAI_BASE_URL) {
+      config.baseURL = process.env.OPENAI_BASE_URL;
+    }
+    _openaiClient = new OpenAI(config);
+  }
+  return _openaiClient;
+}
 
-  const body = JSON.stringify({
-    model: "gemini-2.0-flash",
-    messages: [
+function isOpenAIConfigured() {
+  const key = process.env.OPENAI_API_KEY;
+  return !!key && key !== "your_openai_api_key_here" && key.length > 10;
+}
+
+async function callOpenAILLM(systemPrompt, userQuery, history = []) {
+  if (!isOpenAIConfigured()) return null;
+  try {
+    const client = getOpenAIClient();
+    // Build full conversation: system + history turns + current user message
+    const messages = [
       { role: "system", content: systemPrompt },
+      ...history.slice(-10), // keep last 10 turns to avoid token overflow
       { role: "user",   content: userQuery },
-    ],
-    max_tokens: 700,
-    temperature: 0.2,
-    stream: false,
-  });
-
-  return new Promise((resolve) => {
-    const req = https.request({
-      hostname: "generativelanguage.googleapis.com",
-      path:     "/v1beta/openai/chat/completions",
-      method:   "POST",
-      headers: {
-        "Authorization": `Bearer ${GEMINI_API_KEY}`,
-        "Content-Type":  "application/json",
-        "Content-Length": Buffer.byteLength(body),
-      },
-    }, (res) => {
-      let data = "";
-      res.on("data", chunk => { data += chunk; });
-      res.on("end", () => {
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.error) { console.error("[IA][Gemini]", parsed.error.message); resolve(null); return; }
-          resolve(parsed.choices?.[0]?.message?.content?.trim() || null);
-        } catch { resolve(null); }
-      });
+    ];
+    const completion = await client.chat.completions.create({
+      model:       process.env.OPENAI_MODEL || "gpt-4o-mini",
+      messages,
+      max_tokens:  1000,
+      temperature: 0.4,
     });
-    req.on("error", (e) => { console.error("[IA][Gemini] Réseau:", e.message); resolve(null); });
-    req.write(body);
-    req.end();
-  });
+    return completion.choices[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error("[IA][OpenAI] Erreur:", err.message);
+    return null;
+  }
 }
 
 async function fetchDBSnapshot() {
@@ -841,7 +855,7 @@ CONSIGNES DE RÉPONSE
 // POST /api/ai/query — Chatbot Qualité (Hybride NLP + Gemini LLM)
 // ─────────────────────────────────────────────────────────────
 async function handleChatQuery(req, res) {
-  const { query } = req.body;
+  const { query, history = [] } = req.body;
   const user = req.currentUser;
 
   if (!query || query.trim().length < 3) {
@@ -857,6 +871,17 @@ async function handleChatQuery(req, res) {
   // Si recherche libre mais qu'un type DB a été identifié → forcer by_type
   if (intentPattern.intent === "text_search" && entities.type_code) {
     intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
+  }
+  // Si text_search sans aucune entité identifiable → conversation libre OpenAI
+  // (question ouverte, salutation, conseil général, etc.)
+  if (
+    intentPattern.intent === "text_search" &&
+    !entities.doc_code &&
+    !entities.type_code &&
+    !entities.process_keyword &&
+    !entities.person_name
+  ) {
+    intentPattern = { intent: "general_advice", label: "Conversation IA", roles: ["*"] };
   }
 
   if (intentPattern.roles && !intentPattern.roles.includes("*") && !intentPattern.roles.includes(role)) {
@@ -877,15 +902,44 @@ async function handleChatQuery(req, res) {
       rows = result.rows;
     }
 
-    // ── Gemini LLM : génère un message naturel basé sur les résultats SQL ──
+    // ── OpenAI LLM : génère un message naturel basé sur les résultats SQL ──
     let finalMessage = built.message;
-    const useLLM = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "your_gemini_api_key_here";
+    const useLLM = isOpenAIConfigured();
 
     if (useLLM) {
-      const snapshot = await fetchDBSnapshot();
-      const systemPrompt = buildSystemPrompt(snapshot, role, rows, built.message);
-      const llmMsg = await callGeminiLLM(systemPrompt, trimmedQuery);
-      if (llmMsg) finalMessage = llmMsg;
+      let llmMsg = null;
+      if (built.is_advice) {
+        // Question ouverte / conseil / conversation libre : OpenAI répond sans restriction
+        const advicePrompt = `Tu es l'Assistant IA intégré au Système de Gestion Électronique de Documents (GED) d'ACTIA ES, entreprise spécialisée en électronique automobile.
+
+Tu es un assistant conversationnel intelligent et polyvalent. Tu peux répondre à TOUTES les questions :
+- Questions sur le GED : gestion documentaire, versionning, cycle de vie des documents, archivage
+- Normes qualité : ISO 9001, ISO 9001:2015, amélioration continue, PDCA, audits, non-conformités
+- Questions générales : explication de concepts, aide à la rédaction, conseils pratiques
+- Salutations et conversations informelles : réponds chaleureusement et naturellement
+- Questions techniques ou métier liées à l'automobile, à l'électronique, à la qualité
+- Toute autre question : réponds de façon utile et intelligente
+
+Règles :
+1. Réponds TOUJOURS en français, avec un ton adapté à la question (professionnel pour les questions métier, détendu pour les salutations)
+2. Sois concis mais complet — donne une vraie valeur à chaque réponse
+3. Pour les questions sur le GED ACTIA ES, contextualise bien tes réponses dans ce cadre
+4. Pour les salutations ou questions générales, sois naturel et amical
+5. Ne refuse jamais de répondre sauf si la question est clairement inappropriée
+
+Profil de l'utilisateur : ${role}.`;
+        llmMsg = await callOpenAILLM(advicePrompt, trimmedQuery, history);
+        finalMessage = llmMsg || "Je n'ai pas pu générer une réponse. Veuillez vérifier la connexion à l'API OpenAI ou reformuler votre question.";
+      } else {
+        const snapshot = await fetchDBSnapshot();
+        const systemPrompt = buildSystemPrompt(snapshot, role, rows, built.message);
+        llmMsg = await callOpenAILLM(systemPrompt, trimmedQuery, history);
+        if (llmMsg) finalMessage = llmMsg;
+        // If OpenAI fails, keep the built.message (SQL result summary)
+        if (!finalMessage) finalMessage = built.message || "Aucun résultat disponible.";
+      }
+    } else if (!finalMessage) {
+      finalMessage = "L'assistant IA n'est pas configuré. Vérifiez la clé OPENAI_API_KEY dans le fichier .env.";
     }
 
     // Journalisation
@@ -898,7 +952,7 @@ async function handleChatQuery(req, res) {
 
     return res.json({
       intent:       intentPattern.intent,
-      intent_label: useLLM ? "Gemini AI" : intentPattern.label,
+      intent_label: useLLM ? `OpenAI ${process.env.OPENAI_MODEL || "gpt-4o-mini"}` : intentPattern.label,
       message:      finalMessage,
       result_count: statistics ? statistics.length : rows.length,
       documents:    rows,

@@ -178,7 +178,7 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
       if (emailTo.length > 0) {
         await emailService.sendStatusChangedEmail({
           to: emailTo,
-          docCode, title: docTitle, fromStatus, toStatus, actor,
+          docId, docCode, title: docTitle, fromStatus, toStatus, actor,
         });
       }
     } catch (emailErr) {
@@ -222,7 +222,7 @@ async function triggerNewVersionNotification(docId, docCode, docTitle, version, 
       if (emailTo.length > 0) {
         await emailService.sendNewVersionEmail({
           to: emailTo,
-          docCode, title: docTitle, version, uploadedBy: actorName,
+          docId, docCode, title: docTitle, version, uploadedBy: actorName,
         });
       }
     } catch (emailErr) {

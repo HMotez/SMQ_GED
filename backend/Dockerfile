@@ -1,7 +1,8 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
-# Node.js 20 + Express + LibreOffice + Module IA Gemini
-# ======================================================# =============================================================
+# Node.js 20 + Express + LibreOffice + Module IA OpenAI (GPT-4o-mini)
+# Sprint 11 — OpenAI integration + conversation history
+# =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────
 FROM node:20-slim AS deps

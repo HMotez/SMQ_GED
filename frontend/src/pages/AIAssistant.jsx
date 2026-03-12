@@ -19,7 +19,7 @@ import {
   LuShieldCheck, LuZap, LuChartBar,
   LuFileText, LuFolderOpen, LuTag, LuCalendar,
   LuArchive, LuGitBranch, LuNetwork,
-  LuFileCheck, LuBookOpen,
+  LuFileCheck, LuBookOpen, LuTrash2,
 } from "react-icons/lu";
 
 const GREEN      = "#4ab83f";
@@ -178,14 +178,77 @@ const EMPTY_MESSAGES = {
   text_search:        "Aucun document ne correspond à votre recherche.",
 };
 
-function ChatbotSection({ token }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 0, from: "bot",
-      text: "Bonjour ! Je suis votre assistant IA propulsé par Gemini AI. Posez-moi n'importe quelle question sur vos documents en français — je comprends le langage naturel.",
-      intent: null, docs: [], stats: null, llm: false,
+// ── Simple markdown renderer ─────────────────────────────────
+function renderMarkdown(text) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const elements = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Headers
+    if (/^###\s/.test(line)) {
+      elements.push(<div key={i} style={{ fontSize: 13, fontWeight: 700, color: "rgba(220,235,248,0.95)", marginTop: 10, marginBottom: 4 }}>{line.replace(/^###\s/, "")}</div>);
+    } else if (/^##\s/.test(line)) {
+      elements.push(<div key={i} style={{ fontSize: 14, fontWeight: 800, color: "rgba(220,235,248,0.98)", marginTop: 12, marginBottom: 5, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 4 }}>{line.replace(/^##\s/, "")}</div>);
+    } else if (/^#\s/.test(line)) {
+      elements.push(<div key={i} style={{ fontSize: 15, fontWeight: 900, color: "#4ab83f", marginTop: 14, marginBottom: 6 }}>{line.replace(/^#\s/, "")}</div>);
     }
-  ]);
+    // Bullet list
+    else if (/^[-•*]\s/.test(line)) {
+      elements.push(
+        <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginLeft: 8, marginTop: 3 }}>
+          <span style={{ color: "#4ab83f", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>•</span>
+          <span>{inlineFormat(line.replace(/^[-•*]\s/, ""))}</span>
+        </div>
+      );
+    }
+    // Numbered list
+    else if (/^\d+\.\s/.test(line)) {
+      const num = line.match(/^(\d+)\./)[1];
+      elements.push(
+        <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginLeft: 8, marginTop: 3 }}>
+          <span style={{ color: "#4ab83f", fontWeight: 700, flexShrink: 0, minWidth: 18, marginTop: 1 }}>{num}.</span>
+          <span>{inlineFormat(line.replace(/^\d+\.\s/, ""))}</span>
+        </div>
+      );
+    }
+    // Empty line → spacer
+    else if (line.trim() === "") {
+      elements.push(<div key={i} style={{ height: 6 }} />);
+    }
+    // Normal paragraph
+    else {
+      elements.push(<div key={i} style={{ marginTop: 2 }}>{inlineFormat(line)}</div>);
+    }
+    i++;
+  }
+  return <div style={{ lineHeight: 1.65, fontSize: 13.5 }}>{elements}</div>;
+}
+
+function inlineFormat(text) {
+  // Bold + italic combined, then bold, then italic, then code
+  const parts = text.split(/(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (/^\*\*\*/.test(part)) return <strong key={i}><em>{part.slice(3, -3)}</em></strong>;
+    if (/^\*\*/.test(part))   return <strong key={i} style={{ color: "rgba(220,235,248,0.98)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+    if (/^\*/.test(part))     return <em key={i} style={{ color: "rgba(220,235,248,0.85)" }}>{part.slice(1, -1)}</em>;
+    if (/^`/.test(part))      return <code key={i} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 4, padding: "1px 5px", fontSize: 12, fontFamily: "monospace", color: "#4ab83f" }}>{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
+const INITIAL_MESSAGE = {
+  id: 0, from: "bot",
+  text: "Bonjour ! Je suis votre assistant IA propulsé par OpenAI. Posez-moi n'importe quelle question sur vos documents ou sur la qualité — je comprends le langage naturel et je me souviens du contexte de notre conversation.",
+  intent: null, docs: [], stats: null, llm: false,
+};
+
+function ChatbotSection({ token }) {
+  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+  const [history, setHistory]   = useState([]); // OpenAI conversation turns
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const endRef = useRef(null);
@@ -194,6 +257,11 @@ function ChatbotSection({ token }) {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  function clearConversation() {
+    setMessages([INITIAL_MESSAGE]);
+    setHistory([]);
+  }
+
   async function sendMessage(text) {
     const query = (text || input).trim();
     if (!query) return;
@@ -201,13 +269,14 @@ function ChatbotSection({ token }) {
     setMessages(prev => [...prev, { id: Date.now(), from: "user", text: query }]);
     setLoading(true);
     try {
-      const { data } = await axios.post(`${API}/ai/query`, { query }, {
+      const { data } = await axios.post(`${API}/ai/query`, { query, history }, {
         headers: authHeaders(token),
       });
+      const botText = data.message || "";
       setMessages(prev => [...prev, {
         id:         Date.now() + 1,
         from:       "bot",
-        text:       data.message,
+        text:       botText,
         intent:     data.intent_label,
         intentKey:  data.intent,
         docs:       data.documents || [],
@@ -216,6 +285,12 @@ function ChatbotSection({ token }) {
         count:      data.result_count,
         llm:        data.llm_powered || false,
       }]);
+      // Append to conversation history for next turn
+      setHistory(prev => [
+        ...prev,
+        { role: "user",      content: query },
+        { role: "assistant", content: botText },
+      ]);
     } catch (err) {
       const errMsg = err.response?.data?.error || "Erreur lors du traitement.";
       setMessages(prev => [...prev, {
@@ -316,10 +391,10 @@ function ChatbotSection({ token }) {
                       fontWeight: 600, marginBottom: 6,
                     }}>
                       <LuZap size={10} />
-                      {msg.llm ? "Gemini AI" : msg.intent}
+                      {msg.llm ? "OpenAI" : msg.intent}
                     </div>
                   )}
-                  <div>{msg.text}</div>
+                  <div>{msg.from === "bot" ? renderMarkdown(msg.text) : msg.text}</div>
                 </div>
 
                 {/* Stats table */}
@@ -365,7 +440,7 @@ function ChatbotSection({ token }) {
                 {msg.intentKey && msg.from === "bot" &&
                  (!msg.docs || msg.docs.length === 0) &&
                  (!msg.stats || msg.stats.length === 0) &&
-                 msg.intentKey !== "help" && msg.intentKey !== "how_to_validate" && (
+                 msg.intentKey !== "help" && msg.intentKey !== "how_to_validate" && msg.intentKey !== "general_advice" && (
                   <div style={{
                     display: "flex", alignItems: "center", gap: 10,
                     background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.18)",
@@ -459,11 +534,25 @@ function ChatbotSection({ token }) {
         {/* Input */}
         <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}` }}>
           <div style={{ display: "flex", gap: 10 }}>
+            <button
+              onClick={clearConversation}
+              title="Nouvelle conversation"
+              style={{
+                background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`,
+                borderRadius: 10, padding: "10px 12px", cursor: "pointer",
+                color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center",
+                transition: "all 0.2s", flexShrink: 0,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.1)"; e.currentTarget.style.color = "#f87171"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
+            >
+              <LuTrash2 size={15} />
+            </button>
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              placeholder="Posez votre question en français…"
+              placeholder="Posez votre question en français… (Entrée pour envoyer)"
               style={{
                 flex: 1, background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`,
                 borderRadius: 10, padding: "10px 14px", color: "rgba(220,235,248,0.9)",
@@ -485,6 +574,12 @@ function ChatbotSection({ token }) {
               Envoyer
             </button>
           </div>
+          {history.length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 11, color: "rgba(168,191,212,0.3)", display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} />
+              {Math.floor(history.length / 2)} échange(s) en mémoire · Cliquez sur <LuTrash2 size={10} style={{ margin: "0 2px" }} /> pour réinitialiser
+            </div>
+          )}
         </div>
       </Card>
 
@@ -805,11 +900,11 @@ export default function AIAssistant() {
                     borderRadius: 7, padding: "3px 9px",
                     fontSize: 10.5, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.2px",
                   }}>
-                    <LuZap size={10} /> Gemini AI
+                    <LuZap size={10} /> OpenAI
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
-                  gemini-2.0-flash · Données ACTIA ES en temps réel
+                  gpt-4o-mini · Données ACTIA ES en temps réel · Conversation mémorisée
                 </p>
               </div>
             </div>

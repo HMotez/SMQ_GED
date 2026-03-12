@@ -2,7 +2,7 @@
 // pages/Dashboard.jsx — ACTIA ES GED — Login-Style Dark Design
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
-import { NavLink, useNavigate, useMatch } from "react-router-dom";
+import { NavLink, useNavigate, useMatch, useLocation } from "react-router-dom";
 import axios from "axios";
 import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
@@ -13,11 +13,7 @@ import {
   LuClipboardCheck, LuClock, LuCircleAlert, LuCircleCheck,
   LuTriangleAlert, LuRefreshCw, LuArrowRight,
   LuLogOut, LuPlus, LuUser,
-<<<<<<< HEAD
-  LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuCpu,
-=======
   LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuCpu, LuGitBranch,
->>>>>>> d9df6fe (Update notification email message format in form submission)
 } from "react-icons/lu";
 
 import { API } from "../config";
@@ -466,12 +462,20 @@ const CHART_COLORS = ["#3b82f6","#10b981","#f59e0b","#6d28d9","#ef4444","#0f766e
 /* ══════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [overview,      setOverview]      = useState(null);
   const [stats,         setStats]         = useState(null);
   const [loadingOv,     setLoadingOv]     = useState(true);
   const [loadingSt,     setLoadingSt]     = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [selectedDoc,   setSelectedDoc]   = useState(null);
+
+  // Auto-open document from email link (?docId=<id>)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const docId  = params.get("docId");
+    if (docId) setSelectedDoc(Number(docId));
+  }, [location.search]);
 
   const fetchData = useCallback(() => {
     axios.get(`${API}/dashboard/overview`).then(r => setOverview(r.data)).catch(console.error).finally(() => setLoadingOv(false));

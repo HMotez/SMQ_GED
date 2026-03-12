@@ -9,6 +9,7 @@ import useRoleCheck from "../hooks/useRoleCheck";
 import { AccessDeniedMessage, DocumentAccessStatus, DocumentRolePermissionsMatrix, RoleInfoBadge } from "../components/RoleBasedAccess";
 import AppSidebar from "../components/AppSidebar";
 import DownloadMenu from "../components/DownloadMenu";
+import DocDetailModal from "../components/DocDetailModal";
 import {
   LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2,
   LuTriangleAlert, LuCircleHelp, LuCheck, LuClock, LuRefreshCw,
@@ -235,6 +236,7 @@ export default function DocumentList() {
   const [page, setPage] = useState(1);
   const LIMIT = 15;
 
+  const [linkedDocId,    setLinkedDocId]    = useState(null); // opened via email link
   const [selected,       setSelected]       = useState(null);
   const [versions,       setVersions]       = useState([]);
   const [previewOpen,    setPreviewOpen]     = useState(false);
@@ -246,6 +248,8 @@ export default function DocumentList() {
   const [newFile,        setNewFile]         = useState(null);
   const [submitting,     setSubmitting]      = useState(false);
   const [statusChanging, setStatusChanging]  = useState(false);
+  const [timeline,       setTimeline]        = useState([]);
+  const [activeTab,      setActiveTab]       = useState("detail");
   const debounceTimer = useRef(null);
   const downloadRef   = useRef(null);
   const debounce = (fn, ms=400) => { clearTimeout(debounceTimer.current); debounceTimer.current=setTimeout(fn,ms); };
@@ -300,10 +304,24 @@ export default function DocumentList() {
   const hasActiveFilters = Object.values(filters).some(v => v !== "" && v !== false);
 
   const openDoc = async (doc) => {
-    setSelected(doc); setVersions([]);
-    try { const res = await axios.get(`${API}/documents/${doc.id}/versions`); setVersions(res.data); } catch { /* silent */ }
+    setSelected(doc); setVersions([]); setTimeline([]); setActiveTab("detail");
+    try {
+      const [verRes, auditRes] = await Promise.all([
+        axios.get(`${API}/documents/${doc.id}/versions`),
+        axios.get(`${API}/documents/${doc.id}/audit-trail`).catch(() => ({ data: { timeline: [] } })),
+      ]);
+      setVersions(verRes.data);
+      setTimeline(auditRes.data?.timeline || []);
+    } catch { /* silent */ }
   };
-  const closeDoc = () => { setSelected(null); setVersions([]); setNewVerOpen(false); setSummary(""); setSpLink(""); setNewFile(null); };
+
+  // Auto-open document from email link (?docId=<id>)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const docId  = params.get("docId");
+    if (docId) setLinkedDocId(Number(docId));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const closeDoc = () => { setSelected(null); setVersions([]); setTimeline([]); setActiveTab("detail"); setNewVerOpen(false); setSummary(""); setSpLink(""); setNewFile(null); };
 
   const handleStatusChange = async (nextStatus) => {
     if (!selected) return; setStatusChanging(true);
@@ -578,6 +596,11 @@ export default function DocumentList() {
         </div>
       </main>
 
+      {/* ══ Email-link doc detail (with Consultation tab) ═══ */}
+      {linkedDocId && (
+        <DocDetailModal docId={linkedDocId} onClose={() => setLinkedDocId(null)} />
+      )}
+
       {/* ══ Document detail modal ════════════════════════════ */}
       {selected && (
         <div onClick={closeDoc} className="fixed inset-0 flex items-center justify-center z-[1000] p-6 animate-fade-in"
@@ -604,6 +627,32 @@ export default function DocumentList() {
                 </div>
               </div>
 
+              {/* Tab bar */}
+              <div className="flex items-end gap-0.5 mb-5 border-b" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+                {[
+                  { id:"detail",       label:"Détail" },
+                  { id:"consultation", label:"Consultation", count: timeline.length },
+                ].map(tab => (
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+                    style={{
+                      color: activeTab === tab.id ? "#fff" : "rgba(168,191,212,0.45)",
+                      borderBottomColor: activeTab === tab.id ? "#4ab83f" : "transparent",
+                      background: activeTab === tab.id ? "rgba(74,184,63,0.06)" : "transparent",
+                      cursor: "pointer", marginBottom: -1,
+                    }}>
+                    {tab.label}
+                    {tab.count > 0 && (
+                      <span className="rounded-full px-1.5 py-px text-[10px] font-black"
+                        style={{ background: activeTab === tab.id ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.06)", color: activeTab === tab.id ? "#4ab83f" : "rgba(168,191,212,0.35)" }}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {activeTab === "detail" && <>
               <RoleInfoBadge />
               <DocumentAccessStatus document={selected} />
               <DocumentRolePermissionsMatrix document={selected} />
@@ -795,6 +844,77 @@ export default function DocumentList() {
                     </div>
                     );
                   })}
+                </div>
+              )}
+
+              </> /* end detail tab */}
+
+              {/* ── Consultation tab ──────────────────────── */}
+              {activeTab === "consultation" && (
+                <div>
+                  {timeline.length === 0 ? (
+                    <div className="flex flex-col items-center py-12 gap-3">
+                      <LuFileText size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
+                      <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune activité enregistrée.</p>
+                    </div>
+                  ) : (
+                    <div className="relative pl-2">
+                      <div className="absolute left-[28px] top-5 bottom-5 w-px"
+                        style={{ background:"linear-gradient(to bottom,rgba(74,184,63,0.4) 0%,rgba(148,163,184,0.1) 100%)" }} />
+                      <div className="flex flex-col">
+                        {timeline.map((event, idx) => {
+                          const TYPE_CFG = {
+                            STATUS_CHANGE:      { text:"#a5b4fc", Icon:LuArrowRight,  label:"Changement de statut" },
+                            DOCUMENT_CREATED:   { text:"#4ab83f", Icon:LuCheck,       label:"Création" },
+                            AUTO_ARCHIVE:       { text:"#94a3b8", Icon:LuArchive,     label:"Archivage automatique" },
+                            VERSION_SUPERSEDED: { text:"#fb923c", Icon:LuRefreshCw,   label:"Version remplacée" },
+                          };
+                          let cfg;
+                          if (event.type === "VERSION")     cfg = { text:"#4ab83f", Icon:LuRefreshCw, label:"Nouvelle version" };
+                          else if (event.type === "VALIDATION") cfg = { text:"#a5b4fc", Icon:LuCheck, label:"Validation" };
+                          else cfg = TYPE_CFG[event.action] || { text:"#94a3b8", Icon:LuFileText, label: event.action || "Activité" };
+                          const EI = cfg.Icon;
+                          const details = event.details || {};
+                          return (
+                            <div key={idx} className="flex gap-4 py-3">
+                              <div className="flex-shrink-0 w-14 flex justify-center">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center border"
+                                  style={{ background:`${cfg.text}12`, borderColor:`${cfg.text}25`, position:"relative", zIndex:1 }}>
+                                  <EI size={16} style={{ color:cfg.text }} />
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0 pt-1.5">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="text-sm font-bold" style={{ color:cfg.text }}>{cfg.label}</span>
+                                  <span className="text-[11px] flex-shrink-0" style={{ color:"rgba(168,191,212,0.35)" }}>
+                                    {event.timestamp ? new Date(event.timestamp).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
+                                  </span>
+                                </div>
+                                {event.type === "LOG" && details.from && details.to && (
+                                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                    <span style={{ color:"rgba(168,191,212,0.38)" }}>{details.from}</span>
+                                    {" "}<span style={{ color:cfg.text }}>→</span>{" "}
+                                    <span className="font-semibold text-white">{details.to}</span>
+                                  </p>
+                                )}
+                                {event.type === "VERSION" && (
+                                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                    <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>v{event.version_letter}</span>
+                                    {event.change_summary && <span> · {event.change_summary}</span>}
+                                  </p>
+                                )}
+                                {event.type === "LOG" && event.user_id && (
+                                  <p className="m-0 mt-0.5 text-[11px]" style={{ color:"rgba(168,191,212,0.3)" }}>
+                                    {details.user_name || `Utilisateur #${event.user_id}`}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
