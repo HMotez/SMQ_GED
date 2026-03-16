@@ -1,10 +1,19 @@
 // =============================================================
+<<<<<<< HEAD
 // services/emailService.js — Nodemailer + Rich HTML email templates
 // =============================================================
 const nodemailer = require("nodemailer");
 
 const LOGO_URL = "https://i.imgur.com/LCbKPmV.png";
 
+=======
+// services/emailService.js — Nodemailer transporter + HTML email templates
+// Original design — single green (#4ab83f) theme
+// =============================================================
+const nodemailer = require("nodemailer");
+
+// ── Transporter ───────────────────────────────────────────────
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 function getTransporter() {
   return nodemailer.createTransport({
     host:   process.env.SMTP_HOST   || "smtp.gmail.com",
@@ -154,6 +163,7 @@ function baseHtml(title, accent, headerGrad, svgKey, content) {
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>${title}</title>
 </head>
+<<<<<<< HEAD
 <body style="margin:0;padding:0;background:#e8edf4;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#e8edf4;padding:40px 0;">
 <tr><td align="center">
@@ -212,10 +222,79 @@ function baseHtml(title, accent, headerGrad, svgKey, content) {
 </table>
 </td></tr>
 </table>
+=======
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0"
+        style="background:#ffffff;border-radius:12px;overflow:hidden;
+               box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+        <!-- Top accent bar -->
+        <tr><td style="background:#4ab83f;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+        <!-- Header -->
+        <tr><td style="background:#0b1929;padding:24px 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <span style="color:#4ab83f;font-size:11px;font-weight:700;
+                             text-transform:uppercase;letter-spacing:2px;">
+                  SMQ GED · ACTIA Engineering
+                </span><br/>
+                <span style="color:#ffffff;font-size:20px;font-weight:800;">${title}</span>
+              </td>
+              <td align="right">
+                <div style="width:40px;height:40px;border-radius:10px;
+                            background:rgba(74,184,63,0.15);
+                            border:1px solid rgba(74,184,63,0.3);
+                            display:inline-flex;align-items:center;justify-content:center;">
+                  <span style="color:#4ab83f;font-size:20px;">&#128196;</span>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:32px;">
+          ${content}
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <span style="display:inline-block;background:#0b1929;color:#4ab83f;
+                             font-size:9px;font-weight:800;letter-spacing:2px;
+                             text-transform:uppercase;padding:3px 8px;border-radius:5px;
+                             border:1px solid rgba(74,184,63,0.35);">
+                  ISO 9001 · GED
+                </span>
+              </td>
+              <td align="right">
+                <p style="margin:0;font-size:11px;color:#94a3b8;text-align:right;">
+                  Ce message est envoyé automatiquement par le système SMQ GED.<br/>
+                  Merci de ne pas répondre directement à cet e-mail.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <!-- Bottom accent bar -->
+        <tr><td style="background:#4ab83f;height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 </body>
 </html>`;
 }
 
+<<<<<<< HEAD
 // ── Section label ──────────────────────────────────────────────
 function sectionLabel(text, color) {
   const c = color || "#1e3450";
@@ -305,6 +384,111 @@ async function sendDocumentCreatedEmail({ to, docId, docCode, title, docType, cr
     ${alertBox("Connectez-vous à <strong>SMQ GED</strong> pour consulter, compléter ou soumettre ce document au flux de validation.", accent)}
     ${ctaButton("Voir le document", accent, docPath)}`;
   await sendMail(to, subject, baseHtml("Nouveau document créé", accent, "135deg,#14532d 0%,#15803d 60%,#16a34a 100%", "file", content));
+=======
+// ── Reusable blocks ───────────────────────────────────────────
+
+function docCard(docCode, title, type) {
+  return `
+  <div style="background:#f8fafc;border-radius:8px;border-left:4px solid #4ab83f;
+              padding:16px;margin:20px 0;">
+    <span style="font-size:10px;font-weight:700;color:#4ab83f;
+                 text-transform:uppercase;letter-spacing:1px;">
+      ${type || "Document"}
+    </span><br/>
+    <span style="font-size:16px;font-weight:700;color:#0b1929;">
+      ${title || "—"}
+    </span><br/>
+    <span style="display:inline-block;margin-top:6px;font-size:11px;color:#4ab83f;
+                 font-family:monospace;font-weight:700;background:rgba(74,184,63,0.10);
+                 padding:2px 8px;border-radius:4px;border:1px solid rgba(74,184,63,0.25);">
+      ${docCode || "—"}
+    </span>
+  </div>`;
+}
+
+function greenBadge(text) {
+  return `<span style="font-size:12px;font-weight:700;color:#fff;background:#4ab83f;
+                       border-radius:4px;padding:2px 10px;">${text}</span>`;
+}
+
+function ctaButton(label, url) {
+  if (!url) return "";
+  return `
+  <table cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+    <tr>
+      <td style="background:#4ab83f;border-radius:8px;">
+        <a href="${url}"
+           style="display:inline-block;padding:12px 28px;font-size:13px;font-weight:800;
+                  color:#ffffff;text-decoration:none;font-family:'Segoe UI',Arial,sans-serif;
+                  letter-spacing:0.2px;">
+          ${label} &#8594;
+        </a>
+      </td>
+    </tr>
+  </table>`;
+}
+
+const APP_URL = process.env.APP_URL || "http://localhost";
+
+// ── Email senders ──────────────────────────────────────────────
+
+async function sendDocumentCreatedEmail({ to, docCode, title, docType, createdBy }) {
+  const subject = `[SMQ GED] Nouveau document : ${docCode}`;
+  const content = `
+    <p style="font-size:14px;color:#374151;">
+      Un nouveau document a été créé dans le système GED.
+    </p>
+    ${docCard(docCode, title, docType)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:8px;">
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;">Créé par :</td>
+        <td style="font-size:12px;color:#0b1929;font-weight:600;">${createdBy || "—"}</td>
+      </tr>
+    </table>
+    <p style="font-size:13px;color:#64748b;margin-top:20px;">
+      Connectez-vous à SMQ GED pour consulter ou valider ce document.
+    </p>
+    ${ctaButton("Voir dans SMQ GED", `${APP_URL}/documents`)}`;
+  await sendMail(to, subject, baseHtml("Nouveau document créé", content));
+}
+
+async function sendStatusChangedEmail({ to, docCode, title, docType, fromStatus, toStatus, actor, date }) {
+  const subject = `[SMQ GED] Statut modifié : ${docCode} → ${toStatus}`;
+
+  const contextMsg = {
+    "Appel en relecture":  "Un document vous est soumis pour relecture. Veuillez examiner le document et rendre votre avis dans les meilleurs délais.",
+    "En validation":       "Un document est en attente de validation. Veuillez l'examiner et donner votre décision.",
+    "Validé":              "Le document a été validé avec succès.",
+    "Diffusé":             "Le document est maintenant diffusé et disponible à la consultation.",
+    "Obsolète":            "Ce document a été marqué comme obsolète.",
+    "Archivé":             "Ce document a été archivé.",
+  }[toStatus] || "Le statut du document a été mis à jour.";
+
+  const content = `
+    <p style="font-size:14px;color:#374151;">${contextMsg}</p>
+    ${docCard(docCode, title, docType)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:8px;">
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;width:140px;">Ancien statut :</td>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;">${fromStatus || "—"}</td>
+      </tr>
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;">Nouveau statut :</td>
+        <td style="padding:4px 0;">${greenBadge(toStatus)}</td>
+      </tr>
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;">Effectué par :</td>
+        <td style="font-size:12px;color:#0b1929;font-weight:600;padding:4px 0;">${actor || "—"}</td>
+      </tr>
+      ${date ? `
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;">Date :</td>
+        <td style="font-size:12px;color:#0b1929;font-weight:600;padding:4px 0;">${new Date(date).toLocaleString("fr-FR")}</td>
+      </tr>` : ""}
+    </table>
+    ${ctaButton("Voir dans SMQ GED", `${APP_URL}/validations`)}`;
+  await sendMail(to, subject, baseHtml("Changement de statut", content));
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 }
 
 const STATUS_ROUTE = {
@@ -325,6 +509,7 @@ async function sendStatusChangedEmail({ to, docId, docCode, title, docType, from
   const subject = `[SMQ GED] ${docCode} — Statut : ${toStatus}`;
   const docPath = docId ? `/list?docId=${docId}` : (STATUS_ROUTE[toStatus] || "/dashboard");
   const content = `
+<<<<<<< HEAD
     ${sectionLabel("Changement de statut", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
       ${ctx.headline || "Le statut du document a été modifié."}
@@ -338,6 +523,24 @@ async function sendStatusChangedEmail({ to, docId, docCode, title, docType, from
     ${ctx.detail ? alertBox(ctx.detail, accent) : ""}
     ${ctaButton("Voir dans SMQ GED", accent, docPath)}`;
   await sendMail(to, subject, baseHtml(`Statut : ${toStatus}`, accent, cfg.grad, cfg.svgKey, content));
+=======
+    <p style="font-size:14px;color:#374151;">
+      Une nouvelle version est disponible pour ce document.
+    </p>
+    ${docCard(docCode, title, docType)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:8px;">
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;width:140px;">Nouvelle version :</td>
+        <td style="padding:4px 0;">${greenBadge(`v${version}`)}</td>
+      </tr>
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;">Ajoutée par :</td>
+        <td style="font-size:12px;color:#0b1929;font-weight:600;padding:4px 0;">${uploadedBy || "—"}</td>
+      </tr>
+    </table>
+    ${ctaButton("Voir dans SMQ GED", `${APP_URL}/documents`)}`;
+  await sendMail(to, subject, baseHtml("Nouvelle version ajoutée", content));
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 }
 
 async function sendNewVersionEmail({ to, docId, docCode, title, docType, version, uploadedBy }) {
@@ -345,6 +548,7 @@ async function sendNewVersionEmail({ to, docId, docCode, title, docType, version
   const subject = `[SMQ GED] Nouvelle version — ${docCode} v${version}`;
   const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
+<<<<<<< HEAD
     ${sectionLabel("Mise à jour de version", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
       Une nouvelle version a été publiée. Veuillez en prendre connaissance.
@@ -358,6 +562,23 @@ async function sendNewVersionEmail({ to, docId, docCode, title, docType, version
     ${alertBox("Si vous êtes relecteur ou validateur, vérifiez que les modifications sont conformes aux exigences en vigueur.", accent)}
     ${ctaButton("Consulter la version", accent, docPath)}`;
   await sendMail(to, subject, baseHtml(`Nouvelle version v${version}`, accent, "135deg,#1e3a8a 0%,#1d4ed8 60%,#3b82f6 100%", "version", content));
+=======
+    <p style="font-size:14px;color:#374151;">
+      Un document dépasse sa date de révision prévue.
+    </p>
+    ${docCard(docCode, title, docType)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:8px;">
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;width:140px;">Date de révision :</td>
+        <td style="padding:4px 0;">${greenBadge(reviewDate || "Dépassée")}</td>
+      </tr>
+    </table>
+    <p style="font-size:13px;color:#64748b;margin-top:20px;">
+      Veuillez réviser ce document ou mettre à jour sa date de révision.
+    </p>
+    ${ctaButton("Voir dans SMQ GED", `${APP_URL}/documents`)}`;
+  await sendMail(to, subject, baseHtml("Document en retard de révision", content));
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 }
 
 async function sendExpiringDocumentEmail({ to, docId, docCode, title, docType, reviewDate }) {
@@ -365,6 +586,7 @@ async function sendExpiringDocumentEmail({ to, docId, docCode, title, docType, r
   const subject = `[SMQ GED] ACTION REQUISE — Révision en retard : ${docCode}`;
   const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
+<<<<<<< HEAD
     ${sectionLabel("Alerte — Révision en retard", accent)}
     <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">
       Ce document a dépassé sa date de révision planifiée. Une action est requise pour assurer la conformité ISO 9001.
@@ -377,6 +599,23 @@ async function sendExpiringDocumentEmail({ to, docId, docCode, title, docType, r
     ${alertBox("Ce document doit impérativement être révisé ou passé en statut <strong>Obsolète</strong> pour rester conforme au référentiel qualité.", accent)}
     ${ctaButton("Traiter maintenant", accent, docPath)}`;
   await sendMail(to, subject, baseHtml("Révision en retard", accent, "135deg,#7f1d1d 0%,#b91c1c 60%,#dc2626 100%", "warning", content));
+=======
+    <p style="font-size:14px;color:#374151;">
+      Ce document n'a pas été modifié depuis plus de 6 mois.
+    </p>
+    ${docCard(docCode, title, docType)}
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin-top:8px;">
+      <tr>
+        <td style="font-size:12px;color:#64748b;padding:4px 0;width:140px;">Dernière modification :</td>
+        <td style="font-size:12px;color:#0b1929;font-weight:600;padding:4px 0;">${lastModified || "—"}</td>
+      </tr>
+    </table>
+    <p style="font-size:13px;color:#64748b;margin-top:20px;">
+      Veuillez vérifier si ce document est toujours pertinent ou le passer en statut Obsolète.
+    </p>
+    ${ctaButton("Voir dans SMQ GED", `${APP_URL}/documents`)}`;
+  await sendMail(to, subject, baseHtml("Document inactif (6 mois)", content));
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 }
 
 async function sendInactiveDocumentEmail({ to, docId, docCode, title, docType, lastModified }) {

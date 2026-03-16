@@ -178,6 +178,7 @@ const EMPTY_MESSAGES = {
   text_search:        "Aucun document ne correspond à votre recherche.",
 };
 
+<<<<<<< HEAD
 // ── Simple markdown renderer ─────────────────────────────────
 function renderMarkdown(text) {
   if (!text) return null;
@@ -195,6 +196,14 @@ function renderMarkdown(text) {
       elements.push(<div key={i} style={{ fontSize: 14, fontWeight: 800, color: "rgba(220,235,248,0.98)", marginTop: 12, marginBottom: 5, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 4 }}>{line.replace(/^##\s/, "")}</div>);
     } else if (/^#\s/.test(line)) {
       elements.push(<div key={i} style={{ fontSize: 15, fontWeight: 900, color: "#4ab83f", marginTop: 14, marginBottom: 6 }}>{line.replace(/^#\s/, "")}</div>);
+=======
+function ChatbotSection({ token }) {
+  const [messages, setMessages] = useState([
+    {
+      id: 0, from: "bot",
+      text: "Bonjour ! Je suis votre assistant IA propulsé par Groq AI (Llama 3.3 70B). Posez-moi n'importe quelle question — sur vos documents, l'ISO 9001, la qualité, ou n'importe quel autre sujet. Je suis là pour vous aider !",
+      intent: null, docs: [], stats: null, llm: false,
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
     }
     // Bullet list
     else if (/^[-•*]\s/.test(line)) {
@@ -391,7 +400,11 @@ function ChatbotSection({ token }) {
                       fontWeight: 600, marginBottom: 6,
                     }}>
                       <LuZap size={10} />
+<<<<<<< HEAD
                       {msg.llm ? "OpenAI" : msg.intent}
+=======
+                      {msg.llm ? "Groq AI" : msg.intent}
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
                     </div>
                   )}
                   <div>{msg.from === "bot" ? renderMarkdown(msg.text) : msg.text}</div>
@@ -900,11 +913,19 @@ export default function AIAssistant() {
                     borderRadius: 7, padding: "3px 9px",
                     fontSize: 10.5, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.2px",
                   }}>
+<<<<<<< HEAD
                     <LuZap size={10} /> OpenAI
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
                   gpt-4o-mini · Données ACTIA ES en temps réel · Conversation mémorisée
+=======
+                    <LuZap size={10} /> Groq AI
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
+                  llama-3.3-70b · Données ACTIA ES en temps réel
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
                 </p>
               </div>
             </div>

@@ -561,6 +561,13 @@ export default function Home() {
   const navigate = useNavigate();
   const { currentUser, login } = useUser();
 
+  const role      = currentUser?.role || null;
+  const isVisitor = role === "Visiteur" || role === "Lecteur";
+  const isAdmin   = role === "Admin";
+  const canCreate = currentUser && !isVisitor;
+  const canValidate = role === "Admin" || role === "Ing. Qualité" || role === "Reviewer";
+  const canArchive  = role === "Admin" || role === "Ing. Qualité";
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [demoLoading,    setDemoLoading]    = useState(null);
 
@@ -689,20 +696,32 @@ export default function Home() {
             </p>
 
             <div className="flex justify-center gap-3 flex-wrap">
-              <button
-                onClick={() => currentUser ? navigate("/create") : setShowLoginModal(true)}
-                className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  background: "linear-gradient(135deg, #4ab83f, #3da333)",
-                  boxShadow: "0 8px 30px rgba(74,184,63,0.4)",
-                  fontSize: 15,
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                <LuFilePlus size={16} /> Nouveau document
-              </button>
+              {canCreate && (
+                <button
+                  onClick={() => navigate("/create")}
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    background: "linear-gradient(135deg, #4ab83f, #3da333)",
+                    boxShadow: "0 8px 30px rgba(74,184,63,0.4)",
+                    fontSize: 15, border: "none", cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  <LuFilePlus size={16} /> Nouveau document
+                </button>
+              )}
+              {!currentUser && (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    background: "linear-gradient(135deg, #4ab83f, #3da333)",
+                    boxShadow: "0 8px 30px rgba(74,184,63,0.4)",
+                    fontSize: 15, border: "none", cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  <LuFilePlus size={16} /> Nouveau document
+                </button>
+              )}
               <button
                 onClick={() => currentUser ? navigate("/list") : setShowLoginModal(true)}
                 className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 hover:-translate-y-0.5"
@@ -711,9 +730,7 @@ export default function Home() {
                   border: "1px solid rgba(255,255,255,0.15)",
                   color: "rgba(255,255,255,0.85)",
                   backdropFilter: "blur(10px)",
-                  fontSize: 15,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
+                  fontSize: 15, cursor: "pointer", fontFamily: "inherit",
                 }}
               >
                 Voir les documents <LuArrowRight size={14} />
@@ -728,9 +745,15 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-8 -mt-14 mb-8">
           <div className="flex gap-3.5 flex-wrap">
             <StatCard icon={LuFileText}    label="Total documents" value={loadingStats ? "…" : totalDocs} sub="dans le système"     accent="#60a5fa" onClick={() => navigate("/list")}        />
+<<<<<<< HEAD
             <StatCard icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate("/validations")} />
             <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list?statusName=Validé")}        />
             <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate("/list?overdue=true")} />
+=======
+            <StatCard icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate(canValidate ? "/validations" : "/list")} />
+            <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list")}        />
+            <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate(canArchive ? "/archive" : "/list")} />
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
             <StatCard icon={LuArchive}     label="Archivés"        value={loadingStats ? "…" : archived}   sub="archivage définitif" accent="#94a3b8" onClick={() => navigate("/archive")}    />
           </div>
         </div>
@@ -753,7 +776,15 @@ export default function Home() {
                 return (
                   <div
                     key={label}
+<<<<<<< HEAD
                     onClick={() => navigate(`/list?statusName=${encodeURIComponent(label)}`)}
+=======
+                    onClick={() => {
+                      if (label === "Archivé" || label === "Obsolète") navigate("/archive");
+                      else if (label === "En validation") navigate(canValidate ? "/validations" : "/list");
+                      else navigate("/list");
+                    }}
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
                     className="flex-1 min-w-[80px] cursor-pointer group"
                   >
                     <div
@@ -789,11 +820,12 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2">
                 {[
-                  { to:"/create",      icon:LuFilePlus,       label:"Nouveau document",    desc:"Créer et soumettre un document",     accent:"#4ab83f"  },
-                  { to:"/list",        icon:LuList,           label:"Liste des documents",  desc:"Rechercher, filtrer, gérer",         accent:"#60a5fa"  },
-                  { to:"/validations", icon:LuClipboardCheck, label:"Workflow validation",   desc:"Approuver ou rejeter des documents",  accent:"#a5b4fc"  },
-                  { to:"/archive",     icon:LuArchive,        label:"Archivage ISO",        desc:"Gestion du cycle de vie",       accent:"#94a3b8"  },
-                ].map(({ to, icon, label, desc, accent }) => {
+                  canCreate    && { to:"/create",      icon:LuFilePlus,       label:"Nouveau document",    desc:"Créer et soumettre un document",    accent:"#4ab83f" },
+                               { to:"/list",        icon:LuList,           label:"Liste des documents",  desc:"Rechercher, filtrer, gérer",        accent:"#60a5fa" },
+                  canValidate  && { to:"/validations", icon:LuClipboardCheck, label:"Workflow validation",  desc:"Approuver ou rejeter des documents", accent:"#a5b4fc" },
+                               { to:"/archive",     icon:LuArchive,        label:"Archivage ISO",        desc:"Consulter les documents archivés",   accent:"#94a3b8" },
+                  isAdmin      && { to:"/admin/users", icon:LuUsers,          label:"Gestion utilisateurs", desc:"Gérer les comptes et les rôles",     accent:"#f59e0b" },
+                ].filter(Boolean).map(({ to, icon, label, desc, accent }) => {
                   const ActionIcon = icon;
                   const iconEl = <ActionIcon size={16} style={{ color: accent }} />;
                   return (

@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import { toast } from "sonner";
 import { API, BACKEND } from "../config";
+import HistoryDetailPanel from "../components/HistoryDetailPanel";
 
 const STATUS_CFG = {
   "Diffusé":         { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2        },
@@ -462,6 +463,7 @@ export default function Archive() {
   const [loading,      setLoading]      = useState(true);
   const [activeTab,    setActiveTab]    = useState("archived");
   const [selectedDocId, setSelectedDocId] = useState(null);
+  const [selectedHistoryEntry, setSelectedHistoryEntry] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -696,7 +698,7 @@ export default function Archive() {
                     <div className="px-5 py-2.5 border-b"
                       style={{ background:"rgba(74,184,63,0.04)", borderColor:"rgba(74,184,63,0.1)" }}>
                       <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#4ab83f" }}>
-                        Journal d'archivage — toutes les opérations
+                        Journal d'archivage — cliquer sur une ligne pour voir les détails
                       </p>
                     </div>
                     {/* header */}
@@ -716,8 +718,11 @@ export default function Archive() {
                       }[entry.action] || { color:"#94a3b8", Icon:LuFileText, label:entry.action };
                       const AI = actionMeta.Icon;
                       return (
-                        <div key={entry.id} className="grid px-5 py-3 items-center transition-all duration-150"
-                          style={{ gridTemplateColumns:"110px 130px 1fr 1fr 130px", borderBottom:i<history.length-1?ROW_BORDER:"none" }}>
+                        <div key={entry.id} className="grid px-5 py-3 items-center transition-all duration-150 cursor-pointer"
+                          style={{ gridTemplateColumns:"110px 130px 1fr 1fr 130px", borderBottom:i<history.length-1?ROW_BORDER:"none" }}
+                          onClick={() => setSelectedHistoryEntry(entry)}
+                          onMouseEnter={e => e.currentTarget.style.background="rgba(148,163,184,0.06)"}
+                          onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                           <div>
                             <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
                               {entry.created_at ? new Date(entry.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}) : "—"}
@@ -759,6 +764,13 @@ export default function Archive() {
           canArchive={can("archive:manage")}
           onClose={() => setSelectedDocId(null)}
           onArchive={handleManualArchive}
+        />
+      )}
+      {selectedHistoryEntry && (
+        <HistoryDetailPanel
+          type="archive"
+          entry={selectedHistoryEntry}
+          onClose={() => setSelectedHistoryEntry(null)}
         />
       )}
     </div>

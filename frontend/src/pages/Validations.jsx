@@ -13,6 +13,7 @@ import {
   LuExternalLink, LuX, LuCalendar, LuTag, LuFolder, LuHistory, LuArrowLeftRight, LuZap,
 } from "react-icons/lu";
 import { API, BACKEND } from "../config";
+import HistoryDetailPanel from "../components/HistoryDetailPanel";
 
 const STATUS_CFG = {
   "Brouillon":           { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil         },
@@ -474,6 +475,7 @@ function DocDetailModal({ docId, onClose }) {
   );
 }
 
+<<<<<<< HEAD
 function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded }) {
   const isRelecture  = doc.status_name === "En relecture";
   const isValidation = doc.status_name === "En validation";
@@ -702,26 +704,31 @@ function ValidationModal({ doc, canValidate=false, onClose, onValidationAdded })
   );
 }
 
+=======
+>>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 /* ══════════════════════════════════════════════════════════ */
 export default function Validations() {
-  const { can, currentUser } = useUser();
-  const [pendingDocs, setPendingDocs] = useState([]);
-  const [allHistory,  setAllHistory]  = useState([]);
-  const [stats,       setStats]       = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [activeTab,   setActiveTab]   = useState("validation");
-  const [selectedDoc,   setSelectedDoc]   = useState(null);
+  const { currentUser } = useUser();
+  const [pendingDocs,   setPendingDocs]   = useState([]);
+  const [validatedDocs, setValidatedDocs] = useState([]);
+  const [allHistory,    setAllHistory]    = useState([]);
+  const [stats,         setStats]         = useState(null);
+  const [loading,       setLoading]       = useState(true);
+  const [activeTab,     setActiveTab]     = useState("validates");
   const [selectedDocId, setSelectedDocId] = useState(null);
+  const [selectedHistoryEntry, setSelectedHistoryEntry] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [pending, hist, statsRes] = await Promise.all([
+      const [pending, validated, hist, statsRes] = await Promise.all([
         axios.get(`${API}/validations/pending-docs`),
+        axios.get(`${API}/documents?statusName=Validé&limit=100`),
         axios.get(`${API}/validations?limit=100`),
         axios.get(`${API}/validations/stats`),
       ]);
       setPendingDocs(pending.data);
+      setValidatedDocs(validated.data.data || []);
       setAllHistory(hist.data.data || []);
       setStats(statsRes.data);
     } catch (err) { console.error(err); }
@@ -730,41 +737,28 @@ export default function Validations() {
 
   useEffect(() => { load(); }, [load]);
 
-  const validationDocs = pendingDocs.filter(d => d.status_name === "En validation");
-
-  const [inlineSubmitting, setInlineSubmitting] = useState({});
-  const [pendingAction,    setPendingAction]    = useState(null); // { doc, nextStatus, comment }
-
-  const handleInlineValidation = async (doc, nextStatus, comment = "") => {
-    const decision = nextStatus === "Validé" ? "APPROUVÉ" : "REJETÉ";
-    setPendingAction(null);
-    setInlineSubmitting(s => ({ ...s, [doc.id]: nextStatus }));
-    try {
-      await axios.post(`${API}/validations/document/${doc.id}`, { decision, comment });
-      await axios.patch(`${API}/documents/${doc.id}/status`, { newStatus: nextStatus });
-      await load();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setInlineSubmitting(s => ({ ...s, [doc.id]: null }));
-    }
-  };
+  const pendingCount = pendingDocs.length;
 
   const tabs = [
-    { id:"validation", Icon:LuClipboardCheck,label:"En validation",       count:validationDocs.length, accent:"#a5b4fc" },
-    { id:"history",    Icon:LuCircleCheck,   label:"Historique",          count:allHistory.length,     accent:"#4ade80" },
+    { id:"validates", Icon:LuCircleCheckBig, label:"Validés",    count:validatedDocs.length, accent:"#4ade80" },
+    { id:"history",   Icon:LuHistory,        label:"Historique", count:allHistory.length,    accent:"#a5b4fc" },
   ];
 
-  const ROW_BG_HOVER = "rgba(255,255,255,0.04)";
-  const ROW_BORDER   = "1px solid rgba(255,255,255,0.05)";
+  const ROW_BORDER = "1px solid rgba(255,255,255,0.05)";
 
   const sidebarBottom = (
     <>
-      <div className="rounded-xl px-3 py-2.5 border"
-        style={{ background:"rgba(74,184,63,0.08)", borderColor:"rgba(74,184,63,0.2)" }}>
-        <p className="m-0 text-[10px] uppercase tracking-[1px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>Workflow</p>
-        <p className="m-0 font-black text-xl" style={{ color:"#a5b4fc" }}>{validationDocs.length} validation</p>
-      </div>
+      {[
+        { label:"En attente", value:pendingCount,         accent:"#a5b4fc" },
+        { label:"Validés",    value:validatedDocs.length, accent:"#4ade80" },
+        { label:"Historique", value:allHistory.length,    accent:"#60a5fa" },
+      ].map(({ label, value, accent }) => (
+        <div key={label} className="flex justify-between items-center px-3 py-2 rounded-lg border"
+          style={{ background:`${accent}10`, borderColor:`${accent}25` }}>
+          <span className="text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>{label}</span>
+          <span className="font-bold text-base" style={{ color:accent }}>{value}</span>
+        </div>
+      ))}
     </>
   );
 
@@ -773,7 +767,7 @@ export default function Validations() {
       style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
-        .val-row:hover { background: ${ROW_BG_HOVER} !important; cursor:pointer; }
+
       `}</style>
 
       <AppSidebar user={currentUser} badges={{ "/validations": pendingDocs.length }} bottomContent={sidebarBottom} />
@@ -794,8 +788,8 @@ export default function Validations() {
               </h1>
               <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
                 Décisions de validation · Traçabilité complète
-                {activeTab === "validation" && <span style={{ color:"#a5b4fc" }}> · {validationDocs.length} en validation</span>}
-                {activeTab === "history"    && <span style={{ color:"#4ade80" }}> · {allHistory.length} entrées</span>}
+                {activeTab === "validates" && <span style={{ color:"#4ade80" }}> · {validatedDocs.length} validés</span>}
+                {activeTab === "history"   && <span style={{ color:"#a5b4fc" }}> · {allHistory.length} entrées</span>}
               </p>
             </div>
           </div>
@@ -813,7 +807,7 @@ export default function Validations() {
           {/* ── Stats ──────────────────────────────────────────── */}
           {stats && (
             <div className="flex gap-4 mb-6 flex-wrap">
-              <StatCard Icon={LuClock}          label="En validation"     value={validationDocs.length}                     accent="#a5b4fc" />
+              <StatCard Icon={LuCircleCheckBig} label="Validés"           value={validatedDocs.length}                      accent="#4ade80" />
               <StatCard Icon={LuCircleCheck}    label="Approuvées"        value={stats.decisions?.["APPROUVÉ"] ?? 0}        accent="#4ade80" />
               <StatCard Icon={LuCircleX}        label="Rejetées"          value={stats.decisions?.["REJETÉ"] ?? 0}          accent="#f87171" />
               <StatCard Icon={LuClipboardCheck} label="Total validations" value={stats.total ?? 0}                          accent="#60a5fa" />
@@ -851,186 +845,55 @@ export default function Validations() {
             </div>
           ) : (
             <>
-              {/* ── En validation tab ─────────────────────────── */}
-              {activeTab === "validation" && (
-                validationDocs.length === 0 ? (
+              {/* ── Validés tab ───────────────────────────────── */}
+              {activeTab === "validates" && (
+                validatedDocs.length === 0 ? (
                   <div className="flex flex-col items-center py-16 gap-3">
                     <LuCircleCheckBig size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
                     <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>
-                      Aucun document en attente de validation finale.
+                      Aucun document validé.
                     </p>
                   </div>
                 ) : (
                   <div className="rounded-2xl overflow-hidden border"
-                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(165,180,252,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
-                    {/* banner */}
+                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(134,239,172,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                     <div className="px-5 py-2.5 border-b"
-                      style={{ background:"rgba(165,180,252,0.06)", borderColor:"rgba(165,180,252,0.15)" }}>
-                      <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#a5b4fc" }}>
-                        Validation finale — approuver ou rejeter pour déclencher la transition vers "Validé"
+                      style={{ background:"rgba(74,222,128,0.05)", borderColor:"rgba(134,239,172,0.12)" }}>
+                      <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#4ade80" }}>
+                        Documents validés — historique conservé · Cliquer pour voir les détails
                       </p>
                     </div>
                     {/* header row */}
                     <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 140px 200px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
-                      {["Référence","Titre","Responsable","Type","Version","Dernière décision","Actions"].map(h => (
+                      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      {["Référence","Titre","Responsable","Type","Statut","Version"].map(h => (
                         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
                           style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
                       ))}
                     </div>
                     {/* rows */}
-                    {validationDocs.map((doc, i) => {
-                      const busy      = inlineSubmitting[doc.id];
-                      const isPending = pendingAction?.doc?.id === doc.id;
-                      const isApprove = isPending && pendingAction.nextStatus === "Validé";
-                      const commentOk = !isPending || isApprove || !!pendingAction.comment.trim();
-                      return (
-                      <div key={doc.id} style={{ borderBottom: i < validationDocs.length-1 ? ROW_BORDER : "none" }}>
-                        {/* Normal row */}
-                        <div className="val-row grid px-5 py-3 items-center transition-all duration-150"
-                          style={{ gridTemplateColumns:"160px 1fr 130px 90px 90px 140px 200px", background:"transparent", opacity: isPending ? 0.45 : 1 }}
-                          onClick={() => !isPending && setSelectedDoc(doc)}>
-                          <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
-                          <div className="overflow-hidden pr-3">
-                            <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
-                            {doc.process_name && <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.process_name}</p>}
-                          </div>
-                          <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
-                          <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
-                            style={{ background:"rgba(165,180,252,0.1)", color:"#a5b4fc", borderColor:"rgba(165,180,252,0.2)" }}>
-                            {doc.type_code}
-                          </span>
-                          <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.7)" }}>
-                            {doc.version_letter && doc.version_letter !== "-" ? `v${doc.version_letter}` : "—"}
-                          </span>
-                          <div>
-                            {doc.last_decision
-                              ? <DecisionBadge decision={doc.last_decision} />
-                              : <span className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune</span>
-                            }
-                          </div>
-                          <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
-                            {can("validation:create") ? (
-                              <>
-                                <button disabled={!!busy || isPending}
-                                  onClick={() => setPendingAction({ doc, nextStatus:"En correction", comment:"" })}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all"
-                                  style={{ background:"rgba(249,115,22,0.12)", borderColor:"rgba(249,115,22,0.3)", color:(busy||isPending)?"rgba(168,191,212,0.3)":"#f97316", cursor:(busy||isPending)?"not-allowed":"pointer" }}>
-                                  <LuCircleX size={12} /> {busy==="En correction"?"…":"Rejeter"}
-                                </button>
-                                <button disabled={!!busy || isPending}
-                                  onClick={() => setPendingAction({ doc, nextStatus:"Validé", comment:"" })}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border-none transition-all"
-                                  style={{ background:(busy||isPending)?"rgba(255,255,255,0.06)":"linear-gradient(135deg,#4ab83f,#3da333)", color:(busy||isPending)?"rgba(168,191,212,0.3)":"white", boxShadow:(busy||isPending)?"none":"0 3px 10px rgba(74,184,63,0.3)", cursor:(busy||isPending)?"not-allowed":"pointer" }}>
-                                  <LuCircleCheck size={12} /> {busy==="Validé"?"…":"Approuver"}
-                                </button>
-                              </>
-                            ) : (
-                              <span className="flex items-center gap-1 text-xs" style={{ color:"rgba(168,191,212,0.35)" }}>
-                                <LuLock size={11} /> Accès refusé
-                              </span>
-                            )}
-                          </div>
+                    {validatedDocs.map((doc, i) => (
+                      <div key={doc.id} className="grid px-5 py-3 items-center cursor-pointer transition-all duration-150"
+                        style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", borderBottom: i < validatedDocs.length-1 ? ROW_BORDER : "none", background:"transparent" }}
+                        onClick={() => setSelectedDocId(doc.id)}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <span className="font-mono font-bold text-[13px]" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
+                        <div className="overflow-hidden pr-3">
+                          <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
+                          {doc.folder_name && <p className="m-0 text-xs flex items-center gap-1" style={{ color:"rgba(168,191,212,0.45)" }}><LuFolder size={10}/> {doc.folder_name}</p>}
                         </div>
-
-                        {/* ── Confirmation panel ──────────────────── */}
-                        {isPending && (
-                          <div className="px-5 pb-5 border-t" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
-                            <div className="rounded-2xl border p-5 mt-1"
-                              style={{
-                                background: isApprove ? "rgba(74,184,63,0.06)" : "rgba(249,115,22,0.06)",
-                                borderColor: isApprove ? "rgba(74,184,63,0.25)" : "rgba(249,115,22,0.25)",
-                                boxShadow: isApprove ? "0 8px 30px rgba(74,184,63,0.08)" : "0 8px 30px rgba(249,115,22,0.08)",
-                              }}>
-                              {/* Panel header */}
-                              <div className="flex items-start gap-3 mb-4">
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                                  style={{ background: isApprove ? "rgba(74,184,63,0.15)" : "rgba(249,115,22,0.15)", border:`1.5px solid ${isApprove?"rgba(74,184,63,0.35)":"rgba(249,115,22,0.35)"}` }}>
-                                  {isApprove
-                                    ? <LuCircleCheck size={17} style={{ color:"#4ab83f" }} />
-                                    : <LuCircleX     size={17} style={{ color:"#f97316" }} />
-                                  }
-                                </div>
-                                <div>
-                                  <p className="m-0 font-bold text-sm" style={{ color: isApprove ? "#4ab83f" : "#f97316" }}>
-                                    {isApprove ? "Confirmer l'approbation" : "Confirmer le rejet"}
-                                  </p>
-                                  <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                    {isApprove
-                                      ? `"${doc.title}" sera marqué Validé.`
-                                      : `"${doc.title}" sera renvoyé En correction.`}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Comment field */}
-                              <div className="mb-4">
-                                <label className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.5px] mb-1.5"
-                                  style={{ color:"rgba(168,191,212,0.55)" }}>
-                                  Commentaire
-                                  {!isApprove && <span style={{ color:"#f87171" }}>*</span>}
-                                  {isApprove && <span className="normal-case font-normal tracking-normal ml-1" style={{ color:"rgba(168,191,212,0.35)" }}>(optionnel)</span>}
-                                </label>
-                                <textarea
-                                  rows={3}
-                                  autoFocus
-                                  value={pendingAction.comment}
-                                  onChange={e => setPendingAction(prev => ({ ...prev, comment: e.target.value }))}
-                                  placeholder={isApprove
-                                    ? "Observations, remarques positives…"
-                                    : "Motif du rejet, corrections à apporter… (obligatoire)"}
-                                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm resize-none outline-none transition-all"
-                                  style={{
-                                    background:"rgba(255,255,255,0.04)",
-                                    borderColor: pendingAction.comment.trim()
-                                      ? (isApprove ? "rgba(74,184,63,0.4)" : "rgba(249,115,22,0.4)")
-                                      : "rgba(255,255,255,0.1)",
-                                    color:"rgba(255,255,255,0.85)",
-                                    minHeight:80,
-                                  }}
-                                />
-                                {!isApprove && !pendingAction.comment.trim() && (
-                                  <p className="m-0 mt-1.5 text-xs flex items-center gap-1" style={{ color:"rgba(248,113,113,0.7)" }}>
-                                    <LuTriangleAlert size={11} /> Un commentaire est obligatoire pour un rejet.
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Action buttons */}
-                              <div className="flex items-center justify-end gap-2.5">
-                                <button onClick={() => setPendingAction(null)}
-                                  className="px-4 py-2 rounded-xl text-sm font-semibold border transition-all"
-                                  style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)", cursor:"pointer" }}
-                                  onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(168,191,212,0.3)"; e.currentTarget.style.color="#fff"; }}
-                                  onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.6)"; }}>
-                                  Annuler
-                                </button>
-                                <button
-                                  disabled={!commentOk}
-                                  onClick={() => handleInlineValidation(pendingAction.doc, pendingAction.nextStatus, pendingAction.comment)}
-                                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold border-none transition-all"
-                                  style={{
-                                    background: !commentOk
-                                      ? "rgba(255,255,255,0.06)"
-                                      : isApprove
-                                        ? "linear-gradient(135deg,#4ab83f,#3da333)"
-                                        : "linear-gradient(135deg,#f97316,#ea6c0a)",
-                                    color: !commentOk ? "rgba(168,191,212,0.3)" : "white",
-                                    boxShadow: !commentOk ? "none" : isApprove ? "0 4px 16px rgba(74,184,63,0.35)" : "0 4px 16px rgba(249,115,22,0.35)",
-                                    cursor: !commentOk ? "not-allowed" : "pointer",
-                                  }}>
-                                  {isApprove
-                                    ? <><LuCircleCheck size={14} /> Approuver</>
-                                    : <><LuCircleX     size={14} /> Confirmer le rejet</>
-                                  }
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
+                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
+                          style={{ background:"rgba(74,222,128,0.1)", color:"#4ade80", borderColor:"rgba(74,222,128,0.2)" }}>
+                          {doc.type_code}
+                        </span>
+                        <StatusBadge name={doc.status_name} />
+                        <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.6)" }}>
+                          {doc.current_version && doc.current_version !== "-" ? `v${doc.current_version}` : "—"}
+                        </span>
                       </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 )
               )}
@@ -1047,10 +910,16 @@ export default function Validations() {
                 ) : (
                   <div className="rounded-2xl overflow-hidden border"
                     style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    <div className="px-5 py-2.5 border-b"
+                      style={{ background:"rgba(74,184,63,0.04)", borderColor:"rgba(74,184,63,0.1)" }}>
+                      <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#4ab83f" }}>
+                        Journal des validations — cliquer sur une ligne pour voir les détails
+                      </p>
+                    </div>
                     {/* header row */}
                     <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"130px 160px 1fr 140px 100px 1fr", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
-                      {["Date","Référence","Titre","Validateur","Décision","Commentaire"].map(h => (
+                      style={{ gridTemplateColumns:"110px 130px 1fr 1fr 140px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      {["Date","Décision","Référence / Titre","Commentaire","Validateur"].map(h => (
                         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
                           style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
                       ))}
@@ -1061,36 +930,33 @@ export default function Validations() {
                       const DI = dcfg.Icon;
                       return (
                         <div key={v.id} className="grid px-5 py-3 items-center transition-all duration-150 cursor-pointer"
-                          style={{ gridTemplateColumns:"130px 160px 1fr 140px 100px 1fr", borderBottom: i < allHistory.length-1 ? ROW_BORDER : "none" }}
-                          onClick={() => setSelectedDocId(v.document_id)}
-                          onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+                          style={{ gridTemplateColumns:"110px 130px 1fr 1fr 140px", borderBottom: i < allHistory.length-1 ? ROW_BORDER : "none" }}
+                          onClick={() => setSelectedHistoryEntry(v)}
+                          onMouseEnter={e => { e.currentTarget.style.background="rgba(165,180,252,0.06)"; e.currentTarget.style.cursor="pointer"; }}
                           onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                           <div>
-                            <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.7)" }}>
+                            <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
                               {new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}
                             </p>
-                            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.4)" }}>
+                            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.35)" }}>
                               {new Date(v.validated_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
                             </p>
-                          </div>
-                          <div className="overflow-hidden pr-2">
-                            <p className="m-0 text-sm font-mono font-bold truncate" style={{ color:"#4ab83f" }}>{v.doc_code}</p>
-                            {v.version_letter && v.version_letter !== "-" && (
-                              <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.4)" }}>v{v.version_letter}</p>
-                            )}
-                          </div>
-                          <p className="m-0 text-sm text-white truncate pr-3">{v.doc_title || "—"}</p>
-                          <div className="flex items-center gap-1.5 overflow-hidden">
-                            <LuUser size={12} style={{ color:"rgba(168,191,212,0.4)", flexShrink:0 }} />
-                            <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.7)" }}>{v.validator_name}</span>
                           </div>
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-full border w-fit"
                             style={{ background:dcfg.bg, color:dcfg.text, borderColor:dcfg.border }}>
                             <DI size={10} /> {dcfg.label}
                           </span>
-                          <p className="m-0 text-sm truncate" style={{ color:"rgba(168,191,212,0.5)" }}>
+                          <div>
+                            <p className="m-0 font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{v.doc_code}</p>
+                            <p className="m-0 text-xs truncate" style={{ color:"rgba(168,191,212,0.45)" }}>{v.doc_title || "—"}</p>
+                          </div>
+                          <span className="text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>
                             {v.comment || <span style={{ color:"rgba(168,191,212,0.25)" }}>—</span>}
-                          </p>
+                          </span>
+                          <div className="flex items-center gap-1.5 overflow-hidden">
+                            <LuUser size={12} style={{ color:"rgba(168,191,212,0.4)", flexShrink:0 }} />
+                            <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{v.validator_name}</span>
+                          </div>
                         </div>
                       );
                     })}
@@ -1103,12 +969,11 @@ export default function Validations() {
       </main>
 
       {selectedDocId && <DocDetailModal docId={selectedDocId} onClose={() => setSelectedDocId(null)} />}
-      {selectedDoc && (
-        <ValidationModal
-          doc={selectedDoc}
-          canValidate={can("validation:create")}
-          onClose={() => setSelectedDoc(null)}
-          onValidationAdded={load}
+      {selectedHistoryEntry && (
+        <HistoryDetailPanel
+          type="validation"
+          entry={selectedHistoryEntry}
+          onClose={() => setSelectedHistoryEntry(null)}
         />
       )}
     </div>
