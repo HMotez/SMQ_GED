@@ -1,7 +1,7 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
-# Node.js 20 + Express + LibreOffice + Module IA OpenAI (GPT-4o-mini)
-# Sprint 11 — OpenAI integration + conversation history
+# Node.js 20 + Express + LibreOffice + Module IA Groq (llama-3.3-70b)
+# Sprint 12 — Groq streaming SSE + copy button + suggested questions
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────

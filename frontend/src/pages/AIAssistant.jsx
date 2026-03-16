@@ -20,6 +20,7 @@ import {
   LuFileText, LuFolderOpen, LuTag, LuCalendar,
   LuArchive, LuGitBranch, LuNetwork,
   LuFileCheck, LuBookOpen, LuTrash2,
+  LuCopy, LuCheck, LuHistory, LuPlus, LuMessageSquare, LuX,
 } from "react-icons/lu";
 
 const GREEN      = "#4ab83f";
@@ -178,11 +179,12 @@ const EMPTY_MESSAGES = {
   text_search:        "Aucun document ne correspond à votre recherche.",
 };
 
-<<<<<<< HEAD
 // ── Simple markdown renderer ─────────────────────────────────
 function renderMarkdown(text) {
   if (!text) return null;
-  const lines = text.split("\n");
+  // Strip SUGGESTIONS JSON before rendering
+  const clean = text.replace(/SUGGESTIONS:\{.*?\}$/m, "").trimEnd();
+  const lines = clean.split("\n");
   const elements = [];
   let i = 0;
 
@@ -196,14 +198,6 @@ function renderMarkdown(text) {
       elements.push(<div key={i} style={{ fontSize: 14, fontWeight: 800, color: "rgba(220,235,248,0.98)", marginTop: 12, marginBottom: 5, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 4 }}>{line.replace(/^##\s/, "")}</div>);
     } else if (/^#\s/.test(line)) {
       elements.push(<div key={i} style={{ fontSize: 15, fontWeight: 900, color: "#4ab83f", marginTop: 14, marginBottom: 6 }}>{line.replace(/^#\s/, "")}</div>);
-=======
-function ChatbotSection({ token }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 0, from: "bot",
-      text: "Bonjour ! Je suis votre assistant IA propulsé par Groq AI (Llama 3.3 70B). Posez-moi n'importe quelle question — sur vos documents, l'ISO 9001, la qualité, ou n'importe quel autre sujet. Je suis là pour vous aider !",
-      intent: null, docs: [], stats: null, llm: false,
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
     }
     // Bullet list
     else if (/^[-•*]\s/.test(line)) {
@@ -251,62 +245,157 @@ function inlineFormat(text) {
 
 const INITIAL_MESSAGE = {
   id: 0, from: "bot",
-  text: "Bonjour ! Je suis votre assistant IA propulsé par OpenAI. Posez-moi n'importe quelle question sur vos documents ou sur la qualité — je comprends le langage naturel et je me souviens du contexte de notre conversation.",
-  intent: null, docs: [], stats: null, llm: false,
+  text: "Bonjour ! Je suis votre assistant IA propulsé par **Groq AI** (Llama 3.3 70B). Posez-moi n'importe quelle question — sur vos documents, l'ISO 9001, la qualité, ou n'importe quel autre sujet. Je suis là pour vous aider !",
+  intent: null, docs: [], stats: null, llm: true, suggestions: [],
 };
 
+const LS_KEY = "smq_chat_history";
+
+function loadSavedConvs() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+  catch { return []; }
+}
+
 function ChatbotSection({ token }) {
-  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
-  const [history, setHistory]   = useState([]); // OpenAI conversation turns
-  const [input, setInput]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [messages, setMessages]     = useState([INITIAL_MESSAGE]);
+  const [history, setHistory]       = useState([]);
+  const [input, setInput]           = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [copied, setCopied]         = useState(null);
+  const [savedConvs, setSavedConvs] = useState(loadSavedConvs);
+  const [showHistory, setShowHistory] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  function persistConvs(convs) {
+    setSavedConvs(convs);
+    localStorage.setItem(LS_KEY, JSON.stringify(convs));
+  }
+
+  function saveCurrentConversation() {
+    const userMsgs = messages.filter(m => m.from === "user");
+    if (userMsgs.length === 0) return;
+    const title = userMsgs[0].text.slice(0, 60) + (userMsgs[0].text.length > 60 ? "…" : "");
+    const conv = { id: Date.now(), title, date: new Date().toLocaleDateString("fr-FR"), messages, history };
+    const updated = [conv, ...savedConvs].slice(0, 20);
+    persistConvs(updated);
+    toast.success("Conversation sauvegardée");
+  }
+
+  function loadConversation(conv) {
+    setMessages(conv.messages);
+    setHistory(conv.history || []);
+    setShowHistory(false);
+  }
+
+  function deleteConversation(id, e) {
+    e.stopPropagation();
+    persistConvs(savedConvs.filter(c => c.id !== id));
+  }
+
   function clearConversation() {
     setMessages([INITIAL_MESSAGE]);
     setHistory([]);
   }
 
+  function copyMessage(text) {
+    const clean = text.replace(/SUGGESTIONS:\{.*?\}$/m, "").trim();
+    navigator.clipboard.writeText(clean).then(() => {
+      setCopied(clean);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  }
+
+  function parseSuggestions(text) {
+    try {
+      const m = text.match(/SUGGESTIONS:(\{.*?\})/);
+      return m ? JSON.parse(m[1]).q || [] : [];
+    } catch { return []; }
+  }
+
   async function sendMessage(text) {
     const query = (text || input).trim();
-    if (!query) return;
+    if (!query || loading) return;
     setInput("");
-    setMessages(prev => [...prev, { id: Date.now(), from: "user", text: query }]);
+    const userMsgId = Date.now();
+    const botMsgId  = userMsgId + 1;
+    setMessages(prev => [...prev, { id: userMsgId, from: "user", text: query }]);
     setLoading(true);
+
+    // Streaming via SSE
+    const botPlaceholder = {
+      id: botMsgId, from: "bot", text: "", streaming: true,
+      intent: null, intentKey: null, docs: [], stats: null,
+      statsLabel: "Statut", count: 0, llm: true, suggestions: [],
+    };
+    setMessages(prev => [...prev, botPlaceholder]);
+
     try {
-      const { data } = await axios.post(`${API}/ai/query`, { query, history }, {
-        headers: authHeaders(token),
+      const resp = await fetch(`${API}/ai/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(token) },
+        body: JSON.stringify({ query, history }),
       });
-      const botText = data.message || "";
-      setMessages(prev => [...prev, {
-        id:         Date.now() + 1,
-        from:       "bot",
-        text:       botText,
-        intent:     data.intent_label,
-        intentKey:  data.intent,
-        docs:       data.documents || [],
-        stats:      data.statistics || null,
-        statsLabel: data.stats_label || "Statut",
-        count:      data.result_count,
-        llm:        data.llm_powered || false,
-      }]);
-      // Append to conversation history for next turn
+
+      if (!resp.ok) throw new Error("Erreur serveur");
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer  = "";
+      let   fullText = "";
+      let   meta     = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (raw === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.type === "meta") {
+              meta = parsed;
+              setMessages(prev => prev.map(m => m.id === botMsgId ? {
+                ...m,
+                intent:     meta.intent_label,
+                intentKey:  meta.intent,
+                docs:       meta.documents || [],
+                stats:      meta.statistics || null,
+                statsLabel: meta.stats_label || "Statut",
+                count:      (meta.documents || []).length,
+                llm:        meta.llm_powered || false,
+              } : m));
+            } else if (parsed.token) {
+              fullText += parsed.token;
+              setMessages(prev => prev.map(m =>
+                m.id === botMsgId ? { ...m, text: fullText } : m
+              ));
+            }
+          } catch {}
+        }
+      }
+
+      const suggestions = parseSuggestions(fullText);
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId ? { ...m, streaming: false, suggestions } : m
+      ));
       setHistory(prev => [
         ...prev,
         { role: "user",      content: query },
-        { role: "assistant", content: botText },
+        { role: "assistant", content: fullText.replace(/SUGGESTIONS:\{.*?\}$/m, "").trim() },
       ]);
     } catch (err) {
-      const errMsg = err.response?.data?.error || "Erreur lors du traitement.";
-      setMessages(prev => [...prev, {
-        id:   Date.now() + 1,
-        from: "bot-error",
-        text: errMsg,
-      }]);
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId ? { ...m, from: "bot-error", text: "Erreur lors du traitement.", streaming: false } : m
+      ));
     } finally {
       setLoading(false);
     }
@@ -400,11 +489,7 @@ function ChatbotSection({ token }) {
                       fontWeight: 600, marginBottom: 6,
                     }}>
                       <LuZap size={10} />
-<<<<<<< HEAD
-                      {msg.llm ? "OpenAI" : msg.intent}
-=======
                       {msg.llm ? "Groq AI" : msg.intent}
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
                     </div>
                   )}
                   <div>{msg.from === "bot" ? renderMarkdown(msg.text) : msg.text}</div>
@@ -463,6 +548,64 @@ function ChatbotSection({ token }) {
                     <span style={{ fontSize: 12.5, color: "#fbbf24", fontWeight: 500 }}>
                       {EMPTY_MESSAGES[msg.intentKey] || "Aucun résultat trouvé pour cette requête."}
                     </span>
+                  </div>
+                )}
+
+                {/* Copy + streaming indicator */}
+                {msg.from === "bot" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: -4 }}>
+                    {msg.streaming && (
+                      <span style={{ fontSize: 11, color: "rgba(168,191,212,0.4)", fontStyle: "italic" }}>
+                        l'assistant écrit…
+                      </span>
+                    )}
+                    {!msg.streaming && msg.text && (() => {
+                      const cleanText = msg.text.replace(/SUGGESTIONS:\{.*?\}$/m,"").trim();
+                      const isCopied  = copied === cleanText;
+                      return (
+                        <button
+                          onClick={() => copyMessage(msg.text)}
+                          title={isCopied ? "Copié !" : "Copier la réponse"}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 5,
+                            background: isCopied ? "rgba(74,184,63,0.1)" : "rgba(255,255,255,0.04)",
+                            border: `1px solid ${isCopied ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)"}`,
+                            borderRadius: 6, padding: "3px 9px", cursor: "pointer",
+                            color: isCopied ? GREEN : "rgba(168,191,212,0.45)",
+                            fontSize: 11, fontWeight: 500, transition: "all 0.2s",
+                          }}
+                          onMouseEnter={e => { if (!isCopied) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(168,191,212,0.8)"; }}}
+                          onMouseLeave={e => { if (!isCopied) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.45)"; }}}
+                        >
+                          {isCopied
+                            ? <><LuCheck size={11} /> Copié</>
+                            : <><LuCopy  size={11} /> Copier</>
+                          }
+                        </button>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {/* Suggested follow-up questions */}
+                {msg.from === "bot" && !msg.streaming && msg.suggestions && msg.suggestions.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+                    {msg.suggestions.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => sendMessage(q)}
+                        style={{
+                          background: "rgba(74,184,63,0.06)", border: "1px solid rgba(74,184,63,0.2)",
+                          color: "rgba(74,184,63,0.8)", borderRadius: 20,
+                          padding: "4px 12px", fontSize: 11.5, cursor: "pointer",
+                          transition: "all 0.15s", textAlign: "left",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.14)"; e.currentTarget.style.borderColor = "rgba(74,184,63,0.4)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(74,184,63,0.06)"; e.currentTarget.style.borderColor = "rgba(74,184,63,0.2)"; }}
+                      >
+                        ↳ {q}
+                      </button>
+                    ))}
                   </div>
                 )}
 
@@ -546,54 +689,115 @@ function ChatbotSection({ token }) {
 
         {/* Input */}
         <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}` }}>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={clearConversation}
-              title="Nouvelle conversation"
-              style={{
-                background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`,
-                borderRadius: 10, padding: "10px 12px", cursor: "pointer",
-                color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center",
-                transition: "all 0.2s", flexShrink: 0,
-              }}
+          <div style={{ display: "flex", gap: 8 }}>
+            {/* New conversation */}
+            <button onClick={clearConversation} title="Nouvelle conversation"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.1)"; e.currentTarget.style.color = "#f87171"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
-            >
-              <LuTrash2 size={15} />
-            </button>
+            ><LuPlus size={15} /></button>
+
+            {/* Save conversation */}
+            <button onClick={saveCurrentConversation} title="Sauvegarder la conversation"
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.1)"; e.currentTarget.style.color = GREEN; e.currentTarget.style.borderColor = "rgba(74,184,63,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
+            ><LuMessageSquare size={15} /></button>
+
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
               placeholder="Posez votre question en français… (Entrée pour envoyer)"
-              style={{
-                flex: 1, background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`,
-                borderRadius: 10, padding: "10px 14px", color: "rgba(220,235,248,0.9)",
-                fontSize: 13.5, outline: "none",
-              }}
+              style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 14px", color: "rgba(220,235,248,0.9)", fontSize: 13.5, outline: "none" }}
             />
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading || !input.trim()}
-              style={{
-                background: loading || !input.trim() ? "rgba(74,184,63,0.3)" : `linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})`,
-                border: "none", borderRadius: 10, padding: "10px 16px",
-                color: "#fff", cursor: loading || !input.trim() ? "not-allowed" : "pointer",
-                display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600,
-                transition: "all 0.2s",
-              }}
-            >
-              <LuSend size={15} />
-              Envoyer
-            </button>
+            <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
+              style={{ background: loading || !input.trim() ? "rgba(74,184,63,0.3)" : `linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})`, border: "none", borderRadius: 10, padding: "10px 16px", color: "#fff", cursor: loading || !input.trim() ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, transition: "all 0.2s" }}
+            ><LuSend size={15} /> Envoyer</button>
           </div>
-          {history.length > 0 && (
-            <div style={{ marginTop: 8, fontSize: 11, color: "rgba(168,191,212,0.3)", display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} />
-              {Math.floor(history.length / 2)} échange(s) en mémoire · Cliquez sur <LuTrash2 size={10} style={{ margin: "0 2px" }} /> pour réinitialiser
-            </div>
-          )}
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {history.length > 0 && (
+              <span style={{ fontSize: 11, color: "rgba(168,191,212,0.3)", display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} />
+                {Math.floor(history.length / 2)} échange(s) en mémoire
+              </span>
+            )}
+          </div>
         </div>
+      </Card>
+
+      {/* ── History Panel ───────────────────────────────────────── */}
+      <Card style={{ overflow: "hidden" }}>
+        {/* Header — always visible */}
+        <button
+          onClick={() => setShowHistory(h => !h)}
+          style={{
+            width: "100%", background: "none", border: "none", cursor: "pointer",
+            padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <LuHistory size={15} color={GREEN} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(220,235,248,0.85)" }}>
+              Historique des conversations
+            </span>
+            {savedConvs.length > 0 && (
+              <span style={{ background: `${GREEN}20`, color: GREEN, border: `1px solid ${GREEN}35`, borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
+                {savedConvs.length}
+              </span>
+            )}
+          </div>
+          <LuChevronRight size={14} color="rgba(168,191,212,0.4)"
+            style={{ transform: showHistory ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
+        </button>
+
+        {/* Collapsible list */}
+        {showHistory && (
+          <div style={{ borderTop: `1px solid ${BORDER}`, maxHeight: 320, overflowY: "auto" }}>
+            {savedConvs.length === 0 ? (
+              <div style={{ padding: "24px 16px", textAlign: "center" }}>
+                <LuMessageSquare size={28} color="rgba(168,191,212,0.2)" style={{ marginBottom: 8 }} />
+                <p style={{ margin: 0, fontSize: 12.5, color: "rgba(168,191,212,0.35)" }}>
+                  Aucune conversation sauvegardée.<br />
+                  Cliquez sur <LuMessageSquare size={11} style={{ verticalAlign: "middle" }} /> pour en sauvegarder une.
+                </p>
+              </div>
+            ) : (
+              savedConvs.map(conv => (
+                <div
+                  key={conv.id}
+                  onClick={() => loadConversation(conv)}
+                  style={{
+                    padding: "10px 16px", borderBottom: `1px solid ${BORDER}`,
+                    display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <LuMessageSquare size={13} color="rgba(129,140,248,0.6)" style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: "rgba(220,235,248,0.8)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {conv.title}
+                    </div>
+                    <div style={{ fontSize: 10.5, color: "rgba(168,191,212,0.35)", marginTop: 2 }}>
+                      {conv.date} · {conv.messages.filter(m => m.from === "user").length} question(s)
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => deleteConversation(conv.id, e)}
+                    title="Supprimer"
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(168,191,212,0.25)", padding: 4, borderRadius: 4, display: "flex", transition: "color 0.15s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "#f87171"}
+                    onMouseLeave={e => e.currentTarget.style.color = "rgba(168,191,212,0.25)"}
+                  >
+                    <LuX size={13} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </Card>
 
       <style>{`
@@ -913,19 +1117,11 @@ export default function AIAssistant() {
                     borderRadius: 7, padding: "3px 9px",
                     fontSize: 10.5, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.2px",
                   }}>
-<<<<<<< HEAD
-                    <LuZap size={10} /> OpenAI
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
-                  gpt-4o-mini · Données ACTIA ES en temps réel · Conversation mémorisée
-=======
                     <LuZap size={10} /> Groq AI
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
-                  llama-3.3-70b · Données ACTIA ES en temps réel
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
+                  llama-3.3-70b · Streaming · Données ACTIA ES en temps réel
                 </p>
               </div>
             </div>

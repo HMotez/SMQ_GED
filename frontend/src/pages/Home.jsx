@@ -745,15 +745,9 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-8 -mt-14 mb-8">
           <div className="flex gap-3.5 flex-wrap">
             <StatCard icon={LuFileText}    label="Total documents" value={loadingStats ? "…" : totalDocs} sub="dans le système"     accent="#60a5fa" onClick={() => navigate("/list")}        />
-<<<<<<< HEAD
-            <StatCard icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate("/validations")} />
-            <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list?statusName=Validé")}        />
-            <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate("/list?overdue=true")} />
-=======
             <StatCard icon={LuClock}       label="En validation"   value={loadingStats ? "…" : pending}   sub="en attente"          accent={pending > 0 ? "#a5b4fc" : "#4ade80"} onClick={() => navigate(canValidate ? "/validations" : "/list")} />
             <StatCard icon={LuCircleCheck} label="Validés"         value={loadingStats ? "…" : validated}  sub="documents approuvés" accent="#4ade80" onClick={() => navigate("/list")}        />
             <StatCard icon={LuCircleAlert} label="En retard"       value={loadingStats ? "…" : overdue}    sub="révision dépassée"   accent={overdue > 0 ? "#fb923c" : "#4ade80"} onClick={() => navigate(canArchive ? "/archive" : "/list")} />
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
             <StatCard icon={LuArchive}     label="Archivés"        value={loadingStats ? "…" : archived}   sub="archivage définitif" accent="#94a3b8" onClick={() => navigate("/archive")}    />
           </div>
         </div>
@@ -776,15 +770,11 @@ export default function Home() {
                 return (
                   <div
                     key={label}
-<<<<<<< HEAD
-                    onClick={() => navigate(`/list?statusName=${encodeURIComponent(label)}`)}
-=======
                     onClick={() => {
                       if (label === "Archivé" || label === "Obsolète") navigate("/archive");
                       else if (label === "En validation") navigate(canValidate ? "/validations" : "/list");
                       else navigate("/list");
                     }}
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
                     className="flex-1 min-w-[80px] cursor-pointer group"
                   >
                     <div

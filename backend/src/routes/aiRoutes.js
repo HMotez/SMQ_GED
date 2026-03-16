@@ -13,11 +13,17 @@ const ctrl    = require("../controllers/aiController");
 const { loadUser, requireRole } = require("../middleware/roleMiddleware");
 
 // ── Carte 1 : Chatbot Qualité ────────────────────────────────
-// Accessible aux visiteurs (Lecteur) et aux rôles authentifiés
 router.post(
   "/query",
   loadUser,
   ctrl.handleChatQuery
+);
+
+// ── Carte 1 : Chatbot Qualité — Streaming SSE ────────────────
+router.post(
+  "/stream",
+  loadUser,
+  ctrl.handleStreamQuery
 );
 
 // ── Carte 2 : Classification automatique ─────────────────────

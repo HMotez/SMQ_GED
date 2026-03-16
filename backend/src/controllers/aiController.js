@@ -734,65 +734,20 @@ async function buildSQLForIntent(intent, entities, role) {
 }
 
 // ─────────────────────────────────────────────────────────────
-<<<<<<< HEAD
-// OPENAI LLM — Helper
-=======
 // GROQ LLM — Helpers (Groq Cloud — llama-3.3-70b-versatile)
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 // ─────────────────────────────────────────────────────────────
-const OpenAI = require("openai");
+const https = require("https");
 
-<<<<<<< HEAD
-let _openaiClient = null;
-function getOpenAIClient() {
-  if (!_openaiClient) {
-    const config = { apiKey: process.env.OPENAI_API_KEY };
-    // Support alternative providers (Groq, Together, etc.) via OPENAI_BASE_URL
-    if (process.env.OPENAI_BASE_URL) {
-      config.baseURL = process.env.OPENAI_BASE_URL;
-    }
-    _openaiClient = new OpenAI(config);
-  }
-  return _openaiClient;
-}
-
-function isOpenAIConfigured() {
-  const key = process.env.OPENAI_API_KEY;
-  return !!key && key !== "your_openai_api_key_here" && key.length > 10;
-}
-
-async function callOpenAILLM(systemPrompt, userQuery, history = []) {
-  if (!isOpenAIConfigured()) return null;
-  try {
-    const client = getOpenAIClient();
-    // Build full conversation: system + history turns + current user message
-    const messages = [
-=======
-async function callGeminiLLM(systemPrompt, userQuery) {
+async function callGeminiLLM(systemPrompt, userQuery, history = []) {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_API_KEY || GROQ_API_KEY === "your_groq_api_key_here") return null;
 
   const body = JSON.stringify({
     model: "llama-3.3-70b-versatile",
     messages: [
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
       { role: "system", content: systemPrompt },
-      ...history.slice(-10), // keep last 10 turns to avoid token overflow
+      ...history.slice(-10),
       { role: "user",   content: userQuery },
-<<<<<<< HEAD
-    ];
-    const completion = await client.chat.completions.create({
-      model:       process.env.OPENAI_MODEL || "gpt-4o-mini",
-      messages,
-      max_tokens:  1000,
-      temperature: 0.4,
-    });
-    return completion.choices[0]?.message?.content?.trim() || null;
-  } catch (err) {
-    console.error("[IA][OpenAI] Erreur:", err.message);
-    return null;
-  }
-=======
     ],
     max_tokens: 900,
     temperature: 0.3,
@@ -809,10 +764,10 @@ async function callGeminiLLM(systemPrompt, userQuery) {
         "Content-Type":  "application/json",
         "Content-Length": Buffer.byteLength(body),
       },
-    }, (res) => {
+    }, (groqRes) => {
       let data = "";
-      res.on("data", chunk => { data += chunk; });
-      res.on("end", () => {
+      groqRes.on("data", chunk => { data += chunk; });
+      groqRes.on("end", () => {
         try {
           const parsed = JSON.parse(data);
           if (parsed.error) { console.error("[IA][Groq]", parsed.error.message); resolve(null); return; }
@@ -824,7 +779,58 @@ async function callGeminiLLM(systemPrompt, userQuery) {
     req.write(body);
     req.end();
   });
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
+}
+
+// Streaming version — used by POST /api/ai/stream (SSE)
+async function callGroqLLMStream(systemPrompt, userQuery, history = [], res) {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY || GROQ_API_KEY === "your_groq_api_key_here") return false;
+
+  const body = JSON.stringify({
+    model: "llama-3.3-70b-versatile",
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...history.slice(-10),
+      { role: "user",   content: userQuery },
+    ],
+    max_tokens: 900,
+    temperature: 0.3,
+    stream: true,
+  });
+
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: "api.groq.com",
+      path:     "/openai/v1/chat/completions",
+      method:   "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type":  "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    }, (groqRes) => {
+      let buffer = "";
+      groqRes.on("data", chunk => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") { resolve(true); return; }
+          try {
+            const parsed = JSON.parse(data);
+            const token = parsed.choices?.[0]?.delta?.content || "";
+            if (token) res.write(`data: ${JSON.stringify({ token })}\n\n`);
+          } catch {}
+        }
+      });
+      groqRes.on("end", () => resolve(true));
+    });
+    req.on("error", () => resolve(false));
+    req.write(body);
+    req.end();
+  });
 }
 
 async function fetchDBSnapshot() {
@@ -890,11 +896,14 @@ ${sqlSummary ? `\nDOCUMENTS TROUVÉS POUR CETTE QUESTION\n${sqlSummary}` : ""}
 RÈGLES DE COMPORTEMENT — RESPECTE-LES ABSOLUMENT
 1. Réponds TOUJOURS en français, ton naturel, chaleureux, professionnel — comme ChatGPT.
 2. Tu es un assistant UNIVERSEL : tu réponds à TOUT (salutations, blagues, ISO, qualité, informatique, GED, etc.).
-3. SALUTATIONS (bonjour, salut, bonsoir, hi, hello, ça va, etc.) : réponds de façon HUMAINE et chaleureuse. Dis bonjour, présente-toi brièvement, et propose ton aide. NE PAS lister des fonctionnalités techniques. Exemple : "Bonjour ! 😊 Je suis votre assistant IA GED d'ACTIA ES. Comment puis-je vous aider aujourd'hui ?"
+3. SALUTATIONS (bonjour, salut, bonsoir, hi, hello, ça va, etc.) : réponds de façon HUMAINE et chaleureuse. Dis bonjour, présente-toi brièvement, et propose ton aide. NE PAS lister des fonctionnalités techniques.
 4. QUESTIONS GÉNÉRALES (ISO 9001, qualité, norme, définition, explication, etc.) : réponds depuis ta connaissance générale avec des explications claires et structurées. Utilise des listes si nécessaire.
 5. QUESTIONS GED/DOCUMENTS : utilise les données temps réel ci-dessus pour répondre avec précision.
 6. Si des documents sont listés dans "DOCUMENTS TROUVÉS", intègre-les dans ta réponse.
-7. Sois concis mais complet. Ne dis JAMAIS "je ne peux pas répondre à cela".`;
+7. Sois concis mais complet. Ne dis JAMAIS "je ne peux pas répondre à cela".
+8. À la fin de CHAQUE réponse (sauf salutations), ajoute exactement cette ligne sur une seule ligne :
+SUGGESTIONS:{"q":["question de suivi 1 ?","question de suivi 2 ?","question de suivi 3 ?"]}
+   Les questions doivent être pertinentes et contextuelles à ce qui vient d'être dit.`;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -910,31 +919,7 @@ async function handleChatQuery(req, res) {
 
   const trimmedQuery = query.trim();
   const role         = user?.role || "Reviewer";
-<<<<<<< HEAD
-
-  let intentPattern = detectIntent(trimmedQuery);
-  // Si recherche libre mais qu'un type DB a été identifié → forcer by_type
-  if (intentPattern.intent === "text_search" && entities.type_code) {
-    intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
-  }
-  // Si text_search sans aucune entité identifiable → conversation libre OpenAI
-  // (question ouverte, salutation, conseil général, etc.)
-  if (
-    intentPattern.intent === "text_search" &&
-    !entities.doc_code &&
-    !entities.type_code &&
-    !entities.process_keyword &&
-    !entities.person_name
-  ) {
-    intentPattern = { intent: "general_advice", label: "Conversation IA", roles: ["*"] };
-  }
-
-  if (intentPattern.roles && !intentPattern.roles.includes("*") && !intentPattern.roles.includes(role)) {
-    return res.status(403).json({ error: `Votre rôle (${role}) ne permet pas d'accéder à cette information.` });
-  }
-=======
   const useLLM       = !!process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== "your_groq_api_key_here";
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
 
   try {
     // ── Toujours tenter de récupérer du contexte GED si la question semble documentaire ──
@@ -945,46 +930,6 @@ async function handleChatQuery(req, res) {
       intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
     }
 
-<<<<<<< HEAD
-    // ── OpenAI LLM : génère un message naturel basé sur les résultats SQL ──
-    let finalMessage = built.message;
-    const useLLM = isOpenAIConfigured();
-
-    if (useLLM) {
-      let llmMsg = null;
-      if (built.is_advice) {
-        // Question ouverte / conseil / conversation libre : OpenAI répond sans restriction
-        const advicePrompt = `Tu es l'Assistant IA intégré au Système de Gestion Électronique de Documents (GED) d'ACTIA ES, entreprise spécialisée en électronique automobile.
-
-Tu es un assistant conversationnel intelligent et polyvalent. Tu peux répondre à TOUTES les questions :
-- Questions sur le GED : gestion documentaire, versionning, cycle de vie des documents, archivage
-- Normes qualité : ISO 9001, ISO 9001:2015, amélioration continue, PDCA, audits, non-conformités
-- Questions générales : explication de concepts, aide à la rédaction, conseils pratiques
-- Salutations et conversations informelles : réponds chaleureusement et naturellement
-- Questions techniques ou métier liées à l'automobile, à l'électronique, à la qualité
-- Toute autre question : réponds de façon utile et intelligente
-
-Règles :
-1. Réponds TOUJOURS en français, avec un ton adapté à la question (professionnel pour les questions métier, détendu pour les salutations)
-2. Sois concis mais complet — donne une vraie valeur à chaque réponse
-3. Pour les questions sur le GED ACTIA ES, contextualise bien tes réponses dans ce cadre
-4. Pour les salutations ou questions générales, sois naturel et amical
-5. Ne refuse jamais de répondre sauf si la question est clairement inappropriée
-
-Profil de l'utilisateur : ${role}.`;
-        llmMsg = await callOpenAILLM(advicePrompt, trimmedQuery, history);
-        finalMessage = llmMsg || "Je n'ai pas pu générer une réponse. Veuillez vérifier la connexion à l'API OpenAI ou reformuler votre question.";
-      } else {
-        const snapshot = await fetchDBSnapshot();
-        const systemPrompt = buildSystemPrompt(snapshot, role, rows, built.message);
-        llmMsg = await callOpenAILLM(systemPrompt, trimmedQuery, history);
-        if (llmMsg) finalMessage = llmMsg;
-        // If OpenAI fails, keep the built.message (SQL result summary)
-        if (!finalMessage) finalMessage = built.message || "Aucun résultat disponible.";
-      }
-    } else if (!finalMessage) {
-      finalMessage = "L'assistant IA n'est pas configuré. Vérifiez la clé OPENAI_API_KEY dans le fichier .env.";
-=======
     let rows       = [];
     let statistics = null;
     let built      = { message: null };
@@ -1008,7 +953,6 @@ Profil de l'utilisateur : ${role}.`;
     // ── Groq LLM répond à TOUT ──────────────────────────────────────────────────
     let finalMessage = built.message || "";
 
-    // Intents purement documentaires (affichent la liste de docs)
     const DOC_INTENTS = new Set([
       "expired_docs","validation_pending","overdue_docs","obsolete_docs",
       "archived_docs","published_docs","in_relecture","draft_docs",
@@ -1021,12 +965,11 @@ Profil de l'utilisateur : ${role}.`;
     if (useLLM) {
       const snapshot     = await fetchDBSnapshot();
       const systemPrompt = buildSystemPrompt(snapshot, role, isDocIntent ? rows : [], built.message);
-      const llmMsg       = await callGeminiLLM(systemPrompt, trimmedQuery);
+      const llmMsg       = await callGeminiLLM(systemPrompt, trimmedQuery, history);
       if (llmMsg) finalMessage = llmMsg;
       if (!finalMessage) finalMessage = "Je suis votre assistant IA GED. Posez-moi n'importe quelle question !";
     } else {
       if (!finalMessage) finalMessage = "Je suis votre assistant IA GED. Posez-moi n'importe quelle question !";
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
     }
 
     // N'envoyer les documents que pour les questions documentaires
@@ -1043,11 +986,7 @@ Profil de l'utilisateur : ${role}.`;
 
     return res.json({
       intent:       intentPattern.intent,
-<<<<<<< HEAD
-      intent_label: useLLM ? `OpenAI ${process.env.OPENAI_MODEL || "gpt-4o-mini"}` : intentPattern.label,
-=======
       intent_label: useLLM ? "Groq AI" : intentPattern.label,
->>>>>>> 392052c (feat(ai): switch to Groq (llama-3.3-70b) + fix chatbot responses)
       message:      finalMessage,
       result_count: statsToSend ? statsToSend.length : docsToSend.length,
       documents:    docsToSend,
@@ -1058,6 +997,98 @@ Profil de l'utilisateur : ${role}.`;
   } catch (err) {
     console.error("[IA][Chatbot] Erreur:", err.message);
     return res.status(500).json({ error: "Erreur lors du traitement de la requête IA." });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/ai/stream — Chatbot avec streaming SSE
+// ─────────────────────────────────────────────────────────────
+async function handleStreamQuery(req, res) {
+  const { query, history = [] } = req.body;
+  const user = req.currentUser;
+
+  if (!query || query.trim().length < 1) {
+    return res.status(400).json({ error: "La requête est vide." });
+  }
+
+  const trimmedQuery = query.trim();
+  const role         = user?.role || "Reviewer";
+  const useLLM       = !!process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== "your_groq_api_key_here";
+
+  // SSE headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.flushHeaders();
+
+  try {
+    const entities    = await extractEntities(trimmedQuery);
+    entities._userId  = user?.id;
+    let intentPattern = detectIntent(trimmedQuery);
+    if (intentPattern.intent === "text_search" && entities.type_code) {
+      intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
+    }
+
+    let rows = [], statistics = null, built = { message: null };
+    const isGreeting = /^(bonjour|salut|bonsoir|hello|hi|coucou|hey|ça va|ca va)/i.test(trimmedQuery.split(/\s/)[0]);
+    const isGEDQuery = !isGreeting && intentPattern.intent !== "unknown";
+
+    if (isGEDQuery) {
+      try {
+        built = await buildSQLForIntent(intentPattern.intent, entities, role);
+        if (!built.error) {
+          if (built.is_stats) { statistics = built.statistics; }
+          else if (built.sql) { const r = await pool.query(built.sql, built.params); rows = r.rows; }
+        }
+      } catch {}
+    }
+
+    const DOC_INTENTS = new Set([
+      "expired_docs","validation_pending","overdue_docs","obsolete_docs",
+      "archived_docs","published_docs","in_relecture","draft_docs",
+      "upcoming_reviews","latest_version","validated_docs","list_all",
+      "never_viewed","my_docs","recent_docs","by_responsible","by_process","by_type","by_folder",
+    ]);
+    const isDocIntent = DOC_INTENTS.has(intentPattern.intent);
+    const docsToSend  = isDocIntent ? rows : [];
+    const statsToSend = isDocIntent ? statistics : null;
+
+    // Send metadata first (intent, docs, stats)
+    res.write(`data: ${JSON.stringify({
+      type: "meta",
+      intent: intentPattern.intent,
+      intent_label: useLLM ? "Groq AI" : intentPattern.label,
+      documents: docsToSend,
+      statistics: statsToSend,
+      stats_label: built.stats_label || "Statut",
+      llm_powered: useLLM,
+    })}\n\n`);
+
+    if (useLLM) {
+      const snapshot     = await fetchDBSnapshot();
+      const systemPrompt = buildSystemPrompt(snapshot, role, isDocIntent ? rows : [], built.message);
+      await callGroqLLMStream(systemPrompt, trimmedQuery, history, res);
+    } else {
+      const fallback = built.message || "Je suis votre assistant IA GED. Posez-moi n'importe quelle question !";
+      res.write(`data: ${JSON.stringify({ token: fallback })}\n\n`);
+    }
+
+    res.write("data: [DONE]\n\n");
+
+    // Log query
+    if (user?.id) {
+      await pool.query(
+        `INSERT INTO ai_query_logs (user_id, query_text, intent, result_count) VALUES ($1,$2,$3,$4)`,
+        [user.id, trimmedQuery, intentPattern.intent, docsToSend.length]
+      ).catch(() => {});
+    }
+
+  } catch (err) {
+    console.error("[IA][Stream] Erreur:", err.message);
+    res.write(`data: ${JSON.stringify({ error: "Erreur lors du traitement." })}\n\n`);
+  } finally {
+    res.end();
   }
 }
 
@@ -1602,6 +1633,7 @@ async function getQueryLogs(req, res) {
 module.exports = {
   ensureAITables,
   handleChatQuery,
+  handleStreamQuery,
   handleClassification,
   handleDateExtraction,
   getImprovements,
