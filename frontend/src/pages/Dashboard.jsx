@@ -463,6 +463,8 @@ const CHART_COLORS = ["#3b82f6","#10b981","#f59e0b","#6d28d9","#ef4444","#0f766e
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { userRole } = useUser();
+  const canValidate = userRole === "Admin" || userRole === "Ing. Qualité" || userRole === "Reviewer";
   const [overview,      setOverview]      = useState(null);
   const [stats,         setStats]         = useState(null);
   const [loadingOv,     setLoadingOv]     = useState(true);
@@ -536,8 +538,8 @@ export default function Dashboard() {
           {/* KPI Cards */}
           <div className="flex gap-4 flex-wrap">
             <KpiCard icon={LuTriangleAlert} label="Documents expirés"    value={loadingOv?"…":expired.count}      sub="date de révision dépassée" accent={expired.count>0?"#f87171":"#4ade80"}      pulse={expired.count>0}      onClick={() => navigate("/list?overdue=true")} />
-            <KpiCard icon={LuClipboardCheck} label="En validation"       value={loadingOv?"…":inValidation.count} sub="en attente d'approbation"  accent={inValidation.count>0?"#a5b4fc":"#4ade80"} pulse={inValidation.count>0} onClick={() => navigate("/validations")} />
-            <KpiCard icon={LuCircleAlert}   label="En retard de révision" value={loadingOv?"…":overdue.count}      sub="Diffusés non révisés"      accent={overdue.count>0?"#fb923c":"#4ade80"}     pulse={overdue.count>0}      onClick={() => navigate("/list?overdue=true")} />
+            <KpiCard icon={LuClipboardCheck} label="En validation"       value={loadingOv?"…":inValidation.count} sub="en attente d'approbation"  accent={inValidation.count>0?"#a5b4fc":"#4ade80"} pulse={inValidation.count>0} onClick={() => navigate(canValidate ? "/validations" : "/list?statusName=En%20validation")} />
+            <KpiCard icon={LuCircleAlert}   label="En retard de révision" value={loadingOv?"…":overdue.count}      sub="Diffusés non révisés"      accent={overdue.count>0?"#fb923c":"#4ade80"}     pulse={overdue.count>0}      onClick={() => navigate("/list?statusName=Diffus%C3%A9&overdue=true")} />
             <KpiCard icon={LuCircleCheck}   label="Total documents"       value={loadingOv?"…":totalDocs||0}       sub="dans le système"           accent="#60a5fa"                                                           onClick={() => navigate("/list")} />
           </div>
 

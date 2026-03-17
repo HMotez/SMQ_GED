@@ -1,7 +1,7 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
 # Node.js 20 + Express + LibreOffice + Module IA Groq (llama-3.3-70b)
-# Sprint 12 — Groq streaming SSE + copy button + suggested questions
+# Sprint 13 — PDF→Word (pdf2docx) + PDF→Excel (pdfplumber) conversion fix
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────
@@ -19,12 +19,14 @@ FROM node:20-slim AS production
 
 WORKDIR /app
 
-# Install LibreOffice for document format conversion (/convert route)
-# --no-install-recommends keeps the image as lean as possible
+# Install LibreOffice + Python3 + pip for document format conversion (/convert route)
 RUN apt-get update && apt-get install -y \
     libreoffice \
+    python3 \
+    python3-pip \
     --no-install-recommends \
-  && rm -rf /var/lib/apt/lists/*
+  && pip3 install --break-system-packages pdf2docx pdfplumber openpyxl \
+  && rm -rf /var/lib/apt/lists/* /root/.cache/pip
 
 # Copy production node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -32,6 +34,7 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source code and package files
 COPY package*.json ./
 COPY src/ ./src/
+# Python conversion scripts are inside src/scripts — already copied above
 
 # Create storage directory (will be mounted as a named volume)
 RUN mkdir -p /app/storage

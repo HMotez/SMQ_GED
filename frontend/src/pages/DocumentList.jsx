@@ -763,9 +763,9 @@ export default function DocumentList() {
                           style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.55)", minWidth:"260px" }}>
                           <p className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider border-b m-0"
                             style={{ color:"rgba(168,191,212,0.45)", borderColor:"rgba(255,255,255,0.07)" }}>
-                            {versions.length > 1 ? "Version · Format" : "Format de téléchargement"}
+                            Format de téléchargement
                           </p>
-                          {versions.map(v => (
+                          {versions.slice(-1).map(v => (
                             <div key={v.id} className="flex items-center justify-between px-3.5 py-2.5 border-b"
                               style={{ borderColor:"rgba(255,255,255,0.06)" }}>
                               <span className="flex items-center gap-2 flex-1 min-w-0">
@@ -812,11 +812,10 @@ export default function DocumentList() {
               {versions.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>🕐 Historique versions</p></div>
-                  {versions.map((v) => {
-                    const isLockedDoc = ["Validé","Diffusé","Obsolète","Archivé"].includes(selected?.status_name);
-                    const isFirst = v.version_letter === "-";
-                    const isCurrent = v.version_letter === selected?.current_version;
-                    const canInteract = !isLockedDoc || isFirst || isCurrent;
+                  {versions.map((v, idx) => {
+                    const isFirst   = idx === 0;
+                    const isCurrent = idx === versions.length - 1;
+                    const canInteract = isFirst || isCurrent;
                     return (
                     <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex justify-between items-center gap-2">

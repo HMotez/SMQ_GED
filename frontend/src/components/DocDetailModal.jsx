@@ -255,18 +255,33 @@ export default function DocDetailModal({ docId, onClose }) {
                             {v.file_size > 0 && <span>· {(v.file_size/1024).toFixed(0)} Ko</span>}
                           </p>
                         </div>
-                        {v.file_path && (
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
-                              className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
-                              style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.2)", color:"#60a5fa", cursor:"pointer" }}
-                              onMouseEnter={e => { e.currentTarget.style.background="rgba(96,165,250,0.15)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.4)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
-                              <LuEye size={14} /> Consulter
-                            </button>
-                            <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
-                          </div>
-                        )}
+                        {(() => {
+                          const isFirst = idx === 0;
+                          const isLast  = idx === versions.length - 1;
+                          if (isFirst || isLast) {
+                            return v.file_path && (
+                              <div className="flex gap-2 flex-shrink-0">
+                                <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
+                                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
+                                  style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.2)", color:"#60a5fa", cursor:"pointer" }}
+                                  onMouseEnter={e => { e.currentTarget.style.background="rgba(96,165,250,0.15)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.4)"; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
+                                  <LuEye size={14} /> Consulter
+                                </button>
+                                <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
+                              </div>
+                            );
+                          }
+                          return v.sharepoint_link ? (
+                            <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold no-underline transition-all flex-shrink-0"
+                              style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)" }}
+                              onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}
+                              onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; }}>
+                              <LuShare2 size={14} /> SharePoint
+                            </a>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                   ))}

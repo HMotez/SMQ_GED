@@ -10,6 +10,12 @@ require("dotenv").config({ path: __dirname + "/../.env" });
 const SOFFICE = process.env.SOFFICE_PATH
   || "C:\\Program Files\\LibreOffice\\program\\soffice.exe";
 
+// ── Python3 executable path ───────────────────────────────────
+const PYTHON = process.env.PYTHON_PATH || "python3";
+
+// ── Conversion scripts ────────────────────────────────────────
+const SCRIPTS_DIR = path.join(__dirname, "scripts");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -77,22 +83,58 @@ app.get("/convert/:filename", (req, res) => {
     return res.status(404).json({ error: "Fichier introuvable" });
   }
 
-  // create a unique temp dir so parallel requests don't collide
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ged-convert-"));
+  const tmpDir  = fs.mkdtempSync(path.join(os.tmpdir(), "ged-convert-"));
+  const srcExt  = path.extname(filename).slice(1).toLowerCase();
+  const baseName = path.basename(filename, path.extname(filename));
 
-  const srcExt = path.extname(filename).slice(1).toLowerCase();
-
-  // Pick the right PDF import filter based on target format
-  let infilter = null;
-  if (srcExt === "pdf") {
-    if (["docx", "doc", "odt", "rtf"].includes(targetFmt))      infilter = "writer_pdf_import";
-    else if (["pptx", "ppt", "odp"].includes(targetFmt))         infilter = "impress_pdf_import";
-    else if (["xlsx", "xls", "ods", "csv"].includes(targetFmt)) {
+  // ── Helper: send converted file then clean up ──────────────
+  const sendFile = (outFile, ext) => {
+    if (!fs.existsSync(outFile)) {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-      return res.status(422).json({ error: "Conversion PDF → Excel non supportée par LibreOffice" });
+      return res.status(422).json({ error: `Fichier converti introuvable (${ext})` });
     }
+    res.download(outFile, `${baseName}.${ext}`, (dlErr) => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+      if (dlErr) console.error("Download error:", dlErr);
+    });
+  };
+
+  // ── PDF → DOCX : use pdf2docx (Python) for real text extraction ──
+  if (srcExt === "pdf" && ["docx", "doc"].includes(targetFmt)) {
+    const outFile  = path.join(tmpDir, `${baseName}.docx`);
+    const script   = path.join(SCRIPTS_DIR, "pdf_to_docx.py");
+    execFile(PYTHON, [script, srcPath, outFile], { timeout: 120000 }, (err, _stdout, stderr) => {
+      if (err) {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+        console.error("pdf_to_docx error:", stderr);
+        return res.status(500).json({ error: "Conversion PDF → Word échouée : " + (stderr || err.message) });
+      }
+      sendFile(outFile, "docx");
+    });
+    return;
   }
 
+  // ── PDF → XLSX : use pdfplumber (Python) for table extraction ────
+  if (srcExt === "pdf" && ["xlsx", "xls"].includes(targetFmt)) {
+    const outFile = path.join(tmpDir, `${baseName}.xlsx`);
+    const script  = path.join(SCRIPTS_DIR, "pdf_to_xlsx.py");
+    execFile(PYTHON, [script, srcPath, outFile], { timeout: 120000 }, (err, _stdout, stderr) => {
+      if (err) {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+        console.error("pdf_to_xlsx error:", stderr);
+        return res.status(500).json({ error: "Conversion PDF → Excel échouée : " + (stderr || err.message) });
+      }
+      sendFile(outFile, "xlsx");
+    });
+    return;
+  }
+
+  // ── All other conversions : LibreOffice ───────────────────────────
+  let infilter = null;
+  if (srcExt === "pdf") {
+    if (["pptx", "ppt", "odp"].includes(targetFmt)) infilter = "impress_pdf_import";
+    else                                              infilter = "writer_pdf_import";
+  }
   const infilterArgs = infilter ? [`--infilter=${infilter}`] : [];
 
   execFile(
@@ -104,28 +146,14 @@ app.get("/convert/:filename", (req, res) => {
         fs.rmSync(tmpDir, { recursive: true, force: true });
         return res.status(500).json({ error: "Conversion échouée : " + err.message });
       }
-
-      // Scan the temp dir — LibreOffice may produce a file with any extension
-      const baseName = path.basename(filename, path.extname(filename));
-      const produced = fs.readdirSync(tmpDir)
-        .find(f => path.parse(f).name === baseName);
-
+      const produced = fs.readdirSync(tmpDir).find(f => path.parse(f).name === baseName);
       if (!produced) {
         fs.rmSync(tmpDir, { recursive: true, force: true });
-        const srcFmt = srcExt.toUpperCase();
-        const dstFmt = targetFmt.toUpperCase();
         return res.status(422).json({
-          error: `Conversion ${srcFmt} → ${dstFmt} non supportée par LibreOffice`,
+          error: `Conversion ${srcExt.toUpperCase()} → ${targetFmt.toUpperCase()} non supportée`,
         });
       }
-
-      const outFile      = path.join(tmpDir, produced);
-      const downloadName = `${baseName}.${targetFmt}`;
-
-      res.download(outFile, downloadName, (dlErr) => {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-        if (dlErr) console.error("Download error:", dlErr);
-      });
+      sendFile(path.join(tmpDir, produced), targetFmt);
     }
   );
 });
