@@ -26,7 +26,7 @@ services:
       context:    ./backend
       dockerfile: Dockerfile.offline
     # Remplace le backend existant sur le même port
-    image: smq_ged-backend:sprint11
+    image: smq_ged-backend:sprint16
 
   # ── Frontend — rebuild sans Docker Hub ────────────────────────
   frontend:
@@ -37,4 +37,4 @@ services:
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
     # Remplace le frontend existant sur le même port
-    image: smq_ged-frontend:sprint11
+    image: smq_ged-frontend:sprint16

@@ -111,10 +111,10 @@ export default function DocDetailModal({ docId, onClose }) {
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="font-mono font-black text-sm tracking-wide" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
                         <StatusBadge name={doc.status_name} />
-                        {doc.current_version && doc.current_version !== "-" && (
+                        {doc.current_version && (
                           <span className="rounded-md px-2 py-0.5 text-xs font-bold border"
                             style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
-                            v{doc.current_version}
+                            {doc.current_version === "-" ? "Initiale" : `v${doc.current_version}`}
                           </span>
                         )}
                       </div>
@@ -260,7 +260,7 @@ export default function DocDetailModal({ docId, onClose }) {
                           const isLast  = idx === versions.length - 1;
                           if (isFirst || isLast) {
                             return v.file_path && (
-                              <div className="flex gap-2 flex-shrink-0">
+                              <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
                                 <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
                                   className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
                                   style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.2)", color:"#60a5fa", cursor:"pointer" }}

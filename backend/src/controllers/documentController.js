@@ -1061,10 +1061,12 @@ const getAuditTrail = async (req, res) => {
     // 2. Récupérer les logs d'audit
     const logs = await pool.query(
       `SELECT
-         id, action, user_id, details, created_at
-       FROM logs
-       WHERE document_id = $1
-       ORDER BY created_at ASC`,
+         l.id, l.action, l.user_id, l.details, l.created_at,
+         u.name AS user_name
+       FROM logs l
+       LEFT JOIN users u ON u.id = l.user_id
+       WHERE l.document_id = $1
+       ORDER BY l.created_at ASC`,
       [docId]
     );
 
@@ -1094,12 +1096,14 @@ const getAuditTrail = async (req, res) => {
 
     // Ajouter les logs
     logs.rows.forEach((log) => {
+      const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details;
       timeline.push({
         timestamp: log.created_at,
         type: "LOG",
         action: log.action,
         user_id: log.user_id,
-        details: typeof log.details === "string" ? JSON.parse(log.details) : log.details,
+        user_name: log.user_name || null,
+        details: { ...details, user_name: log.user_name || details?.user_name || null },
       });
     });
 

@@ -759,7 +759,7 @@ export default function DocumentList() {
                         <LuDownload size={14} /> Télécharger
                       </button>
                       {downloadOpen && (
-                        <div className="absolute bottom-[calc(100%+6px)] left-0 right-0 rounded-xl overflow-hidden z-20 border"
+                        <div className="absolute top-[calc(100%+6px)] left-0 right-0 rounded-xl overflow-hidden z-20 border"
                           style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.55)", minWidth:"260px" }}>
                           <p className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider border-b m-0"
                             style={{ color:"rgba(168,191,212,0.45)", borderColor:"rgba(255,255,255,0.07)" }}>

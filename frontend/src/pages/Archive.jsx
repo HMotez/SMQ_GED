@@ -121,10 +121,10 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-mono font-black text-sm tracking-wide" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
                       <StatusBadge name={doc.status_name} />
-                      {doc.current_version && doc.current_version !== "-" && (
+                      {doc.current_version && (
                         <span className="rounded-md px-2 py-0.5 text-xs font-bold border"
                           style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
-                          v{doc.current_version}
+                          {doc.current_version === "-" ? "Initiale" : `v${doc.current_version}`}
                         </span>
                       )}
                     </div>
@@ -254,16 +254,20 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <LuHistory size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
                     <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune version enregistrée.</p>
                   </div>
-                ) : versions.map((v, idx) => (
+                ) : versions.map((v, idx) => {
+                  const isFirst = idx === 0;
+                  const isLast  = idx === versions.length - 1;
+                  const canInteract = isFirst || isLast;
+                  return (
                   <div key={v.id} className="rounded-xl border overflow-hidden"
-                    style={{ background:"rgba(255,255,255,0.02)", borderColor: idx === versions.length - 1 ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.07)" }}>
+                    style={{ background:"rgba(255,255,255,0.02)", borderColor: isLast ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.07)" }}>
                     <div className="px-5 py-4 flex items-center gap-4">
                       <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                         <span className="rounded-xl px-3 py-1 text-sm font-black border"
-                          style={{ background: idx === versions.length-1 ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: idx === versions.length-1 ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: idx === versions.length-1 ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
+                          style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
                           v{v.version_letter}
                         </span>
-                        {idx === versions.length-1 && (
+                        {isLast && (
                           <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color:"#4ab83f" }}>Actuelle</span>
                         )}
                       </div>
@@ -275,8 +279,8 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                           {v.file_size > 0 && <span>· {(v.file_size/1024).toFixed(0)} Ko</span>}
                         </p>
                       </div>
-                      {v.file_path && (
-                        <div className="flex gap-2 flex-shrink-0">
+                      {canInteract && v.file_path ? (
+                        <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
                           <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
                             style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.2)", color:"#60a5fa", cursor:"pointer" }}
@@ -286,10 +290,23 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                           </button>
                           <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
                         </div>
-                      )}
+                      ) : !canInteract ? (
+                        v.sharepoint_link ? (
+                          <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold no-underline transition-all flex-shrink-0"
+                            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)" }}
+                            onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; }}>
+                            <LuShare2 size={14} /> SharePoint
+                          </a>
+                        ) : (
+                          <span className="text-xs flex-shrink-0" style={{ color:"rgba(168,191,212,0.3)" }}>Via SharePoint</span>
+                        )
+                      ) : null}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

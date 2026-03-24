@@ -2,7 +2,7 @@
 // Workflow.jsx — ACTIA ES · Document Lifecycle Visualization
 // EF06 — ISO 9001 Workflow with role-based transitions
 // ============================================================
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
@@ -169,6 +169,13 @@ export default function Workflow() {
   const [docStats, setDocStats] = useState({});
   const [loading,  setLoading]  = useState(true);
   const [selected, setSelected] = useState(null);
+  const detailRef = useRef(null);
+
+  useEffect(() => {
+    if (selected && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selected]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -409,7 +416,7 @@ export default function Workflow() {
             </div>
 
             {/* ── RIGHT: Detail panel ───────────────────────── */}
-            <div className="w-[320px] flex-shrink-0 sticky top-6">
+            <div ref={detailRef} className="w-[320px] flex-shrink-0 sticky top-6">
 
               {/* Role legend */}
               <div className="rounded-2xl border mb-4 overflow-hidden"

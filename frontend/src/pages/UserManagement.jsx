@@ -360,7 +360,7 @@ export default function UserManagement() {
                                 disabled={busy}
                               >
                                 <option value="">— Choisir un rôle —</option>
-                                {roles.map(r => (
+                                {roles.filter(r => r.name !== "Admin").map(r => (
                                   <option key={r.id} value={r.id}>{r.name}</option>
                                 ))}
                               </select>
@@ -478,7 +478,7 @@ export default function UserManagement() {
                                 disabled={saving[u.id]}
                               >
                                 <option value="">— Sélectionner —</option>
-                                {roles.map(r => (
+                                {roles.filter(r => r.name !== "Admin").map(r => (
                                   <option key={r.id} value={r.id}>{r.name}</option>
                                 ))}
                               </select>

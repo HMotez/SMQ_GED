@@ -2,9 +2,11 @@
 // components/AppSidebar.jsx — Pure Tailwind CSS · No Emojis
 // All icons verified against installed react-icons/lu version
 // ============================================================
+import { useEffect, useState, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import logoImg from "../assets/Logo.png";
 import { useUser } from "../context/UserContext";
+import { API } from "../config";
 import {
   LuHouse,
   LuFilePlus,
@@ -215,8 +217,35 @@ function SectionLabel({ children }) {
   );
 }
 
+/* ── Notification unread count hook ──────────────────────── */
+function useNotifCount() {
+  const { token } = useUser();
+  const [count, setCount] = useState(0);
+
+  const fetch_ = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/notifications/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCount(data.count ?? 0);
+    } catch { /* ignore */ }
+  }, [token]);
+
+  useEffect(() => {
+    fetch_();
+    const id = setInterval(fetch_, 60_000);
+    return () => clearInterval(id);
+  }, [fetch_]);
+
+  return count;
+}
+
 /* ── Nav links ────────────────────────────────────────────── */
 export function SidebarNav({ badges = {}, user }) {
+  const notifCount = useNotifCount();
   // treat any unknown/old role (e.g. "Admin GED") as Admin for nav display
   const isAdmin = user?.role === "Admin" || (!user && false) || (user && !NAV_ITEMS_BY_ROLE[user?.role]);
   const roleItems = !user ? NAV_ITEMS_VISITOR : (NAV_ITEMS_BY_ROLE[user?.role] || NAV_ITEMS_DEFAULT);
@@ -254,11 +283,14 @@ export function SidebarNav({ badges = {}, user }) {
                 )}
                 <Icon size={14} className={`flex-shrink-0 ${isActive ? "text-actia-green" : "text-[#a8bfd4]/45"}`} />
                 <span className="flex-1 leading-none">{label}</span>
-                {badges[href] > 0 && (
-                  <span className="bg-red-500 text-white rounded-full px-1.5 py-px text-[10px] font-bold min-w-[18px] text-center leading-none shadow-lg shadow-red-500/30">
-                    {badges[href]}
-                  </span>
-                )}
+                {(() => {
+                  const cnt = href === "/notifications" ? notifCount : (badges[href] ?? 0);
+                  return cnt > 0 ? (
+                    <span className="bg-red-500 text-white rounded-full px-1.5 py-px text-[10px] font-bold min-w-[18px] text-center leading-none shadow-lg shadow-red-500/30">
+                      {cnt > 99 ? "99+" : cnt}
+                    </span>
+                  ) : null;
+                })()}
               </>
             )}
           </NavLink>

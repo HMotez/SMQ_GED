@@ -1,7 +1,7 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
 # Node.js 20 + Express + LibreOffice + Module IA Groq (llama-3.3-70b)
-# Sprint 13 — PDF→Word (pdf2docx) + PDF→Excel (pdfplumber) conversion fix
+# Sprint 16 — Download UX fix (inline format buttons, no popup clipping)
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────

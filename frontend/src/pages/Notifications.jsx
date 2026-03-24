@@ -213,7 +213,7 @@ function DocumentModal({ doc, loading, onClose }) {
               <div className="grid grid-cols-2 gap-4">
                 <InfoRow Icon={LuTag}         label="Type"           value={doc.type_label || doc.type_code} />
                 <InfoRow Icon={LuFolder}      label="Dossier"        value={doc.folder_name} />
-                <InfoRow Icon={LuLayers}      label="Version actuelle" value={doc.current_version && doc.current_version !== "-" ? `Version ${doc.current_version}` : "Aucune"} />
+                <InfoRow Icon={LuLayers}      label="Version actuelle" value={doc.current_version && doc.current_version !== "-" ? `Version ${doc.current_version}` : doc.current_version === "-" ? "Initiale" : "Aucune"} />
                 <InfoRow Icon={LuUser}        label="Créé par"       value={doc.created_by_name} />
                 <InfoRow Icon={LuCalendar}    label="Date de création" value={fmtDate(doc.created_at)} />
                 <InfoRow Icon={LuHistory}     label="Dernière modification" value={fmtDate(doc.updated_at)} />
@@ -303,7 +303,7 @@ export default function Notifications() {
   const userRole = currentUser?.role;
 
   const [notifications, setNotifications] = useState([]);
-  const [loading,       setLoading]       = useState(true);
+  const [loading,       setLoading]       = useState(false);
   const [filter,        setFilter]        = useState("all");
   const [toast,         setToast]         = useState({ msg: "", type: "" });
   const [triggerLoading, setTriggerLoading] = useState(false);
@@ -324,14 +324,15 @@ export default function Notifications() {
 
   /* ── Fetch notifications ────────────────────────────────── */
   const fetchNotifications = useCallback(async () => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     setLoading(true);
     try {
       const res = await fetch(`${API}/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error();
-      setNotifications(await res.json());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setNotifications(Array.isArray(data) ? data : []);
     } catch {
       showToast("Impossible de charger les notifications.", "error");
     } finally {
@@ -350,7 +351,7 @@ export default function Notifications() {
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setExpiredDocs(Array.isArray(data) ? data : data.documents || []);
+      setExpiredDocs(Array.isArray(data) ? data : (data.data || []));
     } catch {
       setExpiredDocs([]);
     } finally {
@@ -387,7 +388,9 @@ export default function Notifications() {
     setSelectedDoc(null);
     setLoadingDoc(true);
     try {
-      const res = await fetch(`${API}/documents/${docId}`);
+      const res = await fetch(`${API}/documents/${docId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error();
       setSelectedDoc(await res.json());
     } catch {

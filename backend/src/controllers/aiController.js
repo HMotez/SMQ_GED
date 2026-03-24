@@ -139,6 +139,41 @@ const INTENT_PATTERNS = [
     label: "Documents par type",
     roles: ["Admin","Ing. Qualité","Reviewer"],
   },
+  // Notifications non lues (BEFORE statistics — more specific)
+  {
+    regex: /notification|non[\s-]lu|notif\b/i,
+    intent: "notifications_unread",
+    label: "Notifications",
+    roles: ["*"],
+  },
+  // Utilisateurs / membres / rôles
+  {
+    regex: /utilisateur|membre|user|compte|qui\s+(est|sont)|r[oô]le\s+(des|du|de)|liste\s+(des|du)\s+(user|membre|util)|actif|connect[eé]/i,
+    intent: "users_info",
+    label: "Utilisateurs",
+    roles: ["Admin","Ing. Qualité"],
+  },
+  // Décisions de validation (BEFORE validated_docs to be more specific)
+  {
+    regex: /d[eé]cision|rejet[eé]|approuv[eé]|refus[eé]|en_attente|valid.*r[eé]cent|r[eé]cent.*valid/i,
+    intent: "validations_history",
+    label: "Historique validations",
+    roles: ["Admin","Ing. Qualité","Reviewer"],
+  },
+  // Activité / logs / consultations / accès
+  {
+    regex: /activit[eé]|consult[eé]|acc[eè]s|historique|log|plus\s+visit[eé]|plus\s+consult[eé]|populaire|ouvert/i,
+    intent: "activity_logs",
+    label: "Activité",
+    roles: ["Admin","Ing. Qualité","Reviewer"],
+  },
+  // Versions (toutes)
+  {
+    regex: /toutes?\s+les\s+version|historique\s+des\s+version|liste.*version|version.*list/i,
+    intent: "versions_info",
+    label: "Versions",
+    roles: ["Admin","Ing. Qualité","Reviewer"],
+  },
   // Statistiques / combien (AFTER specific "par X" patterns)
   {
     regex: /combien|nombre|total|statistique|r[eé]partition/i,
@@ -692,6 +727,144 @@ async function buildSQLForIntent(intent, entities, role) {
         message: "Voici les dates de création et de prochaine révision des documents.",
       };
 
+    case "users_info": {
+      const usersResult = await pool.query(`
+        SELECT r.name AS role, COUNT(*) AS count,
+               SUM(CASE WHEN u.is_active THEN 1 ELSE 0 END) AS active_count
+        FROM users u
+        LEFT JOIN roles r ON r.id = u.role_id
+        GROUP BY r.name
+        ORDER BY count DESC
+      `);
+      const totalUsers = usersResult.rows.reduce((s, r) => s + parseInt(r.count), 0);
+      return {
+        statistics: usersResult.rows.map(r => ({ name: r.role || "Sans rôle", count: parseInt(r.count), active: parseInt(r.active_count) })),
+        message: null,
+        is_stats: true,
+        stats_label: "Utilisateurs par rôle",
+        _extra: { totalUsers },
+      };
+    }
+
+    case "validations_history": {
+      const valResult = await pool.query(`
+        SELECT
+          v.decision,
+          COUNT(*) AS count,
+          COUNT(*) FILTER (WHERE v.created_at > NOW() - INTERVAL '30 days') AS last_30d
+        FROM validations v
+        GROUP BY v.decision
+        ORDER BY count DESC
+      `);
+      const recentVal = await pool.query(`
+        SELECT v.decision, v.comment, v.validated_at,
+               u.name AS validator_name,
+               d.doc_code, d.title
+        FROM validations v
+        JOIN users u ON u.id = v.validator_id
+        JOIN documents d ON d.id = v.document_id
+        ORDER BY v.validated_at DESC
+        LIMIT 10
+      `);
+      return {
+        sql: null,
+        params: [],
+        statistics: valResult.rows.map(r => ({ name: r.decision, count: parseInt(r.count), last_30d: parseInt(r.last_30d) })),
+        message: null,
+        is_stats: true,
+        stats_label: "Décisions de validation",
+        _validations: recentVal.rows,
+      };
+    }
+
+    case "activity_logs": {
+      const topConsulted = await pool.query(`
+        SELECT d.doc_code, d.title, COUNT(l.id) AS views,
+               MAX(l.created_at) AS last_view
+        FROM logs l
+        JOIN documents d ON d.id = l.document_id
+        WHERE l.created_at > NOW() - INTERVAL '30 days'
+        GROUP BY d.id, d.doc_code, d.title
+        ORDER BY views DESC
+        LIMIT 10
+      `);
+      const recentActions = await pool.query(`
+        SELECT l.action, COUNT(*) AS count
+        FROM logs l
+        WHERE l.created_at > NOW() - INTERVAL '7 days'
+        GROUP BY l.action
+        ORDER BY count DESC
+        LIMIT 10
+      `);
+      return {
+        sql: null,
+        params: [],
+        statistics: recentActions.rows.map(r => ({ name: r.action, count: parseInt(r.count) })),
+        message: null,
+        is_stats: true,
+        stats_label: "Activité (7 derniers jours)",
+        _topConsulted: topConsulted.rows,
+      };
+    }
+
+    case "versions_info": {
+      const versResult = await pool.query(`
+        SELECT d.doc_code, d.title, d.current_version,
+               COUNT(v.id) AS version_count,
+               MAX(v.created_at)::date AS last_version_date
+        FROM documents d
+        LEFT JOIN versions v ON v.document_id = d.id
+        GROUP BY d.id, d.doc_code, d.title, d.current_version
+        HAVING COUNT(v.id) > 0
+        ORDER BY version_count DESC, last_version_date DESC
+        LIMIT 15
+      `);
+      const totalVers = await pool.query(`SELECT COUNT(*) AS count FROM versions`);
+      return {
+        sql: null,
+        params: [],
+        statistics: [{ name: "Total versions", count: parseInt(totalVers.rows[0]?.count || 0) }],
+        message: null,
+        is_stats: true,
+        stats_label: "Versions",
+        _versions: versResult.rows,
+      };
+    }
+
+    case "notifications_unread": {
+      const uid = entities._userId;
+      if (!uid) {
+        return {
+          statistics: [{ name: "Non lues", count: 0 }, { name: "Total", count: 0 }],
+          message: "Aucun compte identifié pour récupérer vos notifications.",
+          is_stats: true,
+          stats_label: "Notifications",
+          _notif: { unread: 0, total: 0 },
+        };
+      }
+      const notifRes = await pool.query(
+        `SELECT
+           COUNT(*) FILTER (WHERE is_read = false) AS unread_count,
+           COUNT(*) AS total_count
+         FROM notifications WHERE user_id = $1`,
+        [uid]
+      );
+      const nr = notifRes.rows[0];
+      const unread = parseInt(nr.unread_count || 0);
+      const total  = parseInt(nr.total_count  || 0);
+      return {
+        statistics: [
+          { name: "Non lues", count: unread },
+          { name: "Lues",     count: total - unread },
+          { name: "Total",    count: total },
+        ],
+        message: null, // LLM génère la réponse avec les chiffres exacts
+        is_stats: true,
+        stats_label: "Notifications",
+        _notif: { unread, total },
+      };
+    }
+
     case "help":
       return {
         sql: null,
@@ -833,46 +1006,98 @@ async function callGroqLLMStream(systemPrompt, userQuery, history = [], res) {
   });
 }
 
-async function fetchDBSnapshot() {
+async function fetchDBSnapshot(userId = null) {
+  const notifQuery = userId
+    ? pool.query(`SELECT COUNT(*) FILTER (WHERE is_read = false) AS unread, COUNT(*) AS total FROM notifications WHERE user_id = $1`, [userId])
+    : pool.query(`SELECT 0 AS unread, 0 AS total`);
+
   const results = await Promise.allSettled([
+    // 0 — docs by status
     pool.query(`SELECT s.name, COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id GROUP BY s.name ORDER BY count DESC`),
+    // 1 — expired count
     pool.query(`SELECT COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id WHERE d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Archivé','Obsolète')`),
+    // 2 — pending validation docs
     pool.query(`SELECT d.doc_code, d.title FROM documents d JOIN status s ON s.id=d.status_id WHERE s.name='En validation' LIMIT 5`),
+    // 3 — recent docs
     pool.query(`SELECT d.doc_code, d.title, d.created_at::date as date FROM documents d ORDER BY d.created_at DESC LIMIT 6`),
+    // 4 — total docs
     pool.query(`SELECT COUNT(*) as count FROM documents`),
+    // 5 — by type
     pool.query(`SELECT dt.label, dt.code, COUNT(*) as count FROM documents d JOIN document_types dt ON dt.id=d.type_id GROUP BY dt.label, dt.code ORDER BY count DESC`),
+    // 6 — by process
     pool.query(`SELECT COALESCE(p.sub_process,'Non défini') AS process_name, COUNT(*) as count FROM documents d LEFT JOIN processes p ON p.id=d.process_id GROUP BY process_name ORDER BY count DESC LIMIT 8`),
+    // 7 — notifications (user-specific)
+    notifQuery,
+    // 8 — users by role
+    pool.query(`SELECT r.name AS role, COUNT(*) AS count, SUM(CASE WHEN u.is_active THEN 1 ELSE 0 END) AS active FROM users u LEFT JOIN roles r ON r.id=u.role_id GROUP BY r.name ORDER BY count DESC`),
+    // 9 — validation decisions
+    pool.query(`SELECT decision, COUNT(*) AS count, COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') AS last_30d FROM validations GROUP BY decision ORDER BY count DESC`),
+    // 10 — most consulted docs (30 days)
+    pool.query(`SELECT d.doc_code, d.title, COUNT(l.id) AS views FROM logs l JOIN documents d ON d.id=l.document_id WHERE l.created_at > NOW() - INTERVAL '30 days' GROUP BY d.id, d.doc_code, d.title ORDER BY views DESC LIMIT 5`),
+    // 11 — total versions
+    pool.query(`SELECT COUNT(*) AS count FROM versions`),
+    // 12 — recent activity types (7 days)
+    pool.query(`SELECT action, COUNT(*) AS count FROM logs WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY action ORDER BY count DESC LIMIT 8`),
+    // 13 — total folders
+    pool.query(`SELECT COUNT(*) AS count FROM folders`),
   ]);
+
   return {
-    byStatus: results[0].value?.rows || [],
-    expiredCount: parseInt(results[1].value?.rows[0]?.count || 0),
+    byStatus:         results[0].value?.rows || [],
+    expiredCount:     parseInt(results[1].value?.rows[0]?.count || 0),
     pendingValidation: results[2].value?.rows || [],
-    recentDocs: results[3].value?.rows || [],
-    totalDocs: parseInt(results[4].value?.rows[0]?.count || 0),
-    byType: results[5].value?.rows || [],
-    byProcess: results[6].value?.rows || [],
+    recentDocs:       results[3].value?.rows || [],
+    totalDocs:        parseInt(results[4].value?.rows[0]?.count || 0),
+    byType:           results[5].value?.rows || [],
+    byProcess:        results[6].value?.rows || [],
+    notifUnread:      parseInt(results[7].value?.rows[0]?.unread || 0),
+    notifTotal:       parseInt(results[7].value?.rows[0]?.total  || 0),
+    usersByRole:      results[8].value?.rows  || [],
+    validationStats:  results[9].value?.rows  || [],
+    topConsulted:     results[10].value?.rows || [],
+    totalVersions:    parseInt(results[11].value?.rows[0]?.count || 0),
+    recentActivity:   results[12].value?.rows || [],
+    totalFolders:     parseInt(results[13].value?.rows[0]?.count || 0),
   };
 }
 
 function buildSystemPrompt(snapshot, role, sqlResults, sqlMessage) {
-  const statsStr   = snapshot.byStatus.map(s => `${s.name}: ${s.count}`).join(" | ");
-  const typeStr    = snapshot.byType?.map(t => `${t.label||t.code}: ${t.count}`).join(" | ") || "";
-  const processStr = snapshot.byProcess?.map(p => `${p.process_name}: ${p.count}`).join(" | ") || "";
-  const recentStr  = snapshot.recentDocs.map(d => `${d.doc_code} (${d.date})`).join(", ");
-  const pendingStr = snapshot.pendingValidation.map(d => `${d.doc_code} — ${d.title}`).join("; ") || "Aucun";
+  const statsStr    = snapshot.byStatus.map(s => `${s.name}: ${s.count}`).join(" | ");
+  const typeStr     = snapshot.byType?.map(t => `${t.label||t.code}: ${t.count}`).join(" | ") || "";
+  const processStr  = snapshot.byProcess?.map(p => `${p.process_name}: ${p.count}`).join(" | ") || "";
+  const recentStr   = snapshot.recentDocs.map(d => `${d.doc_code} (${d.date})`).join(", ");
+  const pendingStr  = snapshot.pendingValidation.map(d => `${d.doc_code} — ${d.title}`).join("; ") || "Aucun";
+  const usersStr    = snapshot.usersByRole?.map(u => `${u.role||"Sans rôle"}: ${u.count} (${u.active} actif(s))`).join(" | ") || "—";
+  const totalUsers  = snapshot.usersByRole?.reduce((s, u) => s + parseInt(u.count||0), 0) || 0;
+  const valStr      = snapshot.validationStats?.map(v => `${v.decision}: ${v.count} (${v.last_30d} ce mois)`).join(" | ") || "—";
+  const topConsStr  = snapshot.topConsulted?.map(d => `${d.doc_code} (${d.views} vues)`).join(", ") || "—";
+  const activityStr = snapshot.recentActivity?.map(a => `${a.action}: ${a.count}`).join(" | ") || "—";
 
   const sqlSummary = sqlResults && sqlResults.length > 0
-    ? `Résultats trouvés dans la base documentaire (${sqlResults.length} doc(s)) :\n` + sqlResults.slice(0,15).map(d => {
+    ? `Résultats trouvés dans la base (${sqlResults.length} entrée(s)) :\n` + sqlResults.slice(0,15).map(d => {
         const created  = d.creation_date || (d.created_at       ? new Date(d.created_at).toLocaleDateString("fr-FR")       : null);
         const revision = d.revision_date || (d.next_review_date ? new Date(d.next_review_date).toLocaleDateString("fr-FR") : null);
         const version  = d.version_letter
           ? `v${d.version_letter}${d.version_count ? ` (${d.version_count} version(s))` : ""}`
-          : (d.current_version ? `v${d.current_version}` : null);
+          : (d.current_version && d.current_version !== "-" ? `v${d.current_version}` : d.current_version === "-" ? "Initiale" : null);
+        // Handle user rows
+        if (d.role !== undefined && d.count !== undefined) {
+          return `  - Rôle: ${d.role||d.name||"—"} | Membres: ${d.count}${d.active !== undefined ? ` (${d.active} actif(s))` : ""}`;
+        }
+        // Handle validation rows
+        if (d.decision !== undefined) {
+          return `  - Décision: ${d.decision} | Total: ${d.count}${d.last_30d !== undefined ? ` | Ce mois: ${d.last_30d}` : ""}`;
+        }
+        // Handle activity rows
+        if (d.action !== undefined && d.views === undefined) {
+          return `  - Action: ${d.action} | Occurrences: ${d.count}`;
+        }
         return `  - ${d.doc_code||""} « ${d.title||""} » [${d.status_name||d.folder_name||d.type_code||""}]`
           + (version       ? ` | Version: ${version}`       : "")
           + (created       ? ` | Créé: ${created}`          : "")
           + (revision      ? ` | Révision: ${revision}`     : "")
-          + (d.responsible ? ` | Resp: ${d.responsible}`    : "");
+          + (d.responsible ? ` | Resp: ${d.responsible}`    : "")
+          + (d.views       ? ` | Vues: ${d.views}`          : "");
       }).join("\n")
     : "";
 
@@ -883,25 +1108,40 @@ CONTEXTE ENTREPRISE
 • Le système GED est certifié ISO 9001 — tu maîtrises cette norme parfaitement.
 • Rôle de l'utilisateur connecté : ${role}
 
-ÉTAT DE LA BASE DOCUMENTAIRE (temps réel)
-• Total documents    : ${snapshot.totalDocs}
+ÉTAT COMPLET DE L'APPLICATION (données temps réel)
+
+DOCUMENTS (${snapshot.totalDocs} total | ${snapshot.totalVersions} versions | ${snapshot.totalFolders} dossiers)
 • Par statut         : ${statsStr || "—"}
 ${typeStr    ? `• Par type           : ${typeStr}`    : ""}
 ${processStr ? `• Par processus      : ${processStr}` : ""}
-• Documents expirés  : ${snapshot.expiredCount} (révision dépassée)
-• En attente validation : ${pendingStr}
+• Expirés            : ${snapshot.expiredCount} (révision dépassée)
+• En attente valid.  : ${pendingStr}
 • Créés récemment    : ${recentStr || "—"}
-${sqlSummary ? `\nDOCUMENTS TROUVÉS POUR CETTE QUESTION\n${sqlSummary}` : ""}
+
+UTILISATEURS (${totalUsers} total)
+• Par rôle           : ${usersStr}
+
+VALIDATIONS
+• Décisions          : ${valStr}
+
+ACTIVITÉ (30 derniers jours)
+• Documents les plus consultés : ${topConsStr}
+• Actions (7 jours)  : ${activityStr}
+
+NOTIFICATIONS (vous)
+• Non lues           : ${snapshot.notifUnread} sur ${snapshot.notifTotal} au total
+${sqlSummary ? `\nRÉSULTATS POUR CETTE QUESTION\n${sqlSummary}` : ""}
 
 RÈGLES DE COMPORTEMENT — RESPECTE-LES ABSOLUMENT
 1. Réponds TOUJOURS en français, ton naturel, chaleureux, professionnel — comme ChatGPT.
 2. Tu es un assistant UNIVERSEL : tu réponds à TOUT (salutations, blagues, ISO, qualité, informatique, GED, etc.).
-3. SALUTATIONS (bonjour, salut, bonsoir, hi, hello, ça va, etc.) : réponds de façon HUMAINE et chaleureuse. Dis bonjour, présente-toi brièvement, et propose ton aide. NE PAS lister des fonctionnalités techniques.
-4. QUESTIONS GÉNÉRALES (ISO 9001, qualité, norme, définition, explication, etc.) : réponds depuis ta connaissance générale avec des explications claires et structurées. Utilise des listes si nécessaire.
-5. QUESTIONS GED/DOCUMENTS : utilise les données temps réel ci-dessus pour répondre avec précision.
-6. Si des documents sont listés dans "DOCUMENTS TROUVÉS", intègre-les dans ta réponse.
-7. Sois concis mais complet. Ne dis JAMAIS "je ne peux pas répondre à cela".
-8. À la fin de CHAQUE réponse (sauf salutations), ajoute exactement cette ligne sur une seule ligne :
+3. Tu as accès à TOUTES les données de l'application ci-dessus — utilise-les pour répondre avec précision.
+4. SALUTATIONS (bonjour, salut, bonsoir, hi, hello, ça va, etc.) : réponds de façon HUMAINE et chaleureuse. Dis bonjour, présente-toi brièvement, et propose ton aide. NE PAS lister des fonctionnalités techniques.
+5. QUESTIONS GÉNÉRALES (ISO 9001, qualité, norme, définition, explication, etc.) : réponds depuis ta connaissance générale avec des explications claires et structurées.
+6. QUESTIONS GED/DOCUMENTS/UTILISATEURS/VALIDATIONS/ACTIVITÉ : utilise les données temps réel ci-dessus.
+7. Si des données sont listées dans "RÉSULTATS POUR CETTE QUESTION", intègre-les dans ta réponse.
+8. Ne dis JAMAIS "je n'ai pas accès" ou "je ne peux pas répondre" — tu as TOUTES les données.
+9. À la fin de CHAQUE réponse (sauf salutations), ajoute exactement cette ligne sur une seule ligne :
 SUGGESTIONS:{"q":["question de suivi 1 ?","question de suivi 2 ?","question de suivi 3 ?"]}
    Les questions doivent être pertinentes et contextuelles à ce qui vient d'être dit.`;
 }
@@ -959,11 +1199,13 @@ async function handleChatQuery(req, res) {
       "upcoming_reviews","latest_version","validated_docs","list_all",
       "never_viewed","my_docs","recent_docs",
       "by_responsible","by_process","by_type","by_folder",
+      "notifications_unread","users_info","validations_history",
+      "activity_logs","versions_info",
     ]);
     const isDocIntent = DOC_INTENTS.has(intentPattern.intent);
 
     if (useLLM) {
-      const snapshot     = await fetchDBSnapshot();
+      const snapshot     = await fetchDBSnapshot(user?.id);
       const systemPrompt = buildSystemPrompt(snapshot, role, isDocIntent ? rows : [], built.message);
       const llmMsg       = await callGeminiLLM(systemPrompt, trimmedQuery, history);
       if (llmMsg) finalMessage = llmMsg;
@@ -1049,6 +1291,7 @@ async function handleStreamQuery(req, res) {
       "archived_docs","published_docs","in_relecture","draft_docs",
       "upcoming_reviews","latest_version","validated_docs","list_all",
       "never_viewed","my_docs","recent_docs","by_responsible","by_process","by_type","by_folder",
+      "notifications_unread",
     ]);
     const isDocIntent = DOC_INTENTS.has(intentPattern.intent);
     const docsToSend  = isDocIntent ? rows : [];
@@ -1066,7 +1309,7 @@ async function handleStreamQuery(req, res) {
     })}\n\n`);
 
     if (useLLM) {
-      const snapshot     = await fetchDBSnapshot();
+      const snapshot     = await fetchDBSnapshot(user?.id);
       const systemPrompt = buildSystemPrompt(snapshot, role, isDocIntent ? rows : [], built.message);
       await callGroqLLMStream(systemPrompt, trimmedQuery, history, res);
     } else {

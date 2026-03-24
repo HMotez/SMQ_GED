@@ -105,6 +105,10 @@ const assignRole = async (req, res) => {
     if (!roleCheck.rows.length) {
       return res.status(404).json({ error: "Rôle introuvable." });
     }
+    // Bloquer l'attribution du rôle Admin via cette route
+    if (roleCheck.rows[0].name === "Admin") {
+      return res.status(403).json({ error: "Impossible d'attribuer le rôle Admin via cette interface." });
+    }
     // Vérifier que l'utilisateur existe
     const userCheck = await pool.query(
       "SELECT id, name FROM users WHERE id = $1",
