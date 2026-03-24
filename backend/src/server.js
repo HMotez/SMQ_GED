@@ -22,9 +22,9 @@ app.use(express.json());
 
 console.log("PORT =", process.env.PORT);
 
-// ── Storage path ─────────────────────────────────────────────
+// ── Storage path — pointe vers le disque réel (UPLOAD_DIR) ──
 const uploadDir = process.env.UPLOAD_DIR
-  ? path.resolve(__dirname, "..", process.env.UPLOAD_DIR)
+  ? path.resolve(process.env.UPLOAD_DIR)
   : path.resolve(__dirname, "../../storage");
 
 // ── Servir les fichiers uploadés ─────────────────────────────
@@ -33,39 +33,41 @@ app.use("/files", express.static(uploadDir));
 // ── Servir les assets publics (logo, etc.) ───────────────────
 app.use("/public", express.static(path.join(__dirname, "../public")));
 
-// ── Download route (gère les noms avec espaces/accents) ──────
-app.get("/files/:filename", (req, res) => {
-  const filename = decodeURIComponent(req.params.filename);
-  const filePath = path.join(uploadDir, filename);
+// ── Helper: résoudre le chemin complet d'un fichier ─────────
+// Supporte : nom seul "file.pdf" OU chemin relatif "folder/sub/file.pdf"
+// OU chemin absolu "/app/storage/file.pdf" (anciens documents)
+function resolveFilePath(raw) {
+  const decoded = decodeURIComponent(raw);
+  // Chemin absolu existant → on l'utilise directement
+  if (path.isAbsolute(decoded) && fs.existsSync(decoded)) return decoded;
+  // Chemin relatif → jointure avec uploadDir
+  const rel = path.join(uploadDir, decoded);
+  if (fs.existsSync(rel)) return rel;
+  // Fallback : juste le nom de fichier (anciens docs stockés à plat)
+  const flat = path.join(uploadDir, path.basename(decoded));
+  return flat;
+}
 
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "Fichier introuvable" });
-  }
-
+// ── Files (inline) ───────────────────────────────────────────
+app.get("/files/*filepath", (req, res) => {
+  const filePath = resolveFilePath(req.params.filepath);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Fichier introuvable" });
   res.sendFile(filePath);
 });
 
-// ── Preview route (affiche le fichier dans le navigateur) ────
-app.get("/preview/:filename", (req, res) => {
-  const filename = decodeURIComponent(req.params.filename);
-  const filePath = path.join(uploadDir, filename);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "Fichier introuvable" });
-  }
-
-  res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+// ── Preview (inline dans le navigateur) ──────────────────────
+app.get("/preview/*filepath", (req, res) => {
+  const filePath = resolveFilePath(req.params.filepath);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Fichier introuvable" });
+  res.setHeader("Content-Disposition", `inline; filename="${path.basename(filePath)}"`);
   res.sendFile(filePath);
 });
 
-// ── Download route (force attachment) ────────────────────────
-app.get("/download/:filename", (req, res) => {
-  const filename = decodeURIComponent(req.params.filename);
-  const filePath = path.join(uploadDir, filename);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "Fichier introuvable" });
-  }
-  res.download(filePath, filename);
+// ── Download (force téléchargement) ──────────────────────────
+app.get("/download/*filepath", (req, res) => {
+  const filePath = resolveFilePath(req.params.filepath);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Fichier introuvable" });
+  res.download(filePath, path.basename(filePath));
 });
 
 // ── Conversion route (LibreOffice) ───────────────────────────

@@ -11,6 +11,7 @@
 const pool = require("../db");
 const path = require("path");
 const fs   = require("fs");
+const { baseDir } = require("../upload");
 const { canTransition } = require("../middleware/roleMiddleware");
 const { canTransitionToValidated } = require("./validationController");
 const {
@@ -137,6 +138,8 @@ const createDocument = async (req, res) => {
     fs.renameSync(req.file.path, newFilePath);
     req.file.path         = newFilePath;
     req.file.originalname = newFileName;
+    // Stocker le chemin RELATIF par rapport au baseDir (ex: 01_PS/CDP/PR_Procedures/PR0001.pdf)
+    req.file.relativePath = path.relative(baseDir, newFilePath);
 
     // 6. Keywords array
     const keywordsArray = keywords
@@ -167,7 +170,7 @@ const createDocument = async (req, res) => {
         statusId, initialVersion, folderId, typeId,
         processId || null, userId || null,
         origin.toUpperCase(), context || null, projectRef || null, keywordsArray,
-        req.file.path, req.file.originalname, req.file.size, req.file.mimetype,
+        req.file.relativePath, req.file.originalname, req.file.size, req.file.mimetype,
       ]
     );
     const document = docInsert.rows[0];
@@ -179,7 +182,7 @@ const createDocument = async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
       [
         document.id, initialVersion,
-        req.file.path, req.file.originalname, req.file.size, req.file.mimetype,
+        req.file.relativePath, req.file.originalname, req.file.size, req.file.mimetype,
         "Version initiale",
       ]
     );
@@ -484,11 +487,18 @@ const updateDocument = async (req, res) => {
     const baseCode   = doc.doc_code.replace(/_(?:-|v[A-Z]\d*)$/, "");
     const newDocCode = `${baseCode}_v${next}`;
 
-    // 6b. Renommer le fichier uploadé avec le nouveau doc_code
-    const fileExt     = path.extname(req.file.originalname);
-    const newFileName = `${newDocCode}${fileExt}`;
-    const newFilePath = path.join(path.dirname(req.file.path), newFileName);
+    // 6b. Déplacer vers le bon dossier selon folder_id du document
+    const { resolveFolderPath } = require("../upload");
+    const folderRel = await resolveFolderPath(doc.folder_id);
+    const targetDir = path.join(baseDir, folderRel || "");
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    const fileExt        = path.extname(req.file.originalname);
+    const newFileName    = `${newDocCode}${fileExt}`;
+    const newFilePath    = path.join(targetDir, newFileName);
     fs.renameSync(req.file.path, newFilePath);
+    // Chemin relatif par rapport au baseDir
+    const newRelFilePath = path.relative(baseDir, newFilePath).replace(/\\/g, "/");
 
     // 7. Mettre à jour le document (doc_code, version courante + fichier + sharepoint_link)
     await client.query(
@@ -499,7 +509,7 @@ const updateDocument = async (req, res) => {
            file_size = $5, mime_type = $6,
            sharepoint_link = $7
        WHERE id = $8`,
-      [newDocCode, next, newFilePath, newFileName, req.file.size, req.file.mimetype, sharepoint_link || null, docId]
+      [newDocCode, next, newRelFilePath, newFileName, req.file.size, req.file.mimetype, sharepoint_link || null, docId]
     );
 
     // 8. Insérer la nouvelle version dans la table versions
@@ -507,7 +517,7 @@ const updateDocument = async (req, res) => {
       `INSERT INTO versions
          (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary, sharepoint_link)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [docId, next, newFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim(), sharepoint_link || null]
+      [docId, next, newRelFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim(), sharepoint_link || null]
     );
 
     // 9a. Log VERSION_SUPERSEDED pour la version remplacée — EF11 (Archivage si version remplacée)

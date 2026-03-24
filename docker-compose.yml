@@ -78,9 +78,11 @@ services:
       # regardless of what is in .env
       DB_HOST: postgres
       GROQ_API_KEY: ${GROQ_API_KEY}
+      UPLOAD_DIR: /app/storage
     volumes:
-      # Named volume shared with host for uploaded files persistence
-      - storage:/app/storage
+      # Disque réel ACTIA ES → monté dans le conteneur comme /app/storage
+      # Remplacez C:/ACTIA ES par le chemin réel de votre disque (ex: Q:/ACTIA ES)
+      - "/app/storage:/app/storage"
     ports:
       # Exposed so Docker Desktop users can also test the API directly
       - "4000:4000"

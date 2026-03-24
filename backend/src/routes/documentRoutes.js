@@ -5,7 +5,7 @@
 
 const express = require("express");
 const router  = express.Router();
-const upload  = require("../upload");
+const { upload } = require("../upload");
 const ctrl    = require("../controllers/documentController");
 const { loadUser, requireRole } = require("../middleware/roleMiddleware");
 
