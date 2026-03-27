@@ -29,21 +29,21 @@ async function verifyEmailTransporter() {
   }
 }
 
-// ── Inline SVG icons (email-safe, no emoji) ────────────────────
-const SVG = {
-  pencil:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
-  bell:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
-  eye:      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
-  wrench:   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
-  check:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-  clock:    `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-  send:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
-  ban:      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
-  archive:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`,
-  file:     `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-  warning:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-  version:  `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-  building: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/><path d="M15 9h.01"/><path d="M15 15h.01"/></svg>`,
+// ── Emoji icons (universally supported in all email clients) ────
+const EMOJI = {
+  pencil:   "✏️",
+  bell:     "🔔",
+  eye:      "👁️",
+  wrench:   "🔧",
+  check:    "✅",
+  clock:    "⏰",
+  send:     "📤",
+  ban:      "🚫",
+  archive:  "📦",
+  file:     "📄",
+  warning:  "⚠️",
+  version:  "🔄",
+  building: "🏢",
 };
 
 
@@ -96,46 +96,36 @@ const STATUS_CONTEXT = {
   },
 };
 
-// helper — inline SVG wrapped with a color
-function coloredSvg(svgKey, color, size) {
-  const s = size || 16;
-  const raw = SVG[svgKey] || SVG.file;
-  return raw
-    .replace(/width="18"/g, `width="${s}"`)
-    .replace(/height="18"/g, `height="${s}"`)
-    .replace('stroke="currentColor"', `stroke="${color}"`);
-}
-
-// helper — SVG icon box for email header (white icon on semi-transparent bg)
+// helper — emoji icon box for email header
 function headerIconBox(svgKey) {
-  const svg = coloredSvg(svgKey, "#ffffff", 22);
+  const em = EMOJI[svgKey] || EMOJI.file;
   return `<div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.25);text-align:center;vertical-align:middle;display:inline-block;">
-    <table cellpadding="0" cellspacing="0" width="52" height="52"><tr><td align="center" valign="middle">${svg}</td></tr></table>
+    <table cellpadding="0" cellspacing="0" width="52" height="52"><tr><td align="center" valign="middle"><span style="font-size:24px;line-height:1;">${em}</span></td></tr></table>
   </div>`;
 }
 
 // ── Status pill badge ──────────────────────────────────────────
 function statusPill(name) {
   const c = STATUS_CFG[name] || { color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1", svgKey: "file" };
-  const svg = coloredSvg(c.svgKey, c.color, 12);
-  return `<span style="display:inline-block;background:${c.bg};color:${c.color};border:1.5px solid ${c.border};font-size:11px;font-weight:700;border-radius:20px;padding:4px 12px;letter-spacing:0.3px;vertical-align:middle;">${svg}&nbsp;${name}</span>`;
+  const em = EMOJI[c.svgKey] || EMOJI.file;
+  return `<span style="display:inline-block;background:${c.bg};color:${c.color};border:1.5px solid ${c.border};font-size:11px;font-weight:700;border-radius:20px;padding:4px 12px;letter-spacing:0.3px;vertical-align:middle;">${em}&nbsp;${name}</span>`;
 }
 
 // ── Status arrow transition ────────────────────────────────────
 function statusArrow(from, to) {
   const cFrom = STATUS_CFG[from] || { color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1", svgKey: "file" };
   const cTo   = STATUS_CFG[to]   || { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0", svgKey: "check" };
-  const svgFrom = coloredSvg(cFrom.svgKey, cFrom.color, 13);
-  const svgTo   = coloredSvg(cTo.svgKey,   cTo.color,   13);
+  const emFrom = EMOJI[cFrom.svgKey] || EMOJI.file;
+  const emTo   = EMOJI[cTo.svgKey]   || EMOJI.check;
   return `
   <table cellpadding="0" cellspacing="0" style="margin:20px 0;">
     <tr valign="middle">
       <td style="background:${cFrom.bg};border:1.5px solid ${cFrom.border};border-radius:24px;padding:7px 16px;">
-        <span style="font-size:12px;font-weight:600;color:${cFrom.color};vertical-align:middle;">${svgFrom}&nbsp;${from || "—"}</span>
+        <span style="font-size:12px;font-weight:600;color:${cFrom.color};vertical-align:middle;">${emFrom}&nbsp;${from || "—"}</span>
       </td>
       <td style="padding:0 14px;font-size:22px;color:#94a3b8;">&rarr;</td>
       <td style="background:${cTo.bg};border:2px solid ${cTo.border};border-radius:24px;padding:7px 16px;box-shadow:0 2px 8px ${cTo.border}80;">
-        <span style="font-size:12px;font-weight:800;color:${cTo.color};vertical-align:middle;">${svgTo}&nbsp;${to || "—"}</span>
+        <span style="font-size:12px;font-weight:800;color:${cTo.color};vertical-align:middle;">${emTo}&nbsp;${to || "—"}</span>
       </td>
     </tr>
   </table>`;
@@ -146,7 +136,7 @@ function baseHtml(title, accent, headerGrad, svgKey, content) {
   const grad   = headerGrad || "135deg,#1e3450 0%,#2e4a6b 60%,#3d5f84 100%";
   const ac     = accent     || "#4ab83f";
   const iconHtml = headerIconBox(svgKey || "file");
-  const footerSvg = coloredSvg("building", "#ffffff", 16);
+  const footerEmoji = EMOJI.building;
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -202,7 +192,7 @@ function baseHtml(title, accent, headerGrad, svgKey, content) {
         </td>
         <td align="right" style="padding-left:16px;vertical-align:middle;width:44px;">
           <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1e3450,#3d5f84);text-align:center;vertical-align:middle;display:inline-block;">
-            <table cellpadding="0" cellspacing="0" width="36" height="36"><tr><td align="center" valign="middle">${footerSvg}</td></tr></table>
+            <table cellpadding="0" cellspacing="0" width="36" height="36"><tr><td align="center" valign="middle"><span style="font-size:18px;line-height:1;">${footerEmoji}</span></td></tr></table>
           </div>
         </td>
       </tr>
@@ -379,6 +369,63 @@ async function sendExpiringDocumentEmail({ to, docId, docCode, title, docType, r
   await sendMail(to, subject, baseHtml("Révision en retard", accent, "135deg,#7f1d1d 0%,#b91c1c 60%,#dc2626 100%", "warning", content));
 }
 
+// ── Expiration digest (daily — one email for ALL expired docs) ──
+async function sendExpirationDigestEmail({ to, docs }) {
+  // docs = [{ docCode, title, docType, reviewDate, daysOverdue }]
+  if (!docs || docs.length === 0) return;
+  const accent  = "#dc2626";
+  const count   = docs.length;
+  const subject = `[SMQ GED] ⚠️ ${count} document${count > 1 ? "s" : ""} en retard de révision — ${new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })}`;
+
+  const rows = docs.map(d => `
+    <tr style="border-bottom:1px solid #fecaca;">
+      <td style="padding:10px 12px;font-size:12px;">
+        <code style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:4px;padding:2px 6px;font-family:monospace;">${d.docCode}</code>
+      </td>
+      <td style="padding:10px 12px;font-size:12px;color:#1e3450;font-weight:600;">${d.title}</td>
+      <td style="padding:10px 12px;font-size:11px;color:#64748b;">${d.docType || "—"}</td>
+      <td style="padding:10px 12px;font-size:12px;color:#dc2626;font-weight:700;white-space:nowrap;">${d.reviewDate}</td>
+      <td style="padding:10px 12px;font-size:12px;text-align:center;">
+        <span style="display:inline-block;background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;border-radius:20px;padding:2px 10px;font-weight:800;font-size:11px;">+${d.daysOverdue}j</span>
+      </td>
+    </tr>`).join("");
+
+  const content = `
+    ${sectionLabel("Rapport journalier — Révisions en retard", accent)}
+    <p style="margin:8px 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+      ${count} document${count > 1 ? "s ont" : " a"} dépassé ${count > 1 ? "leurs dates" : "sa date"} de révision planifiée.
+      Une action est requise pour assurer la conformité <strong>ISO 9001</strong>.
+    </p>
+
+    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;overflow:hidden;margin:16px 0;">
+      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:linear-gradient(135deg,#7f1d1d,#dc2626);">
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Code</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Titre</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Type</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Date prévue</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:center;">Retard</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+
+    ${alertBox("Ces documents doivent être révisés ou marqués <strong>Obsolètes</strong> pour rester conformes au référentiel qualité ACTIA.", accent)}
+    ${ctaButton("Gérer les documents expirés", accent, "/notifications")}`;
+
+  await sendMail(to, subject, baseHtml(
+    `${count} document${count > 1 ? "s" : ""} en retard de révision`,
+    accent,
+    "135deg,#7f1d1d 0%,#b91c1c 60%,#dc2626 100%",
+    "warning",
+    content
+  ));
+}
+
 async function sendInactiveDocumentEmail({ to, docId, docCode, title, docType, lastModified }) {
   const accent  = "#d97706";
   const subject = `[SMQ GED] Document inactif depuis 6 mois — ${docCode}`;
@@ -422,5 +469,6 @@ module.exports = {
   sendStatusChangedEmail,
   sendNewVersionEmail,
   sendExpiringDocumentEmail,
+  sendExpirationDigestEmail,
   sendInactiveDocumentEmail,
 };

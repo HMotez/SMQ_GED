@@ -338,9 +338,10 @@ export default function DocumentList() {
   const handleDownloadAs = async (filename, ext) => {
     try {
       const srcExt = filename.split(".").pop()?.toLowerCase();
+      const encodedPath = filename.split("/").map(encodeURIComponent).join("/");
       const url = srcExt === ext
-        ? `${BACKEND}/download/${encodeURIComponent(filename)}`
-        : `${BACKEND}/convert/${encodeURIComponent(filename)}?to=${ext}`;
+        ? `${BACKEND}/download/${encodedPath}`
+        : `${BACKEND}/convert/${encodedPath}?to=${ext}`;
       const response = await fetch(url);
       if (!response.ok) { const err = await response.json().catch(()=>({})); throw new Error(err.error||"Erreur serveur"); }
       const blob = await response.blob(); const blobUrl = URL.createObjectURL(blob);
@@ -711,6 +712,8 @@ export default function DocumentList() {
                   ["Origine",        selected.origin||"—"],
                   ["Version",        selected.current_version||"—"],
                   ["Processus",      selected.folder_name||"—"],
+                  ["Processus stratégique", selected.strategic_process||"—"],
+                  ["Processus principal",   selected.main_process||"—"],
                   ["Contexte",       selected.context||"—"],
                   ["Prochaine revue",selected.next_review_date?new Date(selected.next_review_date).toLocaleDateString("fr-FR"):"—"],
                   ["Créé le",        selected.created_at?new Date(selected.created_at).toLocaleDateString("fr-FR"):"—"],
@@ -746,7 +749,7 @@ export default function DocumentList() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => { setPreviewFile(selected.file_name); setPreviewOpen(true); }}
+                    <button onClick={() => { setPreviewFile(selected.file_path); setPreviewOpen(true); }}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold text-white"
                       style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)" }}>
                       <LuEye size={14} /> Visualiser
@@ -770,7 +773,7 @@ export default function DocumentList() {
                               style={{ borderColor:"rgba(255,255,255,0.06)" }}>
                               <span className="flex items-center gap-2 flex-1 min-w-0">
                                 <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f" }}>
-                                  v{v.version_letter}
+                                  {v.version_letter}
                                 </span>
                                 <span className="text-xs truncate" style={{ color:"rgba(168,191,212,0.45)" }}>
                                   {v.created_at ? new Date(v.created_at).toLocaleDateString("fr-FR") : "—"}
@@ -780,7 +783,7 @@ export default function DocumentList() {
                               <div className="flex gap-1 flex-shrink-0 ml-2">
                                 {[{ext:"pdf",color:"#f87171"},{ext:"docx",label:"Word",color:"#60a5fa"},{ext:"xlsx",label:"Excel",color:"#4ab83f"}].map(({ext,color}) => (
                                   <button key={ext}
-                                    onClick={() => { handleDownloadAs(v.file_name, ext); setDownloadOpen(false); }}
+                                    onClick={() => { handleDownloadAs(v.file_path, ext); setDownloadOpen(false); }}
                                     className="px-2 py-0.5 rounded text-[10px] font-bold border transition-all"
                                     style={{ background:"rgba(255,255,255,0.04)", borderColor:`${color}40`, color, cursor:"pointer" }}
                                     onMouseEnter={e => { e.currentTarget.style.background=`${color}22`; e.currentTarget.style.borderColor=color; }}
@@ -819,16 +822,16 @@ export default function DocumentList() {
                     return (
                     <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex justify-between items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-white">v{v.version_letter}</span>
+                        <span className="font-mono font-bold text-sm text-white">{v.version_letter}</span>
                         <span className="text-sm flex-1" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
                         {canInteract && (
                           <div className="flex gap-1.5">
-                            <button onClick={() => { setPreviewFile(v.file_name); setPreviewOpen(true); }}
+                            <button onClick={() => { setPreviewFile(v.file_path); setPreviewOpen(true); }}
                               className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
                               style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
                               <LuEye size={12} /> Consulter
                             </button>
-                            <DownloadMenu filename={v.file_name} size="small" />
+                            <DownloadMenu filename={v.file_path} size="small" />
                           </div>
                         )}
                       </div>
@@ -898,7 +901,7 @@ export default function DocumentList() {
                                 )}
                                 {event.type === "VERSION" && (
                                   <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                    <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>v{event.version_letter}</span>
+                                    <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>{event.version_letter}</span>
                                     {event.change_summary && <span> · {event.change_summary}</span>}
                                   </p>
                                 )}
@@ -933,12 +936,12 @@ export default function DocumentList() {
         <div onClick={() => setPreviewOpen(false)} className="fixed inset-0 z-[1100] flex flex-col items-center justify-center" style={{ background:"rgba(5,12,20,0.9)", backdropFilter:"blur(8px)" }}>
           <div onClick={e => e.stopPropagation()} className="w-[90vw] h-[90vh] rounded-2xl flex flex-col overflow-hidden border" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)" }}>
             <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)" }}>
-              <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile}</span>
+              <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile?.split("/").pop()}</span>
               <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>
                 <LuX size={18} />
               </button>
             </div>
-            <iframe src={`${BACKEND}/preview/${encodeURIComponent(previewFile||"")}`} title="preview" className="flex-1 border-none w-full" />
+            <iframe src={`${BACKEND}/preview/${(previewFile||"").split("/").map(encodeURIComponent).join("/")}`} title="preview" className="flex-1 border-none w-full" />
           </div>
         </div>
       )}
@@ -951,18 +954,19 @@ export default function DocumentList() {
             style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6)" }}>
             <h3 className="m-0 text-white text-base font-bold flex items-center gap-1.5"><LuPlus size={15} /> Nouvelle version — {selected.doc_code}</h3>
             <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
-              Version actuelle : <strong className="text-white">v{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>v{(() => {
-                const c = selected.current_version;
-                const v = selected.validated_version;
-                if (c === "-") return "A";
-                if (/^[A-Z]$/.test(c)) return `${c}1`;
-                const m = c.match(/^([A-Z])(\d+)$/);
-                if (!m) return "A";
+              Version actuelle : <strong className="text-white">{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>{(() => {
+                const raw = selected.current_version || "v-";
+                const c = raw.replace(/^v/, "");           // strip leading 'v'
+                const v = (selected.validated_version || "").replace(/^v/, "");
+                if (c === "-") return "vA";
+                if (/^[A-Z]$/i.test(c)) return `v${c}1`;
+                const m = c.match(/^([A-Z])(\d+)$/i);
+                if (!m) return "vA";
                 const [, letter, num] = m;
-                if (v && c === v) return String.fromCharCode(letter.charCodeAt(0) + 1);
+                if (v && c === v) return `v${String.fromCharCode(letter.charCodeAt(0) + 1)}`;
                 const n = parseInt(num);
-                if (n < 9) return `${letter}${n + 1}`;
-                return String.fromCharCode(letter.charCodeAt(0) + 1);
+                if (n < 9) return `v${letter}${n + 1}`;
+                return `v${String.fromCharCode(letter.charCodeAt(0) + 1)}`;
               })()}</strong>
             </p>
             <div>

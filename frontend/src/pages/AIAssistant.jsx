@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
+import DocDetailModal from "../components/DocDetailModal";
 import { toast } from "sonner";
 import { API } from "../config";
 import {
@@ -264,6 +265,7 @@ function ChatbotSection({ token }) {
   const [copied, setCopied]         = useState(null);
   const [savedConvs, setSavedConvs] = useState(loadSavedConvs);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState(null);
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -621,10 +623,14 @@ function ChatbotSection({ token }) {
                     </div>
                     <div style={{ maxHeight: 260, overflowY: "auto" }}>
                       {msg.docs.map(doc => (
-                        <div key={doc.id} style={{
+                        <div key={doc.id} onClick={() => setSelectedDocId(doc.id)} style={{
                           padding: "9px 12px", borderBottom: `1px solid ${BORDER}`,
                           display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10,
-                        }}>
+                          cursor: "pointer", transition: "background 0.15s",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(74,184,63,0.07)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                               <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, fontFamily: "monospace", flexShrink: 0 }}>{doc.doc_code}</span>
@@ -799,6 +805,8 @@ function ChatbotSection({ token }) {
           </div>
         )}
       </Card>
+
+      {selectedDocId && <DocDetailModal docId={selectedDocId} onClose={() => setSelectedDocId(null)} />}
 
       <style>{`
         @keyframes pulse {

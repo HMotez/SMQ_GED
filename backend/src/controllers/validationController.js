@@ -393,7 +393,7 @@ const getValidationStats = async (req, res) => {
         `SELECT COUNT(*)::int AS count
          FROM documents d
          JOIN status s ON s.id = d.status_id
-         WHERE s.name IN ('En relecture', 'En validation')`
+         WHERE s.name = 'En validation'`
       ),
     ]);
 
@@ -466,7 +466,7 @@ const getPendingDocuments = async (req, res) => {
          LIMIT 1
        ) last_ver ON TRUE
 
-       WHERE s.name IN ('En relecture', 'En validation')
+       WHERE s.name = 'En validation'
        ORDER BY d.doc_code`,
     );
     return res.json(result.rows);

@@ -16,7 +16,7 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || "8h";
 // Default users — seeded at startup
 // ─────────────────────────────────────────────────────────────
 const DEFAULT_USERS = [
-  { name:"Admin",        email:"admin@test.com",      password:"Admin123!", role:"Admin"        },
+  { name:"Admin",        email:"admin@test.com",       password:"Admin123!", role:"Admin"        },
   { name:"Ing Qualité",  email:"ing@test.com",        password:"Ing123!",   role:"Ing. Qualité" },
   { name:"Reviewer",     email:"reviewer@test.com",   password:"Rev123!",   role:"Reviewer"     },
 ];

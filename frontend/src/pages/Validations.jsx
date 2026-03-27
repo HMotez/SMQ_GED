@@ -147,7 +147,7 @@ function DocDetailModal({ docId, onClose }) {
                       {doc.current_version && (
                         <span className="rounded-md px-2 py-0.5 text-xs font-bold border"
                           style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
-                          {doc.current_version === "-" ? "Initiale" : `v${doc.current_version}`}
+                          {doc.current_version === "v-" ? "Initiale" : doc.current_version}
                         </span>
                       )}
                     </div>
@@ -279,7 +279,7 @@ function DocDetailModal({ docId, onClose }) {
                       <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                         <span className="rounded-xl px-3 py-1 text-sm font-black border"
                           style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
-                          v{v.version_letter}
+                          {v.version_letter}
                         </span>
                         {isLast && (
                           <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color:"#4ab83f" }}>Actuelle</span>
@@ -295,14 +295,14 @@ function DocDetailModal({ docId, onClose }) {
                       </div>
                       {canInteract && v.file_path ? (
                         <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
-                          <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
+                          <button onClick={() => { setPreviewFile(v.file_path); setPreviewOpen(true); }}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
                             style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.2)", color:"#60a5fa", cursor:"pointer" }}
                             onMouseEnter={e => { e.currentTarget.style.background="rgba(96,165,250,0.15)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.4)"; }}
                             onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
                             <LuEye size={14} /> Consulter
                           </button>
-                          <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
+                          <DownloadMenu filename={v.file_path} />
                         </div>
                       ) : !canInteract ? (
                         v.sharepoint_link ? (
@@ -347,7 +347,7 @@ function DocDetailModal({ docId, onClose }) {
                           {v.version_letter && v.version_letter !== "-" && (
                             <span className="text-xs px-2 py-0.5 rounded-md border font-mono font-bold"
                               style={{ background:"rgba(255,255,255,0.04)", color:"rgba(168,191,212,0.5)", borderColor:"rgba(255,255,255,0.08)" }}>
-                              v{v.version_letter}
+                              {v.version_letter}
                             </span>
                           )}
                         </div>
@@ -439,7 +439,7 @@ function DocDetailModal({ docId, onClose }) {
                               )}
                               {event.type === "VERSION" && (
                                 <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                  <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>v{event.version_letter}</span>
+                                  <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>{event.version_letter}</span>
                                   {event.change_summary && <span> · {event.change_summary}</span>}
                                 </p>
                               )}
@@ -494,9 +494,12 @@ export default function Validations() {
   const [allHistory,    setAllHistory]    = useState([]);
   const [stats,         setStats]         = useState(null);
   const [loading,       setLoading]       = useState(true);
-  const [activeTab,     setActiveTab]     = useState("validates");
+  const [activeTab,     setActiveTab]     = useState("pending");
   const [selectedDocId, setSelectedDocId] = useState(null);
   const [selectedHistoryEntry, setSelectedHistoryEntry] = useState(null);
+  const [decisionModal,   setDecisionModal]   = useState(null); // { doc, action }
+  const [decisionComment, setDecisionComment] = useState("");
+  const [decisionLoading, setDecisionLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -519,9 +522,30 @@ export default function Validations() {
 
   const pendingCount = pendingDocs.length;
 
+  const submitDecision = async () => {
+    if (!decisionModal) return;
+    setDecisionLoading(true);
+    try {
+      const token = currentUser?.token || localStorage.getItem("token");
+      await axios.post(
+        `${API}/validations/document/${decisionModal.doc.id}`,
+        { validatorId: currentUser?.id, decision: decisionModal.action, comment: decisionComment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDecisionModal(null);
+      setDecisionComment("");
+      load();
+    } catch (err) {
+      alert(err.response?.data?.error || "Erreur lors de la validation.");
+    } finally {
+      setDecisionLoading(false);
+    }
+  };
+
   const tabs = [
-    { id:"validates", Icon:LuCircleCheckBig, label:"Validés",    count:validatedDocs.length, accent:"#4ade80" },
-    { id:"history",   Icon:LuHistory,        label:"Historique", count:allHistory.length,    accent:"#a5b4fc" },
+    { id:"pending",   Icon:LuClipboardCheck, label:"En validation", count:pendingCount,         accent:"#a5b4fc" },
+    { id:"validates", Icon:LuCircleCheckBig,  label:"Validés",       count:validatedDocs.length, accent:"#4ade80" },
+    { id:"history",   Icon:LuHistory,         label:"Historique",    count:allHistory.length,    accent:"#60a5fa" },
   ];
 
   const ROW_BORDER = "1px solid rgba(255,255,255,0.05)";
@@ -625,6 +649,71 @@ export default function Validations() {
             </div>
           ) : (
             <>
+              {/* ── En validation tab ─────────────────────────── */}
+              {activeTab === "pending" && (
+                pendingDocs.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 gap-3">
+                    <LuClipboardCheck size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
+                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>Aucun document en attente de validation.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {pendingDocs.map(doc => (
+                      <div key={doc.id} className="rounded-2xl border p-5 flex flex-col gap-3"
+                        style={{ background:"rgba(165,180,252,0.04)", borderColor:"rgba(165,180,252,0.18)" }}>
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-mono font-black text-sm" style={{ color:"#a5b4fc" }}>{doc.doc_code}</span>
+                              {doc.type_code && (
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full border"
+                                  style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
+                                  {doc.type_code}
+                                </span>
+                              )}
+                              {doc.version_letter && (
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full border"
+                                  style={{ background:"rgba(74,184,63,0.1)", borderColor:"rgba(74,184,63,0.25)", color:"#4ade80" }}>
+                                  {doc.version_letter}
+                                </span>
+                              )}
+                            </div>
+                            <p className="m-0 font-semibold text-white text-sm leading-snug">{doc.title || "—"}</p>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              {doc.responsible && <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>{doc.responsible}</span>}
+                              {doc.folder_name && <span className="text-xs" style={{ color:"rgba(168,191,212,0.4)" }}>{doc.folder_name}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button onClick={() => setSelectedDocId(doc.id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all"
+                              style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(165,180,252,0.4)"; e.currentTarget.style.color="#a5b4fc"; }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; e.currentTarget.style.color="rgba(168,191,212,0.7)"; }}>
+                              <LuEye size={13} /> Détails
+                            </button>
+                            <button onClick={() => { setDecisionModal({ doc, action:"REJETÉ" }); setDecisionComment(""); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold"
+                              style={{ background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.3)", color:"#f87171", cursor:"pointer" }}
+                              onMouseEnter={e => e.currentTarget.style.background="rgba(248,113,113,0.15)"}
+                              onMouseLeave={e => e.currentTarget.style.background="rgba(248,113,113,0.08)"}>
+                              <LuCircleX size={13} /> Rejeter
+                            </button>
+                            <button onClick={() => { setDecisionModal({ doc, action:"APPROUVÉ" }); setDecisionComment(""); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold"
+                              style={{ background:"rgba(74,184,63,0.1)", borderColor:"rgba(74,184,63,0.35)", color:"#4ade80", cursor:"pointer" }}
+                              onMouseEnter={e => e.currentTarget.style.background="rgba(74,184,63,0.18)"}
+                              onMouseLeave={e => e.currentTarget.style.background="rgba(74,184,63,0.1)"}>
+                              <LuCircleCheck size={13} /> Approuver
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
               {/* ── Validés tab ───────────────────────────────── */}
               {activeTab === "validates" && (
                 validatedDocs.length === 0 ? (
@@ -670,7 +759,7 @@ export default function Validations() {
                         </span>
                         <StatusBadge name={doc.status_name} />
                         <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.6)" }}>
-                          {doc.current_version ? (doc.current_version === "-" ? "Initiale" : `v${doc.current_version}`) : "—"}
+                          {doc.current_version ? (doc.current_version === "v-" ? "Initiale" : doc.current_version) : "—"}
                         </span>
                       </div>
                     ))}
@@ -749,6 +838,62 @@ export default function Validations() {
       </main>
 
       {selectedDocId && <DocDetailModal docId={selectedDocId} onClose={() => setSelectedDocId(null)} />}
+
+      {/* ── Decision confirmation modal ──────────────────────── */}
+      {decisionModal && (
+        <div onClick={() => setDecisionModal(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background:"rgba(5,12,20,0.88)", backdropFilter:"blur(12px)" }}>
+          <div onClick={e => e.stopPropagation()}
+            className="rounded-2xl border w-[min(480px,95vw)] p-6 flex flex-col gap-4"
+            style={{ background:"linear-gradient(160deg,#0d1f30 0%,#0a1622 100%)", borderColor: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.3)" : "rgba(248,113,113,0.3)", boxShadow:"0 40px 80px rgba(0,0,0,0.6)" }}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.12)" : "rgba(248,113,113,0.12)", border:`1.5px solid ${decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.3)" : "rgba(248,113,113,0.3)"}` }}>
+                {decisionModal.action === "APPROUVÉ" ? <LuCircleCheck size={20} style={{ color:"#4ade80" }} /> : <LuCircleX size={20} style={{ color:"#f87171" }} />}
+              </div>
+              <div>
+                <p className="m-0 font-bold text-white text-base">{decisionModal.action === "APPROUVÉ" ? "Approuver le document" : "Rejeter le document"}</p>
+                <p className="m-0 text-xs mt-0.5 font-mono" style={{ color: decisionModal.action === "APPROUVÉ" ? "#4ade80" : "#f87171" }}>{decisionModal.doc.doc_code}</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color:"rgba(168,191,212,0.6)" }}>
+                Commentaire {decisionModal.action === "REJETÉ" ? "(obligatoire)" : "(optionnel)"}
+              </label>
+              <textarea
+                value={decisionComment}
+                onChange={e => setDecisionComment(e.target.value)}
+                rows={7}
+                placeholder={decisionModal.action === "APPROUVÉ" ? "Document conforme aux exigences…" : "Motif du rejet…"}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm resize-y outline-none"
+                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"white", fontFamily:"inherit" }}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setDecisionModal(null)}
+                className="px-4 py-2 rounded-lg border text-sm font-semibold"
+                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
+                Annuler
+              </button>
+              <button onClick={submitDecision}
+                disabled={decisionLoading || (decisionModal.action === "REJETÉ" && !decisionComment.trim())}
+                className="px-5 py-2 rounded-lg border text-sm font-bold flex items-center gap-1.5"
+                style={{
+                  background: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.15)" : "rgba(248,113,113,0.15)",
+                  borderColor: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.4)" : "rgba(248,113,113,0.4)",
+                  color: decisionModal.action === "APPROUVÉ" ? "#4ade80" : "#f87171",
+                  cursor: decisionLoading ? "wait" : "pointer",
+                  opacity: (decisionModal.action === "REJETÉ" && !decisionComment.trim()) ? 0.5 : 1,
+                }}>
+                {decisionLoading ? <LuRefreshCw size={14} className="animate-spin" /> : decisionModal.action === "APPROUVÉ" ? <LuCircleCheck size={14} /> : <LuCircleX size={14} />}
+                {decisionModal.action === "APPROUVÉ" ? "Confirmer l'approbation" : "Confirmer le rejet"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedHistoryEntry && (
         <HistoryDetailPanel
           type="validation"

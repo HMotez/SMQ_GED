@@ -34,7 +34,7 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source code and package files
 COPY package*.json ./
 COPY src/ ./src/
-# Python conversion scripts are inside src/scripts — already copied above
+COPY scripts/ ./scripts/
 
 # Create storage directory (will be mounted as a named volume)
 RUN mkdir -p /app/storage

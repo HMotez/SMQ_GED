@@ -107,10 +107,10 @@ function DocumentModal({ doc, loading, onClose }) {
                   background:statusStyle.bg, color:statusStyle.color, border:`1.5px solid ${statusStyle.border}` }}>
                   {doc.status_name}
                 </span>
-                {doc.current_version && doc.current_version !== "-" && (
+                {doc.current_version && doc.current_version !== "v-" && (
                   <span style={{ fontSize:10.5, fontWeight:600, padding:"3px 9px", borderRadius:7,
                     background:"rgba(96,165,250,0.1)", color:"#60a5fa", border:"1.5px solid rgba(96,165,250,0.25)" }}>
-                    v{doc.current_version}
+                    {doc.current_version}
                   </span>
                 )}
                 {isOverdue && (

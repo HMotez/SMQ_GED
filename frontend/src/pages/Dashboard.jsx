@@ -602,7 +602,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="font-mono text-sm font-bold" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
                           <span style={{ color:"rgba(255,255,255,0.15)" }}>·</span>
-                          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>v{doc.current_version}</span>
+                          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>{doc.current_version}</span>
                         </div>
                         <p className="m-0 text-sm truncate max-w-[220px]" style={{ color:"rgba(168,191,212,0.7)" }}>{doc.title}</p>
                       </div>

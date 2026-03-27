@@ -184,10 +184,10 @@ function DocumentModal({ doc, loading, onClose }) {
                   {doc.status_name}
                 </span>
                 {/* Version badge */}
-                {doc.current_version && doc.current_version !== "-" && (
+                {doc.current_version && doc.current_version !== "v-" && (
                   <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg"
                     style={{ background: "rgba(96,165,250,0.1)", color: "#60a5fa", border: "1.5px solid rgba(96,165,250,0.25)" }}>
-                    v{doc.current_version}
+                    {doc.current_version}
                   </span>
                 )}
                 {/* Overdue warning */}

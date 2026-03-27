@@ -27,9 +27,10 @@ export default function DownloadMenu({ filename, size = "normal" }) {
     if (loading) return;
     setLoading(ext);
     try {
+      const encodedPath = filename.split("/").map(encodeURIComponent).join("/");
       const url = srcExt === ext
-        ? `${BACKEND}/download/${encodeURIComponent(filename)}`
-        : `${BACKEND}/convert/${encodeURIComponent(filename)}?to=${ext}`;
+        ? `${BACKEND}/download/${encodedPath}`
+        : `${BACKEND}/convert/${encodedPath}?to=${ext}`;
       const response = await fetch(url);
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));

@@ -182,10 +182,12 @@ export default function CreateDocument() {
   const [level1, setLevel1] = useState([]);
   const [level2, setLevel2] = useState([]);
   const [level3, setLevel3] = useState([]);
+  const [level4, setLevel4] = useState([]);
 
   const [selectedL1, setSelectedL1] = useState("");
   const [selectedL2, setSelectedL2] = useState("");
   const [selectedL3, setSelectedL3] = useState("");
+  const [selectedL4, setSelectedL4] = useState("");
 
   const [form, setForm] = useState({
     title:"", responsible:"", nextReviewDate:"",
@@ -205,21 +207,27 @@ export default function CreateDocument() {
   }, []);
 
   useEffect(() => {
-    setSelectedL2(""); setSelectedL3(""); setLevel2([]); setLevel3([]);
+    setSelectedL2(""); setSelectedL3(""); setSelectedL4(""); setLevel2([]); setLevel3([]); setLevel4([]);
     if (!selectedL1) return;
     axios.get(`${API}/folders/children/${selectedL1}`).then(r => setLevel2(r.data));
   }, [selectedL1]);
 
   useEffect(() => {
-    setSelectedL3(""); setLevel3([]);
+    setSelectedL3(""); setSelectedL4(""); setLevel3([]); setLevel4([]);
     if (!selectedL2) return;
     axios.get(`${API}/folders/children/${selectedL2}`).then(r => setLevel3(r.data));
   }, [selectedL2]);
 
+  useEffect(() => {
+    setSelectedL4(""); setLevel4([]);
+    if (!selectedL3) return;
+    axios.get(`${API}/folders/children/${selectedL3}`).then(r => setLevel4(r.data));
+  }, [selectedL3]);
+
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const getFolderId  = () => selectedL3 || selectedL2 || selectedL1 || "";
-  const getProcessId = () => selectedL3 || selectedL2 || "";
+  const getFolderId  = () => selectedL4 || selectedL3 || selectedL2 || selectedL1 || "";
+  const getProcessId = () => selectedL4 || selectedL3 || selectedL2 || "";
 
   const getPreview = () => {
     if (!form.typeCode) return null;
@@ -532,15 +540,26 @@ export default function CreateDocument() {
                       />
                     </F>
 
-                    <F label="Sous-processus (optionnel)">
+                    <F label="Sous-processus *">
                       <DarkSelect
                         options={level3Options}
                         value={selectedL3}
                         onChange={setSelectedL3}
-                        placeholder={!selectedL2 ? "Sélectionnez d'abord un processus principal" : level3.length === 0 ? "Aucun sous-processus disponible" : "— Optionnel —"}
+                        placeholder={!selectedL2 ? "Sélectionnez d'abord un processus principal" : level3.length === 0 ? "Aucun sous-processus disponible" : "— Sélectionner —"}
                         disabled={!selectedL2 || level3.length === 0}
                       />
                     </F>
+
+                    {level4.length > 0 && (
+                      <F label="Dossier document *">
+                        <DarkSelect
+                          options={level4.map(f => ({ value: String(f.id), label: f.name }))}
+                          value={selectedL4}
+                          onChange={setSelectedL4}
+                          placeholder="— Sélectionner —"
+                        />
+                      </F>
+                    )}
 
                     {preview && (
                       <div className="mt-3 p-5 rounded-xl flex items-center gap-4 border"

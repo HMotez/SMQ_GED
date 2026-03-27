@@ -18,13 +18,20 @@ async function emailsByRoles(roles) {
      WHERE r.name IN (${placeholders}) AND u.is_active = true AND u.email IS NOT NULL`,
     roles
   );
-  return result.rows.map(r => r.email);
+  const emails = result.rows.map(r => r.email);
+  // Always include ADMIN_NOTIFY_EMAIL from env (guaranteed delivery)
+  const adminEnv = process.env.ADMIN_NOTIFY_EMAIL;
+  if (adminEnv && !emails.includes(adminEnv)) emails.push(adminEnv);
+  return emails;
 }
 async function allActiveEmails() {
   const result = await pool.query(
     `SELECT email FROM users WHERE is_active = true AND email IS NOT NULL`
   );
-  return result.rows.map(r => r.email);
+  const emails = result.rows.map(r => r.email);
+  const adminEnv = process.env.ADMIN_NOTIFY_EMAIL;
+  if (adminEnv && !emails.includes(adminEnv)) emails.push(adminEnv);
+  return emails;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -274,24 +281,24 @@ async function runExpirationNotificationsJob() {
       );
     }
     if (expired.rows.length) {
-      // Send one email listing all expired documents to Admin + Ing. Qualité
+      // Send ONE consolidated digest email for all expired documents
       const adminEmails = await emailsByRoles(["Admin", "Ing. Qualité"]);
       const expiredList = expired.rows.map(d =>
         `• [${d.doc_code}] ${d.title} — prévu le ${fmtDate(d.next_review_date)} (+${Math.floor((Date.now() - new Date(d.next_review_date).getTime()) / 86400000)}j)`
       ).join("\n");
 
-      // Send individual email per document
-      for (const doc of expired.rows) {
-        await emailService.sendExpiringDocumentEmail({
-          to: adminEmails,
-          docCode:    doc.doc_code,
-          title:      doc.title,
-          docType:    doc.status_name || "—",
-          reviewDate: fmtDate(doc.next_review_date),
-        }).catch(err => console.error(`[Notif-CRON] Email expiration failed for ${doc.doc_code}:`, err.message));
-      }
+      await emailService.sendExpirationDigestEmail({
+        to: adminEmails,
+        docs: expired.rows.map(d => ({
+          docCode:    d.doc_code,
+          title:      d.title,
+          docType:    d.status_name || "—",
+          reviewDate: fmtDate(d.next_review_date),
+          daysOverdue: Math.floor((Date.now() - new Date(d.next_review_date).getTime()) / 86400000),
+        })),
+      }).catch(err => console.error("[Notif-CRON] Digest email expiration failed:", err.message));
 
-      console.log(`[Notif-CRON] ${expired.rows.length} document(s) expirés — emails envoyés:\n${expiredList}`);
+      console.log(`[Notif-CRON] ${expired.rows.length} document(s) expirés — digest email envoyé:\n${expiredList}`);
 
       // Also publish to Kafka (best-effort, non-blocking)
       for (const doc of expired.rows) {

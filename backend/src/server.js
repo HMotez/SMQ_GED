@@ -49,31 +49,31 @@ function resolveFilePath(raw) {
 }
 
 // ── Files (inline) ───────────────────────────────────────────
-app.get("/files/*filepath", (req, res) => {
-  const filePath = resolveFilePath(req.params.filepath);
+app.get(/^\/files\/(.+)$/, (req, res) => {
+  const filePath = resolveFilePath(req.params[0]);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Fichier introuvable" });
   res.sendFile(filePath);
 });
 
 // ── Preview (inline dans le navigateur) ──────────────────────
-app.get("/preview/*filepath", (req, res) => {
-  const filePath = resolveFilePath(req.params.filepath);
+app.get(/^\/preview\/(.+)$/, (req, res) => {
+  const filePath = resolveFilePath(req.params[0]);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Fichier introuvable" });
   res.setHeader("Content-Disposition", `inline; filename="${path.basename(filePath)}"`);
   res.sendFile(filePath);
 });
 
 // ── Download (force téléchargement) ──────────────────────────
-app.get("/download/*filepath", (req, res) => {
-  const filePath = resolveFilePath(req.params.filepath);
+app.get(/^\/download\/(.+)$/, (req, res) => {
+  const filePath = resolveFilePath(req.params[0]);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "Fichier introuvable" });
   res.download(filePath, path.basename(filePath));
 });
 
 // ── Conversion route (LibreOffice) ───────────────────────────
-// GET /convert/:filename?to=pdf|docx|xlsx|pptx
-app.get("/convert/:filename", (req, res) => {
-  const filename  = decodeURIComponent(req.params.filename);
+// GET /convert/<relative-path>?to=pdf|docx|xlsx|pptx
+app.get(/^\/convert\/(.+)$/, (req, res) => {
+  const filename  = decodeURIComponent(req.params[0]);
   const targetFmt = (req.query.to || "pdf").toLowerCase();
   const srcPath   = path.join(uploadDir, filename);
 

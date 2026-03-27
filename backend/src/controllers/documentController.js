@@ -146,9 +146,9 @@ const createDocument = async (req, res) => {
       ? keywords.split(",").map((k) => k.trim()).filter(Boolean)
       : null;
 
-    // 7. Status = Brouillon (id=1), version initiale = "-"
+    // 7. Status = Brouillon (id=1), version initiale = "v-"
     const statusId       = 1;
-    const initialVersion = "-";
+    const initialVersion = "v-";
 
     // 8. Insérer le document
     const docInsert = await client.query(
@@ -302,18 +302,22 @@ const getDocuments = async (req, res) => {
       `SELECT
          d.id, d.doc_code, d.title, d.responsible,
          d.current_version, d.next_review_date, d.created_at,
-         d.origin, d.context, d.keywords, d.file_name,
+         d.origin, d.context, d.keywords, d.file_name, d.file_path,
          f.name  AS folder_name,   f.code  AS folder_code,
          dt.code AS type_code,     dt.label AS type_label,
          s.name  AS status_name,   s.id    AS status_id,
          u.name  AS created_by_name,
          pr.id   AS process_id,    pr.sub_process AS process_name,
+         COALESCE(pr.strategic_process, f1.name, f2.name) AS strategic_process,
+         COALESCE(pr.main_process,      f2.name)          AS main_process,
          CASE WHEN d.next_review_date IS NOT NULL
                    AND d.next_review_date < CURRENT_DATE
               THEN true ELSE false END   AS is_overdue,
          COUNT(*) OVER()                AS total_count
        FROM documents d
        JOIN folders        f  ON f.id  = d.folder_id
+       LEFT JOIN folders   f2 ON f2.id = f.parent_id
+       LEFT JOIN folders   f1 ON f1.id = f2.parent_id
        JOIN document_types dt ON dt.id = d.type_id
        JOIN status         s  ON s.id  = d.status_id
        LEFT JOIN users     u  ON u.id  = d.created_by
@@ -355,9 +359,13 @@ const getDocumentById = async (req, res) => {
          s.name  AS status_name,
          u.name  AS created_by_name,
          p.code  AS process_code,
-         p.strategic_process, p.main_process, p.sub_process
+         COALESCE(p.strategic_process, f1.name, f2.name) AS strategic_process,
+         COALESCE(p.main_process,      f2.name)          AS main_process,
+         COALESCE(p.sub_process,       f.name)           AS sub_process
        FROM documents d
        JOIN folders        f  ON f.id  = d.folder_id
+       LEFT JOIN folders   f2 ON f2.id = f.parent_id
+       LEFT JOIN folders   f1 ON f1.id = f2.parent_id
        JOIN document_types dt ON dt.id = d.type_id
        JOIN status         s  ON s.id  = d.status_id
        LEFT JOIN users     u  ON u.id  = d.created_by
@@ -435,57 +443,58 @@ const updateDocument = async (req, res) => {
       return res.status(400).json({ error: "Un nouveau fichier est requis pour créer une version." });
     }
 
-    // 5. Incrémenter la version
-    //    -  → A          (première version : lettre seule)
-    //    A  → A1         (première correction)
-    //    A1 → A2 → A3… (corrections du même cycle)
-    //    A3 (validé) → B (nouveau cycle : lettre suivante)
-    //    B  → B1 → B2…
+    // 5. Incrémenter la version (convention: v- → vA → vA1 → vA2 → vB …)
+    //    v-  → vA         (première version)
+    //    vA  → vA1        (première correction)
+    //    vA1 → vA2 → vA9 (corrections du même cycle)
+    //    vA9 (validé) → vB (nouveau cycle)
+    //    vB  → vB1 → vB2…
     const cur          = doc.current_version;
     const validatedVer = doc.validated_version; // null if never validated
     let next;
-    if (cur === "-") {
-      next = "A";
-    } else if (/^[A-Z]$/.test(cur)) {
-      // Lettre seule (ex: "A") → première correction
-      next = `${cur}1`;
+    if (!cur || cur === "-" || cur === "v-") {
+      next = "vA";
+    } else if (/^v([A-Z])$/i.test(cur)) {
+      // Lettre seule ex: "vA" → "vA1"
+      const letter = cur.slice(1).toUpperCase();
+      next = `v${letter}1`;
     } else {
-      const match = cur.match(/^([A-Z])(\d+)$/);
+      const match = cur.match(/^v([A-Z])(\d+)$/i);
       if (!match) {
-        next = "A";
+        next = "vA";
       } else {
         const [, letter, num] = match;
+        const L = letter.toUpperCase();
         if (validatedVer && cur === validatedVer) {
-          // Version actuelle = version validée → nouveau cycle (lettre suivante)
-          const nextCode = letter.charCodeAt(0) + 1;
+          // Version actuelle = validée → nouveau cycle (lettre suivante)
+          const nextCode = L.charCodeAt(0) + 1;
           if (nextCode > 90) {
             await client.query("ROLLBACK");
             return res.status(400).json({ error: "Nombre maximum de versions atteint." });
           }
-          next = String.fromCharCode(nextCode); // ex: B
+          next = `v${String.fromCharCode(nextCode)}`;
         } else {
           const n = parseInt(num, 10);
           if (n < 9) {
-            next = `${letter}${n + 1}`;
+            next = `v${L}${n + 1}`;
           } else {
-            // Overflow A9 → B (nouveau cycle)
-            const nextCode = letter.charCodeAt(0) + 1;
+            const nextCode = L.charCodeAt(0) + 1;
             if (nextCode > 90) {
               await client.query("ROLLBACK");
               return res.status(400).json({ error: "Nombre maximum de versions atteint." });
             }
-            next = String.fromCharCode(nextCode);
+            next = `v${String.fromCharCode(nextCode)}`;
           }
         }
       }
     }
 
     // 6. Calculer le nouveau doc_code (remplace le suffixe version)
-    //    FF0001_Procedure_-  →  FF0001_Procedure_vA
-    //    FF0001_Procedure_vA →  FF0001_Procedure_vA1
-    //    FF0001_Procedure_vA3 (validé) →  FF0001_Procedure_vB
-    const baseCode   = doc.doc_code.replace(/_(?:-|v[A-Z]\d*)$/, "");
-    const newDocCode = `${baseCode}_v${next}`;
+    //    GU0002_Guide_v-  →  GU0002_Guide_vA
+    //    GU0002_Guide_vA  →  GU0002_Guide_vA1
+    //    GU0002_Guide_vA1 →  GU0002_Guide_vA2
+    const baseCode   = doc.doc_code.replace(/_(?:v-|v[A-Z]\d*|-)$/, "");
+    const newDocCode = `${baseCode}_${next}`;
 
     // 6b. Déplacer vers le bon dossier selon folder_id du document
     const { resolveFolderPath } = require("../upload");
@@ -1094,7 +1103,7 @@ const getAuditTrail = async (req, res) => {
     // 4. Récupérer les versions
     const versions = await pool.query(
       `SELECT
-         id, version_letter, file_name, file_size, change_summary, created_at
+         id, version_letter, file_name, file_path, file_size, change_summary, created_at
        FROM versions
        WHERE document_id = $1
        ORDER BY created_at ASC`,
@@ -1164,6 +1173,28 @@ const getAuditTrail = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/documents/sync-disk — Admin only
+// Lance le script syncDisk.js pour synchroniser le disque ACTIA ES → DB
+// ─────────────────────────────────────────────────────────────
+async function syncDisk(req, res) {
+  const { execFile } = require("child_process");
+  const scriptPath   = path.join(__dirname, "../../scripts/syncDisk.js");
+
+  if (!fs.existsSync(scriptPath)) {
+    return res.status(500).json({ error: "Script syncDisk.js introuvable." });
+  }
+
+  execFile("node", [scriptPath], { timeout: 120000, env: process.env }, (err, stdout, stderr) => {
+    if (err) {
+      console.error("[syncDisk] Error:", stderr || err.message);
+      return res.status(500).json({ error: "Sync échoué.", detail: stderr || err.message });
+    }
+    console.log("[syncDisk] Done:\n" + stdout);
+    return res.json({ success: true, log: stdout });
+  });
+}
+
 module.exports = {
   createDocument,
   getDocuments,
@@ -1182,4 +1213,6 @@ module.exports = {
   runAutoArchiveJob,
   // EF14 — Audit trail complet
   getAuditTrail,
+  // Sync disque ACTIA ES
+  syncDisk,
 };

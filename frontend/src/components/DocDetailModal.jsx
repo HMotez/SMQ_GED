@@ -114,7 +114,7 @@ export default function DocDetailModal({ docId, onClose }) {
                         {doc.current_version && (
                           <span className="rounded-md px-2 py-0.5 text-xs font-bold border"
                             style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
-                            {doc.current_version === "-" ? "Initiale" : `v${doc.current_version}`}
+                            {doc.current_version === "v-" ? "Initiale" : doc.current_version}
                           </span>
                         )}
                       </div>
@@ -241,7 +241,7 @@ export default function DocDetailModal({ docId, onClose }) {
                         <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                           <span className="rounded-xl px-3 py-1 text-sm font-black border"
                             style={{ background: idx === versions.length-1 ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: idx === versions.length-1 ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: idx === versions.length-1 ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
-                            v{v.version_letter}
+                            {v.version_letter === "-" ? "v-" : v.version_letter}
                           </span>
                           {idx === versions.length-1 && (
                             <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color:"#4ab83f" }}>Actuelle</span>
@@ -261,14 +261,14 @@ export default function DocDetailModal({ docId, onClose }) {
                           if (isFirst || isLast) {
                             return v.file_path && (
                               <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
-                                <button onClick={() => { setPreviewFile(v.file_path.split("/").pop() || v.file_path); setPreviewOpen(true); }}
+                                <button onClick={() => { setPreviewFile(v.file_path); setPreviewOpen(true); }}
                                   className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
                                   style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.2)", color:"#60a5fa", cursor:"pointer" }}
                                   onMouseEnter={e => { e.currentTarget.style.background="rgba(96,165,250,0.15)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.4)"; }}
                                   onMouseLeave={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.2)"; }}>
                                   <LuEye size={14} /> Consulter
                                 </button>
-                                <DownloadMenu filename={v.file_path.split("/").pop() || v.file_path} />
+                                <DownloadMenu filename={v.file_path} />
                               </div>
                             );
                           }
@@ -308,10 +308,10 @@ export default function DocDetailModal({ docId, onClose }) {
                               style={{ background:dc.bg, color:dc.text, borderColor:dc.border }}>
                               <DI size={11} /> {dc.label}
                             </span>
-                            {v.version_letter && v.version_letter !== "-" && (
+                            {v.version_letter && v.version_letter !== "-" && v.version_letter !== "v-" && (
                               <span className="text-xs px-2 py-0.5 rounded-md border font-mono font-bold"
                                 style={{ background:"rgba(255,255,255,0.04)", color:"rgba(168,191,212,0.5)", borderColor:"rgba(255,255,255,0.08)" }}>
-                                v{v.version_letter}
+                                {v.version_letter}
                               </span>
                             )}
                           </div>
@@ -403,7 +403,7 @@ export default function DocDetailModal({ docId, onClose }) {
                                 )}
                                 {event.type === "VERSION" && (
                                   <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                    <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>v{event.version_letter}</span>
+                                    <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>{event.version_letter === "-" ? "v-" : event.version_letter}</span>
                                     {event.change_summary && <span> · {event.change_summary}</span>}
                                   </p>
                                 )}
@@ -438,12 +438,12 @@ export default function DocDetailModal({ docId, onClose }) {
         <div onClick={() => setPreviewOpen(false)} className="fixed inset-0 z-[1200] flex flex-col items-center justify-center" style={{ background:"rgba(5,12,20,0.9)", backdropFilter:"blur(8px)" }}>
           <div onClick={e => e.stopPropagation()} className="w-[90vw] h-[90vh] rounded-2xl flex flex-col overflow-hidden border" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)" }}>
             <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)" }}>
-              <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile}</span>
+              <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile?.split("/").pop()}</span>
               <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>
                 <LuX size={18} />
               </button>
             </div>
-            <iframe src={`${BACKEND}/preview/${encodeURIComponent(previewFile||"")}`} title="preview" className="flex-1 border-none w-full" />
+            <iframe src={`${BACKEND}/preview/${(previewFile||"").split("/").map(encodeURIComponent).join("/")}`} title="preview" className="flex-1 border-none w-full" />
           </div>
         </div>
       )}

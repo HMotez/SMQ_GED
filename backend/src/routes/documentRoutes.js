@@ -24,6 +24,13 @@ router.post( "/archive-expired",
   ctrl.archiveExpired
 );
 
+// Sync disque ACTIA ES → DB (Admin uniquement)
+router.post( "/sync-disk",
+  loadUser,
+  requireRole("Admin"),
+  ctrl.syncDisk
+);
+
 // ── CRUD documents ───────────────────────────────────────────
 // Création : Ing. Qualité, Admin
 router.post( "/",
