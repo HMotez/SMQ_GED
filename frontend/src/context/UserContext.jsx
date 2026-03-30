@@ -12,6 +12,7 @@ export const ROLE_PERMISSIONS = {
   "Admin":        ["document:read","document:create","document:update","document:status","validation:create","archive:manage","user:manage"],
   "Ing. Qualité": ["document:read","document:create","document:update","document:status","validation:create"],
   "Reviewer":     ["document:read","validation:create"],
+  "Visiteur":     ["document:read"],
 };
 
 export const TRANSITION_ROLE_MAP = {

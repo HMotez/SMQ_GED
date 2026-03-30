@@ -20,17 +20,21 @@ export function useRoleCheck() {
    * @returns {boolean}
    */
   const canPerformAction = useCallback((action, document = null) => {
-    if (!userRole) return false;
+    const effectiveRole = userRole || 'Visiteur';
+    // Visiteur (or unauthenticated) can only read
+    if (!userRole && action !== 'read') return false;
 
     // ACTIONS WITHOUT DOCUMENT CONTEXT
     if (!document) {
       switch (action) {
-        case 'create':
-          return ['Admin', 'Ing. Qualité'].includes(userRole);
-        case 'read':
-          return true; // Everyone can read
-        default:
-          return false;
+        case 'create':       return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
+        case 'read':         return true;
+        case 'update':       return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
+        case 'validate':     return ['Admin', 'Reviewer'].includes(effectiveRole);
+        case 'change_status':return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
+        case 'comment':      return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
+        case 'archive':      return effectiveRole === 'Admin';
+        default:             return false;
       }
     }
 
@@ -44,37 +48,32 @@ export function useRoleCheck() {
         return true; // Everyone can read
 
       case 'update':
-        // Cannot update locked documents
         if (isDocumentLocked) return false;
-        // Only Ing. Qualité, Admin can update
-        return ['Admin', 'Ing. Qualité'].includes(userRole);
+        return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
 
       case 'delete':
-        // Only Admin can delete (and only drafts)
-        return userRole === 'Admin' && docStatus === 'Brouillon';
+        return effectiveRole === 'Admin' && docStatus === 'Brouillon';
 
       case 'change_status':
-        // Most roles can change status (with constraints)
-        return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(userRole);
+        return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
 
       case 'validate':
-        // Only Reviewer and Admin can validate
-        // And they cannot be the document responsible (ISO constraint EF05)
-        if (!['Admin', 'Reviewer'].includes(userRole)) {
+        if (!['Admin', 'Reviewer'].includes(effectiveRole)) {
           return false;
         }
-        // CONSTRAINT EF05: Validator ≠ Responsible
         if (currentUser?.name === docResponsible) {
           return false;
         }
         return true;
 
       case 'comment':
-        return true; // All roles can comment
+        return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
+
+      case 'archive':
+        return effectiveRole === 'Admin' && ['Obsolète', 'Archivé'].includes(docStatus);
 
       case 'distribute':
-        // Only Admin can distribute (ISO EF14)
-        if (!['Admin'].includes(userRole)) {
+        if (!['Admin'].includes(effectiveRole)) {
           return false;
         }
         // Can only distribute if status is "Validé" (ISO EF14 requirement)

@@ -12,14 +12,14 @@ const pool = require("../db");
 // Retourne :
 //   - Documents expirés (next_review_date < today, non archivés)
 //   - Documents en validation (status = "En validation")
-//   - Documents en retard de révision (Diffusé + date dépassée)
+//   - Documents en retard de révision (date dépassée, hors Archivé/Obsolète)
 //   - Documents récemment modifiés (10 derniers par activité)
 // ─────────────────────────────────────────────────────────────
 const getOverview = async (_req, res) => {
   try {
     const [expiredRes, inValRes, overdueRes, recentRes] = await Promise.all([
 
-      // 1. Documents expirés — next_review_date dépassée, hors Archivé/Obsolète
+      // 1. Documents expirés — next_review_date dépassée, tous statuts
       pool.query(`
         SELECT
           COUNT(*) AS count,
@@ -38,7 +38,6 @@ const getOverview = async (_req, res) => {
         JOIN status s ON s.id = d.status_id
         WHERE d.next_review_date IS NOT NULL
           AND d.next_review_date < CURRENT_DATE
-          AND s.name NOT IN ('Archivé', 'Obsolète')
       `),
 
       // 2. Documents en validation
@@ -60,7 +59,7 @@ const getOverview = async (_req, res) => {
         WHERE s.name = 'En validation'
       `),
 
-      // 3. Documents en retard de révision — Diffusé avec date dépassée
+      // 3. Documents en retard de révision — tous statuts (même logique que list?overdue=true)
       pool.query(`
         SELECT
           COUNT(*) AS count,
@@ -71,6 +70,7 @@ const getOverview = async (_req, res) => {
               'title',            d.title,
               'responsible',      d.responsible,
               'next_review_date', d.next_review_date,
+              'status_name',      s.name,
               'days_overdue',     EXTRACT(DAY FROM AGE(CURRENT_DATE, d.next_review_date))::int
             ) ORDER BY d.next_review_date ASC),
             '[]'::json
@@ -79,7 +79,6 @@ const getOverview = async (_req, res) => {
         JOIN status s ON s.id = d.status_id
         WHERE d.next_review_date IS NOT NULL
           AND d.next_review_date < CURRENT_DATE
-          AND s.name = 'Diffusé'
       `),
 
       // 4. Documents récemment modifiés — 10 derniers par activité

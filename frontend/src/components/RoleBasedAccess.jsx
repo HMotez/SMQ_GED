@@ -152,17 +152,18 @@ export function DocumentRolePermissionsMatrix({ document }) {
     'Admin',
     'Ing. Qualité',
     'Reviewer',
+    'Visiteur',
   ];
 
   // Truth table mirroring useRoleCheck.js canPerformAction (without document context)
   const ACTIONS = [
-    { label: 'Lire',            allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true  } },
-    { label: 'Modifier',        allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': false } },
-    { label: 'Valider',         allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': true  } },
-    { label: 'Changer statut',  allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true  } },
-    { label: 'Commenter',       allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true  } },
-    { label: 'Archiver',        allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': false } },
-    { label: 'Gérer utilisateurs', allowed: { 'Admin': true, 'Ing. Qualité': false, 'Reviewer': false } },
+    { label: 'Lire',               allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': true  } },
+    { label: 'Modifier',           allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': false, 'Visiteur': false } },
+    { label: 'Valider',            allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': true,  'Visiteur': false } },
+    { label: 'Changer statut',     allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': false } },
+    { label: 'Commenter',          allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': false } },
+    { label: 'Archiver',           allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': false, 'Visiteur': false } },
+    { label: 'Gérer utilisateurs', allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': false, 'Visiteur': false } },
   ];
 
   const canRolePerformAction = (role, action) => action.allowed[role] ?? false;
@@ -172,6 +173,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
       'Admin':        '#f87171',
       'Ing. Qualité': '#2dd4bf',
       'Reviewer':     '#4ade80',
+      'Visiteur':     '#a78bfa',
     };
     return colors[role] || '#8b949e';
   };
@@ -291,7 +293,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
         color: '#8b949e',
       }}>
         <p style={{ margin: 0 }}>
-          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Admin a accès complet. Ing. Qualité peut créer, modifier et changer de statut. Reviewer peut lire, valider, changer de statut et commenter.
+          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Admin a accès complet. Ing. Qualité peut créer, modifier et changer de statut. Reviewer peut valider et commenter. Visiteur peut uniquement lire.
         </p>
       </div>
     </div>

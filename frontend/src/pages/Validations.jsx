@@ -492,7 +492,7 @@ function DocDetailModal({ docId, onClose }) {
 
 /* ══════════════════════════════════════════════════════════ */
 export default function Validations() {
-  const { currentUser } = useUser();
+  const { currentUser, userRole } = useUser();
   const [pendingDocs,   setPendingDocs]   = useState([]);
   const [validatedDocs, setValidatedDocs] = useState([]);
   const [allHistory,    setAllHistory]    = useState([]);
@@ -696,6 +696,7 @@ export default function Validations() {
                               onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; e.currentTarget.style.color="rgba(168,191,212,0.7)"; }}>
                               <LuEye size={13} /> Détails
                             </button>
+                            {["Admin","Reviewer"].includes(userRole) && (<>
                             <button onClick={() => { setDecisionModal({ doc, action:"REJETÉ" }); setDecisionComment(""); }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold"
                               style={{ background:"rgba(248,113,113,0.08)", borderColor:"rgba(248,113,113,0.3)", color:"#f87171", cursor:"pointer" }}
@@ -710,6 +711,7 @@ export default function Validations() {
                               onMouseLeave={e => e.currentTarget.style.background="rgba(74,184,63,0.1)"}>
                               <LuCircleCheck size={13} /> Approuver
                             </button>
+                            </>)}
                           </div>
                         </div>
                       </div>
