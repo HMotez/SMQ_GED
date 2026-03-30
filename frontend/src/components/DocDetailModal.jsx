@@ -184,12 +184,16 @@ export default function DocDetailModal({ docId, onClose }) {
                 <div className="flex flex-col gap-5">
                   <div className="grid gap-3" style={{ gridTemplateColumns:"repeat(3, 1fr)" }}>
                     {[
-                      { Icon:LuUser,     label:"Responsable",        value:doc.responsible || "—" },
-                      { Icon:LuTag,      label:"Type",               value:doc.type_code ? `${doc.type_code}${doc.type_label ? " — " + doc.type_label : ""}` : "—" },
-                      { Icon:LuFolder,   label:"Processus",          value:doc.folder_name || "—" },
-                      { Icon:LuCalendar, label:"Créé le",            value:doc.created_at ? new Date(doc.created_at).toLocaleDateString("fr-FR") : "—" },
-                      { Icon:LuCalendar, label:"Prochaine révision", value:doc.next_review_date ? new Date(doc.next_review_date).toLocaleDateString("fr-FR") : "—" },
-                      { Icon:LuFileText, label:"Origine",            value:doc.origin || "INTERNE" },
+                      { Icon:LuUser,     label:"Responsable",              value:doc.responsible || "—" },
+                      { Icon:LuTag,      label:"Type",                   value:doc.type_code ? `${doc.type_code}${doc.type_label ? " — " + doc.type_label : ""}` : "—" },
+                      { Icon:LuFolder,   label:"Processus",              value:doc.folder_name || "—" },
+                      { Icon:LuCalendar, label:"Créé le",                value:doc.created_at ? new Date(doc.created_at).toLocaleDateString("fr-FR") : "—" },
+                      { Icon:LuCalendar, label:"Prochaine révision",     value:doc.next_review_date ? new Date(doc.next_review_date).toLocaleDateString("fr-FR") : "—" },
+                      { Icon:LuFileText, label:"Origine",                value:doc.origin || "INTERNE" },
+                      { Icon:LuHistory,  label:"Version",                value:doc.current_version || doc.version_letter || "—" },
+                      { Icon:LuFolder,   label:"Processus stratégique",  value:doc.strategic_process || "—" },
+                      { Icon:LuFolder,   label:"Processus principal",    value:doc.main_process || "—" },
+                      { Icon:LuUser,     label:"Créé par",               value:doc.created_by_name || "—" },
                     ].map(({ Icon, label, value }) => (
                       <div key={label} className="rounded-xl px-4 py-3 border"
                         style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(255,255,255,0.07)" }}>

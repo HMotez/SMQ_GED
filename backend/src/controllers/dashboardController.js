@@ -164,15 +164,15 @@ const getDashboardStats = async (_req, res) => {
         ORDER BY count DESC
       `),
 
-      // Répartition par processus (top 10)
+      // Répartition par processus (top 10) — via dossier parent
       pool.query(`
         SELECT
-          COALESCE(p.sub_process, 'Non défini') AS name,
-          p.id,
+          COALESCE(fp.name, f.name, 'Non assigné') AS name,
           COUNT(*) AS count
         FROM documents d
-        LEFT JOIN processes p ON p.id = d.process_id
-        GROUP BY p.id, p.sub_process
+        LEFT JOIN folders f  ON f.id  = d.process_id
+        LEFT JOIN folders fp ON fp.id = f.parent_id
+        GROUP BY fp.name, f.name
         ORDER BY count DESC
         LIMIT 10
       `),

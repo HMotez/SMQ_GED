@@ -56,7 +56,7 @@ function StatusBadge({ name, size = "sm" }) {
   const s = sCfg(name);
   const SI = s.Icon;
   return (
-    <span className={`inline-flex items-center gap-1 ${size==="lg"?"px-3 py-1 text-xs":"px-2 py-0.5 text-[11px]"} font-semibold rounded-full whitespace-nowrap border`}
+    <span className={`inline-flex items-center gap-1 ${size==="lg"?"px-3 py-1 text-xs":"px-1.5 py-0.5 text-[11px]"} font-semibold rounded-md whitespace-nowrap border w-fit`}
       style={{ background:s.bg, color:s.text, borderColor:s.border }}>
       <SI size={size==="lg"?12:11} />
       {name||"—"}
@@ -551,7 +551,7 @@ export default function DocumentList() {
               {/* Table */}
               <div className="rounded-2xl overflow-hidden border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                 {/* Header */}
-                <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:"155px 1fr 120px 110px 155px 105px 28px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:"240px 1fr 120px 80px 130px 105px 28px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
                   {["Référence","Titre","Responsable","Type","Statut","Revue",""].map(h => (
                     <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]" style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
                   ))}
@@ -561,7 +561,7 @@ export default function DocumentList() {
                   <div key={doc.id} onClick={() => openDoc(doc)}
                     className="grid px-5 py-3 items-center cursor-pointer transition-all duration-150"
                     style={{
-                      gridTemplateColumns:"155px 1fr 120px 110px 155px 105px 28px",
+                      gridTemplateColumns:"240px 1fr 120px 80px 130px 105px 28px",
                       borderBottom: i < documents.length-1 ? "1px solid rgba(255,255,255,0.05)" : "none",
                       background: doc.is_overdue ? "rgba(251,146,60,0.04)" : "transparent",
                     }}
@@ -570,7 +570,7 @@ export default function DocumentList() {
                   >
                     <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
                     <div className="overflow-hidden pr-3">
-                      <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
+                      <p className="m-0 text-sm font-medium text-white truncate" title={doc.title}>{doc.title}</p>
                       {doc.folder_name && (
                         <p className="m-0 mt-0.5 text-xs flex items-center gap-1" style={{ color:"rgba(168,191,212,0.45)" }}>
                           <LuFolder size={10} /> {doc.folder_name}

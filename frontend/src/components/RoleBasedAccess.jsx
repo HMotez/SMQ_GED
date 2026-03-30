@@ -154,20 +154,18 @@ export function DocumentRolePermissionsMatrix({ document }) {
     'Reviewer',
   ];
 
-  // Map UI actions to permission strings in ROLE_PERMISSIONS
+  // Truth table mirroring useRoleCheck.js canPerformAction (without document context)
   const ACTIONS = [
-    { label: 'Lire', permission: 'document:read' },
-    { label: 'Modifier', permission: 'document:update' },
-    { label: 'Valider', permission: 'validation:create' },
-    { label: 'Changer statut', permission: 'document:status' },
-    { label: 'Archiver', permission: 'archive:manage' },
-    { label: 'Gérer utilisateurs', permission: 'user:manage' },
+    { label: 'Lire',            allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true  } },
+    { label: 'Modifier',        allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': false } },
+    { label: 'Valider',         allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': true  } },
+    { label: 'Changer statut',  allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true  } },
+    { label: 'Commenter',       allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true  } },
+    { label: 'Archiver',        allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': false } },
+    { label: 'Gérer utilisateurs', allowed: { 'Admin': true, 'Ing. Qualité': false, 'Reviewer': false } },
   ];
 
-  // Check if role has permission
-  const canRolePerformAction = (role, permissionString) => {
-    return (ROLE_PERMISSIONS[role] || []).includes(permissionString);
-  };
+  const canRolePerformAction = (role, action) => action.allowed[role] ?? false;
 
   const getRoleColor = (role) => {
     const colors = {
@@ -236,11 +234,12 @@ export function DocumentRolePermissionsMatrix({ document }) {
                 }}>
                   {role}
                 </td>
-                {ACTIONS.map(({ label, permission }) => {
-                  const allowed = canRolePerformAction(role, permission);
+                {ACTIONS.map((action) => {
+                  const { label } = action;
+                  const allowed = canRolePerformAction(role, action);
                   return (
                     <td
-                      key={permission}
+                      key={label}
                       style={{
                         padding: '8px',
                         textAlign: 'center',
@@ -292,7 +291,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
         color: '#8b949e',
       }}>
         <p style={{ margin: 0 }}>
-          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Permissions définies selon le rôle. Admin a accès complet; Ing. Qualité peut créer et soumettre; Reviewer peut valider les documents.
+          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Admin a accès complet. Ing. Qualité peut créer, modifier et changer de statut. Reviewer peut lire, valider, changer de statut et commenter.
         </p>
       </div>
     </div>
