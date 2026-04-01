@@ -19,4 +19,10 @@ router.get("/me",        ctrl.me);
 // POST /api/auth/logout   → 200 (JWT stateless)
 router.post("/logout",   ctrl.logout);
 
+// POST /api/auth/forgot-password  → envoie email avec lien reset
+router.post("/forgot-password", ctrl.forgotPassword);
+
+// POST /api/auth/reset-password   → { token, password, confirmPassword }
+router.post("/reset-password",  ctrl.resetPassword);
+
 module.exports = router;

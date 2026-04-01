@@ -1,6 +1,6 @@
 # =============================================================
 # SMQ_GED — Frontend Dockerfile  (ACTIA Engineering Services)
-# React 18 + Vite → bundle statique servi par Nginx
+# React 19 + Vite → bundle statique servi par Nginx
 # ======================================================# =============================================================
 
 # ── Stage 1: Build ───────────────────────────────────────────

@@ -910,6 +910,104 @@ function ImprovementsSection({ token }) {
         </button>
       </div>
 
+      {/* ── AI Synthesis Block ─────────────────────────────────── */}
+      {data.ai_synthesis && (
+        <Card style={{ padding: 0, overflow: "hidden", border: "1px solid rgba(139,92,246,0.22)" }}>
+          {/* Header */}
+          <div style={{
+            padding: "13px 20px",
+            background: "linear-gradient(90deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04))",
+            borderBottom: "1px solid rgba(139,92,246,0.15)",
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <LuSparkles size={14} color="#a78bfa" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>Rapport IA — Amélioration Continue</div>
+              <div style={{ fontSize: 11, color: "rgba(167,139,250,0.5)" }}>Généré par llama-3.3-70b · ISO 9001</div>
+            </div>
+          </div>
+
+          <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+            {/* Synthèse */}
+            {data.ai_synthesis.synthese && (
+              <div style={{
+                background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.12)",
+                borderRadius: 10, padding: "13px 16px",
+              }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(167,139,250,0.6)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 7 }}>
+                  Synthèse exécutive
+                </div>
+                <p style={{ margin: 0, fontSize: 13.5, color: "rgba(220,235,248,0.88)", lineHeight: 1.65 }}>
+                  {data.ai_synthesis.synthese}
+                </p>
+              </div>
+            )}
+
+            {/* Axes prioritaires */}
+            {data.ai_synthesis.axes?.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(167,139,250,0.6)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>
+                  Axes prioritaires d'amélioration
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {data.ai_synthesis.axes.map((axe, i) => (
+                    <div key={i} style={{
+                      display: "flex", alignItems: "flex-start", gap: 12, padding: "11px 14px",
+                      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                      borderRadius: 9,
+                    }}>
+                      <div style={{
+                        minWidth: 24, height: 24, borderRadius: 6,
+                        background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.28)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 800, color: "#a78bfa", flexShrink: 0,
+                      }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(220,235,248,0.9)" }}>{axe.titre}</span>
+                          {axe.clause && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, color: "#a78bfa",
+                              background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)",
+                              borderRadius: 5, padding: "1px 7px",
+                            }}>
+                              {axe.clause}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ margin: 0, fontSize: 12.5, color: "rgba(168,191,212,0.72)", lineHeight: 1.55 }}>{axe.action}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Conclusion */}
+            {data.ai_synthesis.conclusion && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                background: `rgba(74,184,63,0.06)`, border: `1px solid rgba(74,184,63,0.15)`,
+                borderRadius: 9,
+              }}>
+                <LuCircleCheck size={15} color={GREEN} style={{ flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 12.5, color: "rgba(220,235,248,0.75)", fontStyle: "italic", lineHeight: 1.5 }}>
+                  {data.ai_synthesis.conclusion}
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Recommendations */}
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>

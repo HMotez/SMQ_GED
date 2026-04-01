@@ -317,6 +317,19 @@ export default function Login() {
               </div>
             </div>
 
+            {/* Forgot password */}
+            <div className="text-right -mt-2">
+              <NavLink
+                to="/forgot-password"
+                className="text-[12px] font-semibold no-underline"
+                style={{ color: "rgba(168,191,212,0.5)" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#4ab83f"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(168,191,212,0.5)"}
+              >
+                Mot de passe oublié ?
+              </NavLink>
+            </div>
+
             {/* Submit button */}
             <button
               type="submit"

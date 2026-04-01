@@ -445,6 +445,57 @@ async function sendInactiveDocumentEmail({ to, docId, docCode, title, docType, l
   await sendMail(to, subject, baseHtml("Document inactif (6 mois)", accent, "135deg,#78350f 0%,#d97706 60%,#f59e0b 100%", "clock", content));
 }
 
+// ── Password reset email ───────────────────────────────────────
+async function sendPasswordResetEmail({ to, name, token, expiresAt }) {
+  const accent   = "#4ab83f";
+  const base     = (process.env.APP_URL || "http://localhost").replace(/\/$/, "");
+  const resetUrl = `${base}/reset-password?token=${token}`;
+  const expTime  = new Date(expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const expDate  = new Date(expiresAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const subject  = "[SMQ GED] Réinitialisation de votre mot de passe";
+
+  const content = `
+    ${sectionLabel("Réinitialisation du mot de passe", accent)}
+    <p style="margin:8px 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+      Bonjour <strong style="color:#1e3450;">${name || "Utilisateur"}</strong>,<br/>
+      Vous avez demandé la réinitialisation de votre mot de passe sur la plateforme <strong>SMQ GED ACTIA</strong>.
+    </p>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${resetUrl}"
+         style="display:inline-block;background:linear-gradient(135deg,#4ab83f,#3da333);color:#ffffff;font-size:14px;font-weight:700;padding:14px 36px;border-radius:12px;text-decoration:none;letter-spacing:0.3px;box-shadow:0 6px 20px rgba(74,184,63,0.4);">
+        🔑 Réinitialiser mon mot de passe &rarr;
+      </a>
+    </div>
+
+    ${infoTable(
+      infoRow("Lien valide jusqu'à", `<strong style="color:#1e3450;">${expDate} à ${expTime}</strong>`),
+      infoRow("Durée de validité",   "1 heure")
+    )}
+
+    ${alertBox(
+      "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email. Votre mot de passe ne sera pas modifié.",
+      "#d97706"
+    )}
+
+    <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+      Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br/>
+      <span style="font-family:monospace;font-size:11px;color:#64748b;word-break:break-all;">${resetUrl}</span>
+    </p>`;
+
+  await sendMail(
+    to,
+    subject,
+    baseHtml(
+      "Réinitialisation du mot de passe",
+      accent,
+      "135deg,#14532d 0%,#15803d 60%,#16a34a 100%",
+      "check",
+      content
+    )
+  );
+}
+
 // ── Core send ──────────────────────────────────────────────────
 async function sendMail(to, subject, html) {
   if (!process.env.SMTP_USER || process.env.SMTP_USER === "your.email@gmail.com") return;
@@ -471,4 +522,5 @@ module.exports = {
   sendExpiringDocumentEmail,
   sendExpirationDigestEmail,
   sendInactiveDocumentEmail,
+  sendPasswordResetEmail,
 };

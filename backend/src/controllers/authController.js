@@ -5,8 +5,10 @@
 // ============================================================
 "use strict";
 
-const bcrypt = require("bcryptjs");
-const jwt    = require("jsonwebtoken");
+const bcrypt       = require("bcryptjs");
+const jwt          = require("jsonwebtoken");
+const crypto       = require("crypto");
+const emailService = require("../services/emailService");
 const pool   = require("../db");
 
 const JWT_SECRET  = process.env.JWT_SECRET  || "actia-ged-fallback-secret";
@@ -307,12 +309,164 @@ function verifyToken(token) {
   return jwt.verify(token, JWT_SECRET);
 }
 
+// ─────────────────────────────────────────────────────────────
+// ensureResetTokensTable — crée la table reset_tokens si absente
+// ─────────────────────────────────────────────────────────────
+async function ensureResetTokensTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reset_tokens (
+      id         SERIAL PRIMARY KEY,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token      VARCHAR(128) NOT NULL UNIQUE,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      used       BOOLEAN DEFAULT false,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_reset_tokens_token
+      ON reset_tokens(token)
+  `);
+  console.log("[Auth] Table reset_tokens vérifiée.");
+}
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/forgot-password
+// Body: { email }
+// Génère un token de réinitialisation et envoie l'email
+// ─────────────────────────────────────────────────────────────
+async function forgotPassword(req, res) {
+  const { email } = req.body;
+  if (!email?.trim()) {
+    return res.status(400).json({ error: "Email requis.", code: "MISSING_EMAIL" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id, name, email FROM users WHERE LOWER(email) = LOWER($1) AND is_active = true",
+      [email.trim()]
+    );
+
+    // Réponse identique que l'email existe ou non (sécurité anti-énumération)
+    if (!result.rows.length) {
+      return res.json({ message: "Si cet email existe, un lien de réinitialisation a été envoyé." });
+    }
+
+    const user = result.rows[0];
+
+    // Invalider les anciens tokens non utilisés pour ce user
+    await pool.query(
+      "UPDATE reset_tokens SET used = true WHERE user_id = $1 AND used = false",
+      [user.id]
+    );
+
+    // Générer un token sécurisé (32 octets = 64 hex)
+    const rawToken  = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
+
+    await pool.query(
+      "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)",
+      [user.id, rawToken, expiresAt]
+    );
+
+    // Envoyer l'email
+    await emailService.sendPasswordResetEmail({
+      to:        user.email,
+      name:      user.name,
+      token:     rawToken,
+      expiresAt,
+    });
+
+    console.log(`[Auth] Reset token généré pour : ${user.email}`);
+    return res.json({ message: "Si cet email existe, un lien de réinitialisation a été envoyé." });
+  } catch (err) {
+    console.error("[Auth] forgotPassword error:", err);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/reset-password
+// Body: { token, password, confirmPassword }
+// ─────────────────────────────────────────────────────────────
+async function resetPassword(req, res) {
+  const { token, password, confirmPassword } = req.body;
+
+  if (!token || !password || !confirmPassword) {
+    return res.status(400).json({ error: "Token, mot de passe et confirmation requis.", code: "MISSING_FIELDS" });
+  }
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: "Les mots de passe ne correspondent pas.", code: "PASSWORD_MISMATCH" });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Le mot de passe doit contenir au moins 6 caractères.", code: "PASSWORD_TOO_SHORT" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const tokenResult = await client.query(
+      `SELECT rt.id, rt.user_id, rt.expires_at, rt.used
+       FROM reset_tokens rt
+       WHERE rt.token = $1`,
+      [token]
+    );
+
+    if (!tokenResult.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Lien invalide ou expiré.", code: "INVALID_TOKEN" });
+    }
+
+    const row = tokenResult.rows[0];
+
+    if (row.used) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Ce lien a déjà été utilisé.", code: "TOKEN_USED" });
+    }
+
+    if (new Date(row.expires_at) < new Date()) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Lien expiré. Veuillez faire une nouvelle demande.", code: "TOKEN_EXPIRED" });
+    }
+
+    // Hasher le nouveau mot de passe
+    const hash = await bcrypt.hash(password, 10);
+
+    // Mettre à jour le mot de passe
+    await client.query(
+      "UPDATE users SET password_hash = $1 WHERE id = $2",
+      [hash, row.user_id]
+    );
+
+    // Invalider le token
+    await client.query(
+      "UPDATE reset_tokens SET used = true WHERE id = $1",
+      [row.id]
+    );
+
+    await client.query("COMMIT");
+
+    console.log(`[Auth] Mot de passe réinitialisé pour user_id=${row.user_id}`);
+    return res.json({ message: "Mot de passe réinitialisé avec succès. Vous pouvez vous connecter." });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("[Auth] resetPassword error:", err);
+    return res.status(500).json({ error: "Erreur serveur." });
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   ensureAuthColumns,
+  ensureResetTokensTable,
   seedDefaultUsers,
   login,
   register,
   me,
   logout,
+  forgotPassword,
+  resetPassword,
   verifyToken,
 };

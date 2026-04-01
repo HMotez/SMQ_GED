@@ -1819,6 +1819,60 @@ async function computeImprovements() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// buildImprovementsAISynthesis — Groq prompt for ISO 9001 analysis
+// ─────────────────────────────────────────────────────────────
+async function buildImprovementsAISynthesis(result) {
+  const { health_score, health_label, kpis, recommendations } = result;
+
+  const recoSummary = recommendations.length === 0
+    ? "Aucune anomalie détectée."
+    : recommendations.map((r, i) =>
+        `${i + 1}. [${r.priority}] ${r.title} — ${r.detail}`
+      ).join("\n");
+
+  const systemPrompt = `Tu es un Expert en Management de la Qualité ISO 9001 chez ACTIA Engineering Services.
+Tu rédiges des rapports d'audit documentaire professionnels, concis et orientés action.
+Réponds UNIQUEMENT en JSON valide, sans texte avant ou après.`;
+
+  const userQuery = `Analyse les données suivantes du système documentaire ACTIA ES et génère un rapport structuré.
+
+ÉTAT DU SYSTÈME :
+- Score qualité global : ${health_score}/100 (${health_label})
+- Total documents : ${kpis.total}
+- Diffusés (actifs) : ${kpis.diffuse}
+- En validation : ${kpis.en_validation}
+- Obsolètes : ${kpis.obsolete}
+- Expirés (révision dépassée) : ${kpis.expired}
+- Archivés : ${kpis.archive}
+- Nombre d'anomalies détectées : ${recommendations.length}
+
+ANOMALIES DÉTECTÉES :
+${recoSummary}
+
+Génère un rapport JSON avec exactement cette structure :
+{
+  "synthese": "Paragraphe de 2-3 phrases résumant l'état documentaire de façon professionnelle et factuelle.",
+  "axes": [
+    { "titre": "Titre axe 1", "clause": "Clause ISO 9001 ex: 7.5.3", "action": "Action concrète recommandée." },
+    { "titre": "Titre axe 2", "clause": "Clause ISO 9001", "action": "Action concrète recommandée." },
+    { "titre": "Titre axe 3", "clause": "Clause ISO 9001", "action": "Action concrète recommandée." }
+  ],
+  "conclusion": "Phrase de conclusion encourageante et professionnelle."
+}`;
+
+  try {
+    const raw = await callGeminiLLM(systemPrompt, userQuery);
+    if (!raw) return null;
+    // Extract JSON even if LLM added surrounding text
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    return JSON.parse(match[0]);
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // GET /api/ai/improvements — Analyse amélioration continue
 // ─────────────────────────────────────────────────────────────
 async function getImprovements(req, res) {
@@ -1833,7 +1887,9 @@ async function getImprovements(req, res) {
 
   try {
     const result = await computeImprovements();
-    return res.json(result);
+    // Enrich with AI synthesis (Groq) — non-blocking fallback if Groq unavailable
+    const ai_synthesis = await buildImprovementsAISynthesis(result);
+    return res.json({ ...result, ai_synthesis });
   } catch (err) {
     console.error("[IA][Improvements] Erreur:", err.message);
     return res.status(500).json({ error: "Erreur lors de l'analyse d'amélioration continue." });

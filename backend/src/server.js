@@ -197,8 +197,9 @@ app.listen(process.env.PORT || 4000, async () => {
   await ensureRoles();
 
   // ── Auth JWT Sprint 3 — colonnes + seed utilisateurs ───────
-  const { ensureAuthColumns, seedDefaultUsers } = require("./controllers/authController");
+  const { ensureAuthColumns, ensureResetTokensTable, seedDefaultUsers } = require("./controllers/authController");
   await ensureAuthColumns();
+  await ensureResetTokensTable();
   await seedDefaultUsers();
 
   // ── Table validations EF05 ─────────────────────────────────

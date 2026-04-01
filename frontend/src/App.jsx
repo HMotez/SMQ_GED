@@ -3,7 +3,9 @@ import { Toaster } from "sonner";
 import { UserProvider, useUser } from "./context/UserContext";
 import Home           from "./pages/Home";
 import Login          from "./pages/Login";
-import Register       from "./pages/Register";
+import Register        from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword  from "./pages/ResetPassword";
 import CreateDocument from "./pages/CreateDocument";
 import DocumentList   from "./pages/DocumentList";
 import Archive        from "./pages/Archive";
@@ -50,8 +52,10 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/login"            element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register"         element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password"  element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/reset-password"   element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
       {/* Visitor-accessible */}
       <Route path="/"           element={<Home />} />
