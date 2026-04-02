@@ -182,6 +182,7 @@ app.use("/api/roles",       require("./routes/roleRoutes"));       // Sprint 2 E
 app.use("/api/dashboard",       require("./routes/dashboardRoutes"));  // Sprint 4 — Tableau de bord
 app.use("/api/notifications",   require("./routes/notificationRoutes")); // Sprint 5 — Notifications
 app.use("/api/ai",              require("./routes/aiRoutes"));             // Sprint 6 — Module IA
+app.use("/api/logs",            require("./routes/logRoutes"));            // Logs Admin
 
 // ── Error handler ────────────────────────────────────────────
 app.use((err, _req, res, _next) => {

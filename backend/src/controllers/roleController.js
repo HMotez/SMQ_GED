@@ -160,4 +160,45 @@ const rejectUser = async (req, res) => {
   }
 };
 
-module.exports = { ensureRoles, getRoles, getUsersWithRoles, assignRole, rejectUser };
+// ─────────────────────────────────────────────────────────────
+// PATCH /api/roles/users/:userId/deactivate — Désactiver un compte actif
+// Réservé : Admin GED — ne peut pas se désactiver soi-même ni un autre Admin
+// ─────────────────────────────────────────────────────────────
+const deactivateUser = async (req, res) => {
+  const { userId } = req.params;
+  const requesterId = req.currentUser?.id;
+
+  if (parseInt(userId) === requesterId) {
+    return res.status(403).json({ error: "Vous ne pouvez pas désactiver votre propre compte." });
+  }
+
+  try {
+    const userCheck = await pool.query(
+      `SELECT u.id, u.name, u.email, r.name AS role
+       FROM users u LEFT JOIN roles r ON r.id = u.role_id
+       WHERE u.id = $1`,
+      [userId]
+    );
+    if (!userCheck.rows.length) {
+      return res.status(404).json({ error: "Utilisateur introuvable." });
+    }
+    const target = userCheck.rows[0];
+    if (target.role === "Admin") {
+      return res.status(403).json({ error: "Impossible de désactiver un compte Administrateur." });
+    }
+
+    await pool.query(
+      "UPDATE users SET is_active = false WHERE id = $1",
+      [userId]
+    );
+    return res.json({
+      message: `Compte de "${target.name}" désactivé avec succès.`,
+      userId: parseInt(userId),
+    });
+  } catch (err) {
+    console.error("[EF06] deactivateUser error:", err.message);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
+module.exports = { ensureRoles, getRoles, getUsersWithRoles, assignRole, rejectUser, deactivateUser };

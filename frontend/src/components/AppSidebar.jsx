@@ -28,6 +28,7 @@ import {
   LuWrench,
   LuLogOut,
   LuGitBranch,
+  LuScrollText,
 } from "react-icons/lu";
 
 // Navigation items per role — each role sees only relevant items
@@ -296,10 +297,38 @@ export function SidebarNav({ badges = {}, user }) {
           </NavLink>
         ))}
 
-        {/* Admin-only: Gestion utilisateurs */}
+        {/* Admin-only: Administration */}
         {isAdmin && (
           <>
             <SectionLabel>Administration</SectionLabel>
+            <NavLink
+              to="/admin/logs"
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
+                  isActive
+                    ? "text-red-400 font-semibold"
+                    : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
+                }`
+              }
+              style={({ isActive }) => isActive ? {
+                background: "rgba(248,113,113,0.1)",
+                border: "1.5px solid rgba(248,113,113,0.22)",
+              } : {
+                background: "transparent",
+                border: "1.5px solid transparent",
+              }}
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-r-full"
+                      style={{ background: "linear-gradient(to bottom, #f87171, #ef4444)" }} />
+                  )}
+                  <LuScrollText size={14} className={`flex-shrink-0 ${isActive ? "text-red-400" : "text-[#a8bfd4]/45"}`} />
+                  <span className="flex-1 leading-none">Journaux</span>
+                </>
+              )}
+            </NavLink>
             <NavLink
               to="/admin/users"
               className={({ isActive }) =>

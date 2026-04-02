@@ -7,7 +7,7 @@ import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
 import {
   LuUsers, LuUserCheck, LuUserX, LuRefreshCw, LuShieldCheck,
-  LuCircleCheckBig, LuCircleAlert, LuClock, LuCheck, LuX,
+  LuCircleCheckBig, LuCircleAlert, LuClock, LuCheck, LuX, LuUserMinus,
 } from "react-icons/lu";
 
 import { API } from "../config";
@@ -93,8 +93,10 @@ export default function UserManagement() {
   const [users,     setUsers]     = useState([]);
   const [roles,     setRoles]     = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [saving,    setSaving]    = useState({}); // userId → bool (activate)
-  const [rejecting, setRejecting] = useState({}); // userId → bool
+  const [saving,       setSaving]       = useState({}); // userId → bool (activate)
+  const [rejecting,    setRejecting]    = useState({}); // userId → bool
+  const [deactivating, setDeactivating] = useState({}); // userId → bool
+  const [confirmModal, setConfirmModal] = useState(null); // { userId, userName }
   const [selected,  setSelected]  = useState({}); // userId → roleId
   const [toast,     setToast]     = useState({ msg:"", type:"" });
 
@@ -197,6 +199,31 @@ export default function UserManagement() {
       showToast(err.message, "error");
     } finally {
       setSaving(s => ({ ...s, [userId]: false }));
+    }
+  };
+
+  // ── Deactivate active account ────────────────────────────
+  const handleDeactivate = (userId, userName) => {
+    setConfirmModal({ userId, userName });
+  };
+
+  const confirmDeactivate = async () => {
+    const { userId, userName } = confirmModal;
+    setConfirmModal(null);
+    setDeactivating(s => ({ ...s, [userId]: true }));
+    try {
+      const res = await fetch(`${API}/roles/users/${userId}/deactivate`, {
+        method:  "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur.");
+      showToast(data.message, "success");
+      await fetchUsers();
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setDeactivating(s => ({ ...s, [userId]: false }));
     }
   };
 
@@ -429,7 +456,7 @@ export default function UserManagement() {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
-                        {["Nom", "Email", "Rôle actuel", "Modifier le rôle", "Action"].map(h => (
+                        {["Nom", "Email", "Rôle actuel", "Modifier le rôle", "Actions"].map(h => (
                           <th key={h} className="text-left px-5 py-3 text-[10.5px] font-bold uppercase tracking-wider"
                             style={{ color:"rgba(168,191,212,0.4)" }}>
                             {h}
@@ -439,8 +466,12 @@ export default function UserManagement() {
                     </thead>
                     <tbody>
                       {active.map((u, idx) => {
-                        const roleColor = ROLE_COLORS[u.role] || "#a8bfd4";
-                        const isDirty = selected[u.id] && String(selected[u.id]) !== String(u.role_id);
+                        const roleColor    = ROLE_COLORS[u.role] || "#a8bfd4";
+                        const isDirty      = selected[u.id] && String(selected[u.id]) !== String(u.role_id);
+                        const isDeactivating = !!deactivating[u.id];
+                        const isSavingRole   = !!saving[u.id];
+                        const isSelf         = u.id === currentUser?.id;
+                        const isAdmin        = u.role === "Admin";
                         return (
                           <tr key={u.id}
                             className="user-row"
@@ -484,19 +515,40 @@ export default function UserManagement() {
                               </select>
                             </td>
                             <td className="px-5 py-3.5">
-                              <button
-                                className="action-btn"
-                                onClick={() => handleActivate(u.id, u.name)}
-                                disabled={saving[u.id] || !isDirty}
-                                style={{
-                                  background: isDirty ? "rgba(96,165,250,0.12)" : "rgba(255,255,255,0.04)",
-                                  color:      isDirty ? "#60a5fa"               : "rgba(168,191,212,0.3)",
-                                  border:     `1.5px solid ${isDirty ? "rgba(96,165,250,0.3)" : "rgba(255,255,255,0.07)"}`,
-                                }}>
-                                {saving[u.id]
-                                  ? <><span style={{ width:11,height:11,border:"2px solid rgba(255,255,255,0.2)",borderTopColor:"#60a5fa",borderRadius:"50%",animation:"spin 0.7s linear infinite",display:"inline-block" }} /> En cours…</>
-                                  : <><LuCheck size={12} /> Appliquer</>}
-                              </button>
+                              <div className="flex items-center gap-2">
+                                {/* Appliquer rôle */}
+                                <button
+                                  className="action-btn"
+                                  onClick={() => handleActivate(u.id, u.name)}
+                                  disabled={isSavingRole || isDeactivating || !isDirty}
+                                  style={{
+                                    background: isDirty ? "rgba(96,165,250,0.12)" : "rgba(255,255,255,0.04)",
+                                    color:      isDirty ? "#60a5fa"               : "rgba(168,191,212,0.3)",
+                                    border:     `1.5px solid ${isDirty ? "rgba(96,165,250,0.3)" : "rgba(255,255,255,0.07)"}`,
+                                  }}>
+                                  {isSavingRole
+                                    ? <><span style={{ width:11,height:11,border:"2px solid rgba(255,255,255,0.2)",borderTopColor:"#60a5fa",borderRadius:"50%",animation:"spin 0.7s linear infinite",display:"inline-block" }} /> En cours…</>
+                                    : <><LuCheck size={12} /> Appliquer</>}
+                                </button>
+
+                                {/* Désactiver */}
+                                {!isSelf && !isAdmin && (
+                                  <button
+                                    className="action-btn"
+                                    onClick={() => handleDeactivate(u.id, u.name)}
+                                    disabled={isDeactivating || isSavingRole}
+                                    title="Désactiver ce compte"
+                                    style={{
+                                      background: "rgba(251,191,36,0.1)",
+                                      color:      "#fbbf24",
+                                      border:     "1.5px solid rgba(251,191,36,0.28)",
+                                    }}>
+                                    {isDeactivating
+                                      ? <><span style={{ width:11,height:11,border:"2px solid rgba(255,255,255,0.2)",borderTopColor:"#fbbf24",borderRadius:"50%",animation:"spin 0.7s linear infinite",display:"inline-block" }} /> …</>
+                                      : <><LuUserMinus size={12} /> Désactiver</>}
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -511,6 +563,82 @@ export default function UserManagement() {
       </main>
 
       <Toast msg={toast.msg} type={toast.type} />
+
+      {/* ── Confirmation modal désactivation ───────────── */}
+      {confirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
+        >
+          <div
+            className="anim-in w-full rounded-2xl p-6"
+            style={{
+              maxWidth: 400,
+              background: "rgba(15,30,48,0.97)",
+              border: "1.5px solid rgba(251,191,36,0.3)",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(251,191,36,0.1)",
+            }}
+          >
+            {/* Icon + title */}
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(251,191,36,0.12)", border: "1.5px solid rgba(251,191,36,0.3)" }}
+              >
+                <LuUserMinus size={18} style={{ color: "#fbbf24" }} />
+              </div>
+              <div>
+                <p className="text-white font-extrabold text-[15px] m-0" style={{ letterSpacing: "-0.02em" }}>
+                  Désactiver le compte
+                </p>
+                <p className="m-0 text-[11.5px] mt-0.5" style={{ color: "rgba(168,191,212,0.5)" }}>
+                  Action réversible — l'Admin peut réactiver
+                </p>
+              </div>
+            </div>
+
+            {/* Message */}
+            <div
+              className="rounded-xl px-4 py-3 mb-5"
+              style={{ background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.2)" }}
+            >
+              <p className="m-0 text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
+                Le compte de{" "}
+                <strong style={{ color: "#fbbf24" }}>"{confirmModal.userName}"</strong>{" "}
+                sera désactivé. L'utilisateur ne pourra plus se connecter.
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-2.5">
+              <button
+                className="action-btn flex-1 justify-center"
+                onClick={() => setConfirmModal(null)}
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(168,191,212,0.7)",
+                  border: "1.5px solid rgba(255,255,255,0.1)",
+                  padding: "9px 0",
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                className="action-btn flex-1 justify-center"
+                onClick={confirmDeactivate}
+                style={{
+                  background: "rgba(251,191,36,0.15)",
+                  color: "#fbbf24",
+                  border: "1.5px solid rgba(251,191,36,0.35)",
+                  padding: "9px 0",
+                }}
+              >
+                <LuUserMinus size={13} /> Désactiver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

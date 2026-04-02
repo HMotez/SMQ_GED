@@ -19,4 +19,7 @@ router.patch("/users/:userId", loadUser, requireRole("Admin"), ctrl.assignRole);
 // DELETE /api/roles/users/:userId — rejeter un compte (Admin uniquement)
 router.delete("/users/:userId", loadUser, requireRole("Admin"), ctrl.rejectUser);
 
+// PATCH /api/roles/users/:userId/deactivate — désactiver un compte actif (Admin uniquement)
+router.patch("/users/:userId/deactivate", loadUser, requireRole("Admin"), ctrl.deactivateUser);
+
 module.exports = router;

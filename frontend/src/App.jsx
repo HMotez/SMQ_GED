@@ -12,6 +12,7 @@ import Archive        from "./pages/Archive";
 import Validations    from "./pages/Validations";
 import Dashboard      from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
+import Logs          from "./pages/Logs";
 import Notifications  from "./pages/Notifications";
 import AIAssistant    from "./pages/AIAssistant";
 import Workflow       from "./pages/Workflow";
@@ -70,6 +71,7 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/ai"            element={<AIAssistant />} />
       <Route path="/admin/users"   element={<AdminRoute><UserManagement /></AdminRoute>} />
+      <Route path="/admin/logs"    element={<AdminRoute><Logs /></AdminRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
