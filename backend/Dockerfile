@@ -1,7 +1,7 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
 # Node.js 20 + Express + LibreOffice + Module IA Groq (llama-3.3-70b)
-# Sprint 16 — Download UX fix (inline format buttons, no popup clipping)
+# Sprint 27 — Admin activity journal (GET /api/logs + PDF export)
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────
