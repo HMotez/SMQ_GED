@@ -34,7 +34,7 @@ import {
 // Navigation items per role — each role sees only relevant items
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
-    { icon: LuHouse,           label: "Accueil",          href: "/",              end: true  },
+    { icon: LuHouse,           label: "Accueil",          href: "/dashboard",     end: true  },
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFilePlus,        label: "Nouveau document", href: "/create",        end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
@@ -45,7 +45,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
   "Ing. Qualité": [
-    { icon: LuHouse,           label: "Accueil",          href: "/",              end: true  },
+    { icon: LuHouse,           label: "Accueil",          href: "/dashboard",     end: true  },
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFilePlus,        label: "Nouveau document", href: "/create",        end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
@@ -56,7 +56,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
   "Reviewer": [
-    { icon: LuHouse,           label: "Accueil",          href: "/",              end: true  },
+    { icon: LuHouse,           label: "Accueil",          href: "/dashboard",     end: true  },
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
     { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",   end: false },
@@ -69,7 +69,7 @@ const NAV_ITEMS_BY_ROLE = {
 
 // Visitor / Lecteur nav — read-only access (no create/edit)
 const NAV_ITEMS_VISITOR = [
-  { icon: LuHouse,          label: "Accueil",          href: "/",            end: true  },
+  { icon: LuHouse,          label: "Accueil",          href: "/dashboard",   end: true  },
   { icon: LuFileText,       label: "Liste documents",  href: "/list",        end: false },
   { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
   { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
@@ -171,8 +171,7 @@ export function LogoMark() {
       <img
         src={logoImg}
         alt="ACTIA ES"
-        className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-        style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+        className="actia-logo h-12 w-auto"
       />
     </NavLink>
   );
@@ -195,8 +194,7 @@ export function SidebarBrand() {
         <img
           src={logoImg}
           alt="ACTIA ES"
-          className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-          style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+          className="actia-logo h-12 w-auto"
         />
       </NavLink>
     </div>

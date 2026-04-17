@@ -1,7 +1,7 @@
 ﻿// ============================================================
 // pages/Dashboard.jsx — ACTIA ES GED — Login-Style Dark Design
 // ============================================================
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { NavLink, useNavigate, useMatch, useLocation } from "react-router-dom";
 import axios from "axios";
 import logoImg from "../assets/Logo.png";
@@ -17,6 +17,12 @@ import {
 } from "react-icons/lu";
 
 import { API } from "../config";
+import {
+  Chart as ChartJS, ArcElement, Tooltip, Legend,
+  CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler,
+} from "chart.js";
+import { Doughnut, Bar, Line } from "react-chartjs-2";
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler);
 
 /* ── Animation styles ──────────────────────────────────── */
 const ANIMATION_STYLES = `
@@ -25,6 +31,8 @@ const ANIMATION_STYLES = `
     50%     { transform: translateY(-6px); }
   }
   .dot-float { animation: floatY 3s ease-in-out infinite; }
+
+
 `;
 
 const GREEN      = "#4ab83f";
@@ -58,7 +66,6 @@ const ROLE_COLOR = {
 
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
-    { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
@@ -67,7 +74,6 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Ing. Qualité": [
-    { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
@@ -76,7 +82,6 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Reviewer": [
-    { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
@@ -191,8 +196,7 @@ function Navbar() {
               <img
                 src={logoImg}
                 alt="ACTIA ES"
-                className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-                style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+                className="actia-logo h-12 w-auto"
               />
             </NavLink>
             <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)", flexShrink: 0 }} />
@@ -387,77 +391,97 @@ function AlertRow({ doc, accent, onClick }) {
   );
 }
 
-/* ── Horizontal bar chart ─────────────────────────────────── */
-function HBarChart({ data, colorFn }) {
-  if (!data || data.length === 0) return <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>;
-  const max = Math.max(...data.map(d => d.count), 1);
-  return (
-    <div className="flex flex-col gap-3">
-      {data.map((item, i) => {
-        const pct = Math.round((item.count / max) * 100);
-        const color = colorFn ? colorFn(item, i) : "#60a5fa";
-        return (
-          <div key={i}>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm truncate max-w-[70%]" style={{ color:"rgba(255,255,255,0.8)" }}>{item.label||item.name||item.code}</span>
-              <span className="text-sm font-bold ml-2" style={{ color }}>{item.count}</span>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background:"rgba(255,255,255,0.08)" }}>
-              <div className="h-full rounded-full transition-all duration-700" style={{ width:`${pct}%`, background:color }} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ── Donut chart ──────────────────────────────────────────── */
-function DonutChart({ data, total, colors }) {
-  if (!data || data.length === 0 || total === 0) return (
-    <div className="flex items-center justify-center h-40">
-      <p className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
-    </div>
-  );
-  const R = 58, CX = 80, CY = 80, CIRC = 2 * Math.PI * R;
-  const segments = data.map((item, i) => {
-    const len    = (item.count / total) * CIRC;
-    const prevLen = data.slice(0, i).reduce((s, d) => s + (d.count / total) * CIRC, 0);
-    return { ...item, len, offset: CIRC - prevLen, color: colors?.[i % colors.length] || "#60a5fa" };
-  });
-  return (
-    <svg width="160" height="160" viewBox="0 0 160 160" style={{ overflow:"visible" }}>
-      <g transform={`rotate(-90 ${CX} ${CY})`}>
-        {segments.map((seg, i) => (
-          <circle key={i} cx={CX} cy={CY} r={R} fill="none" stroke={seg.color} strokeWidth={20}
-            strokeDasharray={`${seg.len} ${CIRC - seg.len}`} strokeDashoffset={seg.offset} strokeLinecap="butt" />
-        ))}
-      </g>
-      <text x={CX} y={CY - 6} textAnchor="middle" fontSize="22" fontWeight="900" fill="white">{total}</text>
-      <text x={CX} y={CY + 13} textAnchor="middle" fontSize="11" fill="rgba(168,191,212,0.6)" fontWeight="600" letterSpacing="0.5">DOCUMENTS</text>
-    </svg>
-  );
-}
-
-/* ── Chart legend ─────────────────────────────────────────── */
-function ChartLegend({ data, colors }) {
-  return (
-    <div className="flex flex-col gap-2">
-      {data.map((item, i) => {
-        const color = colors?.[i % colors.length] || "#60a5fa";
-        return (
-          <div key={i} className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background:color }} />
-            <span className="text-sm flex-1 truncate" style={{ color:"rgba(168,191,212,0.65)" }}>{item.label||item.name||item.code||"—"}</span>
-            <span className="text-sm font-bold" style={{ color:"rgba(255,255,255,0.8)" }}>{item.count}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 const CHART_COLORS = ["#3b82f6","#10b981","#f59e0b","#6d28d9","#ef4444","#0f766e","#4ab83f","#c2410c","#475569","#1d4ed8"];
+
+/* ── Gradient Area Chart (like the image) ─────────────────── */
+function makeGradientPlugin(colors) {
+  return {
+    id: "areaGradient_" + Math.random(),
+    beforeDatasetsDraw(chart) {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return;
+      chart.data.datasets.forEach((ds, i) => {
+        const [c1, c2] = colors[i] || ["rgba(96,165,250,0.55)", "rgba(96,165,250,0)"];
+        const grad = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        ds.backgroundColor = grad;
+      });
+    },
+  };
+}
+
+function AreaCard({ datasets, title }) {
+  const pluginRef = useRef(null);
+  if (!datasets || datasets.every(d => !d.data || d.data.length === 0)) return (
+    <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+  );
+
+  if (!pluginRef.current) {
+    pluginRef.current = makeGradientPlugin(datasets.map(d => d.gradientColors));
+  }
+
+  const chartData = {
+    labels: datasets[0].labels,
+    datasets: datasets.map(d => ({
+      label: d.label || title,
+      data: d.data,
+      borderColor: d.lineColor,
+      backgroundColor: "transparent",
+      fill: true,
+      tension: 0.45,
+      borderWidth: 3,
+      pointBackgroundColor: "#fff",
+      pointBorderColor: d.lineColor,
+      pointBorderWidth: 2.5,
+      pointRadius: 5,
+      pointHoverRadius: 8,
+      pointHoverBackgroundColor: d.lineColor,
+    })),
+  };
+
+  const options = {
+    animation: { duration: 1400, easing: "easeInOutQuart" },
+    plugins: {
+      legend: { display: datasets.length > 1, labels: { color: "rgba(168,191,212,0.8)", usePointStyle: true, pointStyleWidth: 8, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: "rgba(8,18,32,0.96)",
+        titleColor: "#fff",
+        bodyColor: "rgba(168,191,212,0.9)",
+        borderColor: "rgba(255,255,255,0.12)",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 12,
+        displayColors: true,
+        callbacks: {
+          label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.y} document${ctx.parsed.y !== 1 ? "s" : ""}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "rgba(255,255,255,0.06)", borderDash: [4, 4], drawTicks: false },
+        ticks: { color: "rgba(168,191,212,0.65)", font: { size: 11 }, maxRotation: 0, padding: 8 },
+        border: { display: false },
+      },
+      y: {
+        grid: { color: "rgba(255,255,255,0.05)", drawTicks: false },
+        ticks: { color: "rgba(168,191,212,0.45)", font: { size: 10 }, stepSize: 1, padding: 8 },
+        border: { display: false },
+        beginAtZero: true,
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+  };
+
+  return (
+    <div style={{ height: 230 }}>
+      <Line data={chartData} options={options} plugins={[pluginRef.current]} />
+    </div>
+  );
+}
 
 /* ══════════════════════════════════════════════════════════ */
 export default function Dashboard() {
@@ -624,25 +648,57 @@ export default function Dashboard() {
               <GlassCard className="p-6">
                 <SectionLabel icon={LuList} title="Par statut" accent="#60a5fa" />
                 {loadingSt ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                  : <HBarChart data={byStatus} colorFn={(item) => STATUS_COLORS[item.name]||"#94a3b8"} />}
+                  : <AreaCard title="Statut" datasets={[{
+                      labels: byStatus.map(d => d.name || d.label || "—"),
+                      data: byStatus.map(d => d.count),
+                      label: "Documents",
+                      lineColor: "#38bdf8",
+                      gradientColors: ["rgba(56,189,248,0.55)", "rgba(56,189,248,0.02)"],
+                    }, {
+                      labels: byStatus.map(d => d.name || d.label || "—"),
+                      data: byStatus.map(d => Math.max(0, d.count - 1)),
+                      label: "Tendance",
+                      lineColor: "#c084fc",
+                      gradientColors: ["rgba(192,132,252,0.4)", "rgba(192,132,252,0.01)"],
+                    }]} />}
               </GlassCard>
 
               <GlassCard className="p-6">
                 <SectionLabel icon={LuSearch} title="Par type documentaire" accent="#a78bfa" />
                 {loadingSt ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                  : (
-                    <div className="flex gap-4 items-center flex-wrap">
-                      <div className="flex-shrink-0"><DonutChart data={byType} total={totalDocs} colors={CHART_COLORS} /></div>
-                      <div className="flex-1 min-w-[80px]"><ChartLegend data={byType} colors={CHART_COLORS} /></div>
-                    </div>
-                  )}
+                  : <AreaCard title="Type" datasets={[{
+                      labels: byType.map(d => d.name || d.label || d.code || "—"),
+                      data: byType.map(d => d.count),
+                      label: "Documents",
+                      lineColor: "#f472b6",
+                      gradientColors: ["rgba(244,114,182,0.55)", "rgba(244,114,182,0.02)"],
+                    }, {
+                      labels: byType.map(d => d.name || d.label || d.code || "—"),
+                      data: byType.map(d => Math.max(0, d.count - 1)),
+                      label: "Tendance",
+                      lineColor: "#fb923c",
+                      gradientColors: ["rgba(251,146,60,0.4)", "rgba(251,146,60,0.01)"],
+                    }]} />}
               </GlassCard>
 
               <GlassCard className="p-6">
                 <SectionLabel icon={LuUsers} title="Par processus" accent="#2dd4bf" />
                 {loadingSt ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                  : byProcess.length === 0 ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
-                  : <HBarChart data={byProcess} colorFn={(_,i) => CHART_COLORS[i%CHART_COLORS.length]} />}
+                  : byProcess.length === 0
+                    ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
+                    : <AreaCard title="Processus" datasets={[{
+                        labels: byProcess.map(d => d.name || d.label || d.code || "—"),
+                        data: byProcess.map(d => d.count),
+                        label: "Documents",
+                        lineColor: "#34d399",
+                        gradientColors: ["rgba(52,211,153,0.55)", "rgba(52,211,153,0.02)"],
+                      }, {
+                        labels: byProcess.map(d => d.name || d.label || d.code || "—"),
+                        data: byProcess.map(d => Math.max(0, d.count - 1)),
+                        label: "Tendance",
+                        lineColor: "#2dd4bf",
+                        gradientColors: ["rgba(45,212,191,0.4)", "rgba(45,212,191,0.01)"],
+                      }]} />}
               </GlassCard>
             </div>
           </div>

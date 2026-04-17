@@ -30,6 +30,29 @@
   --dk-shadow-lg:    0 20px 60px rgba(0,0,0,0.4);
 }
 
+/* ══════════════════════════════════════════════════════════
+   ACTIA Logo — Dynamic global animation
+   ══════════════════════════════════════════════════════════ */
+@keyframes actiaBreath {
+  0%, 100% {
+    filter: drop-shadow(0 2px 8px rgba(74,184,63,0.22));
+    opacity: 0.9;
+  }
+  50% {
+    filter: drop-shadow(0 2px 18px rgba(74,184,63,0.5)) drop-shadow(0 0 8px rgba(74,184,63,0.2));
+    opacity: 1;
+  }
+}
+
+.actia-logo {
+  animation: actiaBreath 3s ease-in-out infinite;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.actia-logo:hover {
+  transform: scale(1.06);
+}
+
 @layer base {
   body {
     background-color: var(--actia-bg);

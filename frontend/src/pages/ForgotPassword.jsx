@@ -109,7 +109,7 @@ export default function ForgotPassword() {
         >
           {/* Logo */}
           <div className="mb-8">
-            <img src={logoImg} alt="ACTIA ES" className="h-14 w-auto" style={{ filter:"drop-shadow(0 4px 16px rgba(74,184,63,0.25))" }} />
+            <img src={logoImg} alt="ACTIA ES" className="actia-logo h-14 w-auto" />
           </div>
 
           {sent ? (

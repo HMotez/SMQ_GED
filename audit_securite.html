@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Audit Sécurité — SMQ GED</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 11px;
+      color: #1e293b;
+      background: #fff;
+      line-height: 1.5;
+    }
+
+    /* ── PAGE LAYOUT ── */
+    .page {
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 12mm 14mm;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #1d4ed8;
+      margin-bottom: 18px;
+    }
+    .header-left h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1d4ed8;
+      letter-spacing: -0.3px;
+    }
+    .header-left h2 {
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .header-right {
+      text-align: right;
+      font-size: 10px;
+      color: #64748b;
+    }
+    .header-right .badge {
+      display: inline-block;
+      background: #1d4ed8;
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+
+    /* ── META INFO ── */
+    .meta-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .meta-item {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 10px;
+    }
+    .meta-item strong { color: #1d4ed8; }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+      padding: 7px 14px;
+      border-radius: 6px;
+      margin: 20px 0 10px;
+      letter-spacing: 0.2px;
+    }
+
+    .subsection-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #1d4ed8;
+      border-left: 3px solid #1d4ed8;
+      padding-left: 8px;
+      margin: 14px 0 6px;
+    }
+
+    /* ── TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+      font-size: 10px;
+    }
+    thead tr {
+      background: #e8f0fe;
+    }
+    thead th {
+      padding: 7px 10px;
+      text-align: left;
+      font-weight: 600;
+      color: #1e3a8a;
+      border: 1px solid #c7d7f5;
+    }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody tr:hover { background: #eff6ff; }
+    tbody td {
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    /* ── STATUS BADGES ── */
+    .badge-ok {
+      display: inline-block;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 9.5px;
+      white-space: nowrap;
+    }
+    .badge-missing {
+      display: inline-block;
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 9.5px;
+      white-space: nowrap;
+    }
+    .badge-partial {
+      display: inline-block;
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fdba74;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 9.5px;
+      white-space: nowrap;
+    }
+
+    /* ── PRIORITY TAGS ── */
+    .prio-critical {
+      display: inline-block;
+      background: #7f1d1d;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .prio-high {
+      display: inline-block;
+      background: #c2410c;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .prio-medium {
+      display: inline-block;
+      background: #d97706;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+    .summary-card {
+      border-radius: 8px;
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid;
+    }
+    .card-ok    { background: #f0fdf4; border-color: #86efac; }
+    .card-miss  { background: #fef2f2; border-color: #fca5a5; }
+    .card-part  { background: #fff7ed; border-color: #fdba74; }
+    .card-total { background: #eff6ff; border-color: #93c5fd; }
+    .summary-card .num {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .card-ok   .num { color: #15803d; }
+    .card-miss .num { color: #b91c1c; }
+    .card-part .num { color: #c2410c; }
+    .card-total .num { color: #1d4ed8; }
+    .summary-card .lbl {
+      font-size: 9.5px;
+      font-weight: 600;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── CODE INLINE ── */
+    code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 9px;
+      color: #7c3aed;
+    }
+
+    /* ── RECOMMENDATIONS SECTION ── */
+    .rec-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      border-left: 4px solid;
+    }
+    .rec-critical { background: #fff1f2; border-color: #ef4444; }
+    .rec-high     { background: #fff7ed; border-color: #f97316; }
+    .rec-medium   { background: #fefce8; border-color: #eab308; }
+    .rec-item .rec-num {
+      font-size: 11px;
+      font-weight: 700;
+      min-width: 20px;
+    }
+    .rec-critical .rec-num { color: #b91c1c; }
+    .rec-high     .rec-num { color: #c2410c; }
+    .rec-medium   .rec-num { color: #a16207; }
+    .rec-item .rec-body { flex: 1; }
+    .rec-item .rec-title { font-weight: 600; font-size: 10.5px; margin-bottom: 2px; }
+    .rec-item .rec-detail { font-size: 9.5px; color: #64748b; }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: 24px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body { font-size: 10px; }
+      .page { padding: 8mm 10mm; }
+      .section-title { break-before: avoid; }
+      table { break-inside: avoid; }
+      .rec-item { break-inside: avoid; }
+      .summary-grid { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Audit Sécurité — Application Web SMQ GED</h1>
+      <h2>Étude de cas : Projet Équipe DESK — ACTIA Engineering Services</h2>
+    </div>
+    <div class="header-right">
+      <div class="badge">ISO 9001 — GED</div><br/>
+      Date : 14 Avril 2026<br/>
+      Version : 1.0<br/>
+      Auditeur : Motez HM
+    </div>
+  </div>
+
+  <!-- META INFO -->
+  <div class="meta-bar">
+    <div class="meta-item"><strong>Projet :</strong> SMQ_GED</div>
+    <div class="meta-item"><strong>Stack :</strong> Node.js / React / PostgreSQL / Docker / Kafka</div>
+    <div class="meta-item"><strong>Branche :</strong> main</div>
+    <div class="meta-item"><strong>Référentiel :</strong> OWASP + Bonnes pratiques ANSSI</div>
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-grid">
+    <div class="summary-card card-ok">
+      <div class="num">7</div>
+      <div class="lbl">✅ Implémenté</div>
+    </div>
+    <div class="summary-card card-miss">
+      <div class="num">8</div>
+      <div class="lbl">❌ Manquant</div>
+    </div>
+    <div class="summary-card card-part">
+      <div class="num">6</div>
+      <div class="lbl">⚠️ Partiel</div>
+    </div>
+    <div class="summary-card card-total">
+      <div class="num">21</div>
+      <div class="lbl">Total critères</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: DEVELOPPEMENT -->
+  <div class="section-title">Recommandations au cours du développement</div>
+
+  <!-- Authentification -->
+  <div class="subsection-title">Authentification</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Utilisation d'un annuaire LDAP</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Authentification locale uniquement, pas d'intégration LDAP/Active Directory</td>
+        <td><code>authController.js</code></td>
+      </tr>
+      <tr>
+        <td>Politique complexe de mot de passe</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Seulement longueur minimale 6 caractères — pas de règle majuscule, chiffre, ou caractère spécial</td>
+        <td><code>authController.js:249</code></td>
+      </tr>
+      <tr>
+        <td>Protection contre le Brute Force</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Aucun rate limiting, aucun blocage de compte après N tentatives échouées. Le login endpoint accepte des tentatives illimitées</td>
+        <td><code>authController.js:116</code></td>
+      </tr>
+      <tr>
+        <td>Anti-énumération de comptes (messages génériques)</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Le même message d'erreur est retourné pour email inexistant et mot de passe incorrect : "Email ou mot de passe incorrect."</td>
+        <td><code>authController.js:137</code></td>
+      </tr>
+      <tr>
+        <td>Délai d'attente de session inactive</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Seulement une expiration JWT fixe de 8h — aucun mécanisme de timeout sur inactivité</td>
+        <td><code>authController.js:15</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Gestion des sessions -->
+  <div class="subsection-title">Gestion des sessions</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Session invalide après déconnexion</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>La fonction <code>logout()</code> retourne juste un 200 OK. Le JWT reste valide jusqu'à son expiration naturelle (8h). Aucune blacklist de tokens.</td>
+        <td><code>authController.js:301</code></td>
+      </tr>
+      <tr>
+        <td>Bouton de déconnexion accessible sur chaque page</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Bouton de déconnexion présent et accessible dans la navigation du frontend</td>
+        <td>Frontend React</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Protection données en transit -->
+  <div class="subsection-title">Protection des données en transit</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Utiliser le protocole SSL</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Nginx écoute uniquement sur le port 80 en HTTP. Aucune configuration HTTPS/TLS.</td>
+        <td><code>nginx.conf:11</code></td>
+      </tr>
+      <tr>
+        <td>Certificats SSL valides (CA reconnue)</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Aucun certificat SSL configuré. Le backend est exposé sur le port 4000 en clair.</td>
+        <td><code>docker-compose.yml:88</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Gestion des entrées/sorties -->
+  <div class="subsection-title">Gestion des entrées et sorties</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Valider la source de l'entrée (GET/POST)</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Validation manuelle basique sans librairie dédiée (joi / express-validator). Certaines validations sont manquantes ou incomplètes.</td>
+        <td><code>authController.js:236</code></td>
+      </tr>
+      <tr>
+        <td>Valider les fichiers soumis (type, taille, MIME)</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Whitelist MIME stricte (PDF/DOCX/XLSX uniquement), limite de 50 MB, renommage sécurisé des fichiers uploadés.</td>
+        <td><code>upload.js:56</code></td>
+      </tr>
+      <tr>
+        <td>Headers CSP / X-XSS-Protection</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Pas de <code>helmet.js</code> installé. Aucun header de sécurité (CSP, X-XSS-Protection, X-Content-Type-Options, HSTS).</td>
+        <td><code>server.js</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Contrôle d'accès -->
+  <div class="subsection-title">Contrôle d'accès</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Principe du moindre privilège</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>RBAC granulaire avec rôles définis (Admin GED, Ing. Qualité, Validateur, Reviewer). Permissions par rôle strictement définies.</td>
+        <td><code>roleMiddleware.js:17</code></td>
+      </tr>
+      <tr>
+        <td>Vérifications contrôle d'accès systématiques</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Middleware <code>requireRole()</code> appliqué systématiquement sur toutes les routes sensibles. Médiation complète.</td>
+        <td><code>roleMiddleware.js:95</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Gestion des erreurs -->
+  <div class="subsection-title">Gestion des erreurs</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Messages d'erreurs génériques (sans fuite interne)</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Le handler global expose <code>err.message</code> brut. Les routes de conversion fuitent les erreurs LibreOffice/Python vers le client.</td>
+        <td><code>server.js:190</code></td>
+      </tr>
+      <tr>
+        <td>Gérer toutes les exceptions</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Handler global présent mais laisse passer des détails systèmes. Certains contrôleurs exposent <code>err.message</code> directement.</td>
+        <td><code>documentController.js:226</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 2: DÉPLOIEMENT -->
+  <div class="section-title">Recommandations liées au déploiement et à la mise en production</div>
+
+  <!-- Infrastructure -->
+  <div class="subsection-title">Endurcissement de l'infrastructure</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Application sur machine dédiée</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Chaque service (DB, Kafka, Backend, Frontend) est isolé dans son propre conteneur Docker.</td>
+        <td><code>docker-compose.yml</code></td>
+      </tr>
+      <tr>
+        <td>Désinstaller les services inutiles</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Images Docker minimalistes, pas de services superflus exposés.</td>
+        <td><code>docker-compose.yml</code></td>
+      </tr>
+      <tr>
+        <td>Masquer les versions/technologies utilisées</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Pas de <code>server_tokens off</code> dans Nginx. L'en-tête <code>X-Powered-By: Express</code> est exposé. Les versions des technologies sont visibles.</td>
+        <td><code>nginx.conf</code>, <code>server.js</code></td>
+      </tr>
+      <tr>
+        <td>Supprimer les comptes par défaut du système</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Des utilisateurs par défaut avec des mots de passe prévisibles sont présents dans le script d'initialisation (Admin123!, Ing123!).</td>
+        <td><code>authController.js:20</code></td>
+      </tr>
+      <tr>
+        <td>Mise en place d'un WAF</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td>Aucun pare-feu applicatif web configuré pour détecter les attaques zero-day.</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Administration -->
+  <div class="subsection-title">Administration</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Protocoles sécurisés (SSH, SFTP, HTTPS)</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Pas de HTTPS configuré pour l'accès à l'application. L'administration peut se faire via SSH mais l'app tourne en HTTP.</td>
+        <td><code>nginx.conf</code></td>
+      </tr>
+      <tr>
+        <td>Ne pas exposer les interfaces d'administration</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Le port backend 4000 est exposé publiquement dans docker-compose, permettant un accès direct à l'API sans passer par Nginx.</td>
+        <td><code>docker-compose.yml:88</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Journaux -->
+  <div class="subsection-title">Journaux d'audit</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Conserver des journaux d'audit complets</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Table <code>logs</code> présente. Actions enregistrées : CREATE, UPDATE, STATUS_CHANGE, VALIDATION avec user_id, document_id et timestamp.</td>
+        <td><code>logController.js</code></td>
+      </tr>
+      <tr>
+        <td>Surveillance et alertes efficaces</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Logs présents et accessibles aux admins, mais pas de système d'alerte temps-réel ni de détection d'anomalies automatisée.</td>
+        <td><code>logController.js</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Gestion BD -->
+  <div class="subsection-title">Gestion de la base de données</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Règle</th>
+        <th style="width:12%">Statut</th>
+        <th>Description / Constat</th>
+        <th style="width:22%">Fichier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Mots de passe forts pour la BD</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Mot de passe PostgreSQL configuré via variable d'environnement. Non exposé dans le code source.</td>
+        <td><code>.env</code></td>
+      </tr>
+      <tr>
+        <td>TLS pour communications BD</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>Communication via réseau Docker interne isolé (<code>smq_network</code>). La BD n'est pas exposée à l'extérieur.</td>
+        <td><code>docker-compose.yml</code></td>
+      </tr>
+      <tr>
+        <td>Surveillance des accès non autorisés BD</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Pas de monitoring spécifique des tentatives d'accès à la base de données.</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>Moindre privilège pour l'accès BD</td>
+        <td><span class="badge-partial">⚠️ Partiel</span></td>
+        <td>Un seul utilisateur PostgreSQL <code>postgres</code> (superuser) utilisé pour toutes les opérations. Devrait être un user limité.</td>
+        <td><code>.env</code></td>
+      </tr>
+      <tr>
+        <td>Protection injection SQL</td>
+        <td><span class="badge-ok">✅ OK</span></td>
+        <td>100% des requêtes utilisent des paramètres préparés ($1, $2…). Aucune concaténation de chaînes SQL détectée.</td>
+        <td>Tous les controllers</td>
+      </tr>
+      <tr>
+        <td>CORS restrictif</td>
+        <td><span class="badge-missing">❌ Manquant</span></td>
+        <td><code>app.use(cors())</code> sans restriction — accepte toutes les origines. En production, doit être limité aux domaines autorisés.</td>
+        <td><code>server.js:20</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section-title">Plan de correction — Priorités</div>
+
+  <div class="rec-item rec-critical">
+    <div class="rec-num">1</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-critical">CRITIQUE</span> &nbsp; Protection Brute Force — Rate Limiting</div>
+      <div class="rec-detail">Installer <code>express-rate-limit</code> sur le endpoint <code>POST /api/auth/login</code>. Bloquer le compte 15min après 3 tentatives échouées. Fichier : <code>authController.js:116</code> + <code>authRoutes.js:11</code></div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-critical">
+    <div class="rec-num">2</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-critical">CRITIQUE</span> &nbsp; Invalidation du JWT à la déconnexion</div>
+      <div class="rec-detail">Implémenter une blacklist de tokens en Redis ou en base de données. La fonction <code>logout()</code> doit ajouter le JTI du token à cette liste. Fichier : <code>authController.js:301</code></div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-critical">
+    <div class="rec-num">3</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-critical">CRITIQUE</span> &nbsp; HTTPS / SSL en production</div>
+      <div class="rec-detail">Configurer un certificat SSL (Let's Encrypt/Certbot) dans Nginx. Rediriger le port 80 vers 443. Fichier : <code>nginx.conf:11</code>, <code>docker-compose.yml</code></div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-high">
+    <div class="rec-num">4</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-high">IMPORTANT</span> &nbsp; Headers de sécurité HTTP (helmet.js)</div>
+      <div class="rec-detail">Installer <code>npm install helmet</code> et ajouter <code>app.use(helmet())</code> dans <code>server.js</code>. Ajoute automatiquement CSP, X-XSS-Protection, HSTS, X-Frame-Options, X-Content-Type-Options.</div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-high">
+    <div class="rec-num">5</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-high">IMPORTANT</span> &nbsp; Restreindre la politique CORS</div>
+      <div class="rec-detail">Remplacer <code>app.use(cors())</code> par <code>app.use(cors({ origin: process.env.ALLOWED_ORIGINS }))</code> avec la liste des domaines autorisés. Fichier : <code>server.js:20</code></div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-high">
+    <div class="rec-num">6</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-high">IMPORTANT</span> &nbsp; Renforcer la politique de mots de passe</div>
+      <div class="rec-detail">Exiger minimum 8 caractères avec au moins une majuscule, un chiffre et un caractère spécial. Fichier : <code>authController.js:249</code> et <code>:401</code></div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-medium">
+    <div class="rec-num">7</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-medium">MOYEN</span> &nbsp; Masquer les messages d'erreur internes</div>
+      <div class="rec-detail">Remplacer <code>res.json({ error: err.message })</code> par un message générique "Erreur serveur." avec log interne uniquement. Fichier : <code>server.js:190</code></div>
+    </div>
+  </div>
+
+  <div class="rec-item rec-medium">
+    <div class="rec-num">8</div>
+    <div class="rec-body">
+      <div class="rec-title"><span class="prio-medium">MOYEN</span> &nbsp; Ne pas exposer le port backend 4000</div>
+      <div class="rec-detail">Supprimer la section <code>ports: "4000:4000"</code> du service backend dans <code>docker-compose.yml:88</code>. L'API doit être accessible uniquement via Nginx (port 80/443).</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>SMQ GED — Audit Sécurité v1.0 — ACTIA Engineering Services</span>
+    <span>Généré le 14 Avril 2026 — Confidentiel</span>
+  </div>
+
+</div>
+</body>
+</html>

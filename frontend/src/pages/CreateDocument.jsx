@@ -194,7 +194,8 @@ export default function CreateDocument() {
     typeCode:"", origin:"INTERNE", context:"", keywords:"",
   });
 
-  const [file,    setFile]    = useState(null);
+  const [file,           setFile]           = useState(null);
+  const [sharepointLink, setSharepointLink] = useState("");
   const [message, setMessage] = useState("");
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -265,15 +266,16 @@ export default function CreateDocument() {
       fd.append("folderId",       getFolderId());
       fd.append("processId",      getProcessId());
       fd.append("origin",         form.origin);
-      if (form.context)  fd.append("context",  form.context);
-      if (form.keywords) fd.append("keywords", form.keywords);
+      if (form.context)   fd.append("context",         form.context);
+      if (form.keywords)  fd.append("keywords",        form.keywords);
+      if (sharepointLink) fd.append("sharepoint_link", sharepointLink.trim());
       fd.append("userId", currentUser?.id);
       fd.append("file",   file);
 
       const res = await axios.post(`${API}/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       setMessage(res.data.document.doc_code);
       setForm({ title:"", responsible:"", nextReviewDate:"", typeCode:"", origin:"INTERNE", context:"", keywords:"" });
-      setFile(null); setSelectedL1(""); setSelectedL2(""); setSelectedL3(""); setStep(1);
+      setFile(null); setSharepointLink(""); setSelectedL1(""); setSelectedL2(""); setSelectedL3(""); setStep(1);
       document.getElementById("fileInput").value = "";
     } catch (err) {
       setError(err.response?.data?.error || "Erreur lors de l'enregistrement.");
@@ -623,6 +625,22 @@ export default function CreateDocument() {
                   <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xlsx,.xls"
                     onChange={e => setFile(e.target.files?.[0] || null)} className="hidden" />
                 </label>
+
+                {/* SharePoint link */}
+                <div className="mb-6">
+                  <label className="block text-xs uppercase tracking-wider font-semibold mb-1.5"
+                    style={{ color:"rgba(168,191,212,0.6)" }}>
+                    Lien SharePoint <span style={{ color:"rgba(168,191,212,0.35)", fontWeight:400, textTransform:"none" }}>(optionnel)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={sharepointLink}
+                    onChange={e => setSharepointLink(e.target.value)}
+                    placeholder="https://mohetn.sharepoint.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all"
+                    style={{ background:"rgba(255,255,255,0.04)", borderColor: sharepointLink ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.10)", color:"rgba(255,255,255,0.85)", fontFamily:"inherit" }}
+                  />
+                </div>
 
                 {/* Summary */}
                 <div className="rounded-2xl border p-6 mb-6"

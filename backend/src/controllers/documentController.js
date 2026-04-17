@@ -56,10 +56,11 @@ const createDocument = async (req, res) => {
       typeCode,
       userId,
       processId,
-      origin     = "INTERNE",
+      origin          = "INTERNE",
       context,
       projectRef,
       keywords,
+      sharepoint_link,
     } = req.body;
 
     // 1. Validation champs obligatoires
@@ -178,12 +179,12 @@ const createDocument = async (req, res) => {
     // 9. Version initiale "-" (EF04)
     await client.query(
       `INSERT INTO versions
-         (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+         (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary, sharepoint_link)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         document.id, initialVersion,
         req.file.relativePath, req.file.originalname, req.file.size, req.file.mimetype,
-        "Version initiale",
+        "Version initiale", sharepoint_link || null,
       ]
     );
 
@@ -528,6 +529,16 @@ const updateDocument = async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [docId, next, newRelFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim(), sharepoint_link || null]
     );
+
+    // Back-propagate sharepoint_link to v- entry if it has none
+    if (sharepoint_link) {
+      await client.query(
+        `UPDATE versions SET sharepoint_link = $1
+         WHERE document_id = $2 AND version_letter IN ('v-', '-')
+           AND (sharepoint_link IS NULL OR sharepoint_link = '')`,
+        [sharepoint_link, docId]
+      );
+    }
 
     // 9a. Log VERSION_SUPERSEDED pour la version remplacée — EF11 (Archivage si version remplacée)
     if (cur !== "-") {

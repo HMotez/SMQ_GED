@@ -269,7 +269,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                       <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                         <span className="rounded-xl px-3 py-1 text-sm font-black border"
                           style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
-                          {v.version_letter}
+                          {v.version_letter === "-" ? "v-" : v.version_letter}
                         </span>
                         {isLast && (
                           <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color:"#4ab83f" }}>Actuelle</span>

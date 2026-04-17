@@ -381,8 +381,7 @@ function Navbar({ onOpenLogin = () => {} }) {
             <img
               src={logoImg}
               alt="ACTIA ES"
-              className="h-12 w-auto transition-opacity duration-200 opacity-90 hover:opacity-100"
-              style={{ filter: "drop-shadow(0 2px 16px rgba(74,184,63,0.45))" }}
+              className="actia-logo h-12 w-auto"
             />
           </NavLink>
 

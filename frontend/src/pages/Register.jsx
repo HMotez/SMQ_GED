@@ -174,7 +174,7 @@ export default function Register() {
         <div className="flex-shrink-0 rounded-2xl" style={{ width:430, padding:"36px 32px", background:"rgba(255,255,255,0.045)", backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)", border:"1px solid rgba(255,255,255,0.1)", boxShadow:"0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
 
           <div className="mb-7">
-            <img src={logoImg} alt="ACTIA ES" className="h-14 w-auto" style={{ filter:"drop-shadow(0 4px 16px rgba(74,184,63,0.25))" }} />
+            <img src={logoImg} alt="ACTIA ES" className="actia-logo h-14 w-auto" />
           </div>
 
           <h1 className="text-white text-[24px] font-black m-0 mb-1.5" style={{ letterSpacing:-0.7 }}>Créer un compte</h1>

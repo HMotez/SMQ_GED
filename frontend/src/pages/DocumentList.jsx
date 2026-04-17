@@ -822,7 +822,7 @@ export default function DocumentList() {
                     return (
                     <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex justify-between items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-white">{v.version_letter}</span>
+                        <span className="font-mono font-bold text-sm text-white">{v.version_letter === "-" ? "v-" : v.version_letter}</span>
                         <span className="text-sm flex-1" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
                         {canInteract && (
                           <div className="flex gap-1.5">
