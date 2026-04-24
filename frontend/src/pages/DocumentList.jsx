@@ -227,7 +227,7 @@ export default function DocumentList() {
   const initialFilters = (() => {
     const p = new URLSearchParams(location.search);
     return {
-      keyword: "", docCode: "", typeId: "", processId: "", responsible: "",
+      keyword: "", docCode: "", typeId: p.get("typeId") || "", processId: p.get("folderId") || "", responsible: "",
       statusName: p.get("statusName") || "",
       overdue: p.get("overdue") === "true",
     };
@@ -346,7 +346,7 @@ export default function DocumentList() {
       if (!response.ok) { const err = await response.json().catch(()=>({})); throw new Error(err.error||"Erreur serveur"); }
       const blob = await response.blob(); const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = blobUrl; link.download = filename.replace(/\.[^/.]+$/, "") + "." + ext;
+      link.href = blobUrl; link.download = filename.split("/").pop().replace(/\.[^/.]+$/, "") + "." + ext;
       document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(blobUrl);
     } catch(e) { toast.error(e.message || "Erreur de téléchargement"); }
   };
@@ -836,7 +836,7 @@ export default function DocumentList() {
                         )}
                       </div>
                       {v.change_summary && <p className="m-0 mt-1 text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>{v.change_summary}</p>}
-                      {v.sharepoint_link && (
+                      {v.sharepoint_link && v.version_letter !== "-" && (
                         <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
                           className="mt-1 inline-flex items-center gap-1 text-xs font-medium"
                           style={{ color:"#60a5fa" }}>
@@ -981,8 +981,8 @@ export default function DocumentList() {
                 style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Lien SharePoint <span style={{ color:"#ef4444" }}>*</span></label>
-              <input required type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
+              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Lien SharePoint <span style={{ color:"rgba(168,191,212,0.35)", fontWeight:400, textTransform:"none" }}>(optionnel)</span></label>
+              <input type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
                 className="w-full px-3 py-1.5 rounded-lg border text-sm outline-none"
                 style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>

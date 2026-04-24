@@ -9,7 +9,8 @@
 // ============================================================
 
 const pool = require("../db");
-const { verifyToken } = require("../controllers/authController");
+const { verifyToken, isTokenBlacklisted } = require("../controllers/authController");
+const { auditLog } = require("../utils/auditLog");
 
 // ─────────────────────────────────────────────────────────────
 // Permissions par rôle
@@ -54,6 +55,11 @@ const loadUser = async (req, _res, next) => {
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     try {
+      // Rejeter les tokens invalidés après déconnexion
+      if (await isTokenBlacklisted(token)) {
+        req.currentUser = null;
+        return next();
+      }
       const payload = verifyToken(token);
       req.currentUser = {
         id:    payload.sub,
@@ -94,6 +100,8 @@ const loadUser = async (req, _res, next) => {
 // ─────────────────────────────────────────────────────────────
 const requireRole = (...allowedRoles) => (req, res, next) => {
   if (!req.currentUser) {
+    auditLog({ action: "ACCESS_DENIED_401", severity: "warning",
+      details: { path: req.originalUrl, method: req.method }, req });
     return res.status(401).json({
       error: "Authentification requise. Sélectionnez un utilisateur.",
       code:  "NO_USER",
@@ -101,6 +109,8 @@ const requireRole = (...allowedRoles) => (req, res, next) => {
   }
   const role = req.currentUser.role;
   if (!allowedRoles.includes(role)) {
+    auditLog({ action: "ACCESS_DENIED_403", userId: req.currentUser.id, severity: "warning",
+      details: { path: req.originalUrl, method: req.method, role, required: allowedRoles }, req });
     return res.status(403).json({
       error: `Accès refusé. Votre rôle (${role}) ne permet pas cette action.`,
       code:  "FORBIDDEN",

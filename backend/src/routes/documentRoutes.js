@@ -8,6 +8,7 @@ const router  = express.Router();
 const { upload } = require("../upload");
 const ctrl    = require("../controllers/documentController");
 const { loadUser, requireRole } = require("../middleware/roleMiddleware");
+const { virusScanMiddleware } = require("../middleware/virusScan");
 
 // ── Routes statiques de lecture (avant /:id) — accès libre ──
 router.get(  "/statuses",           ctrl.getStatuses);
@@ -37,6 +38,7 @@ router.post( "/",
   loadUser,
   requireRole("Admin", "Ing. Qualité"),
   upload.single("file"),
+  virusScanMiddleware,
   ctrl.createDocument
 );
 
@@ -51,6 +53,7 @@ router.put(  "/:id",
   loadUser,
   requireRole("Admin", "Ing. Qualité"),
   upload.single("file"),
+  virusScanMiddleware,
   ctrl.updateDocument
 );
 

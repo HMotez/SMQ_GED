@@ -1,5 +1,6 @@
 # =============================================================
 # SMQ_GED — Docker Compose  (ACTIA Engineering Services)
+# Sprint 42 — Endurcissement infrastructure
 # =============================================================
 
 services:
@@ -13,10 +14,15 @@ services:
       POSTGRES_USER:     ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB:       ${DB_NAME}
+    # Logging : detect unauthorized connections (Gestion BD)
+    command: >
+      postgres
+        -c log_connections=on
+        -c log_disconnections=on
+        -c log_statement=ddl
+        -c log_min_duration_statement=2000
     volumes:
-      # Persistent data — survives container restarts
       - pgdata:/var/lib/postgresql/data
-      # Init script — runs ONCE automatically on first startup (empty pgdata)
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - smq_network
@@ -55,66 +61,125 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
       interval: 15s
-      timeout: 10s
-      retries: 5
+      timeout:  10s
+      retries:  5
       start_period: 30s
+
+  # ── ClamAV Antivirus (Endurcissement infrastructure) ─────────
+  clamav:
+    image: clamav/clamav:stable
+    container_name: smq_clamav
+    restart: unless-stopped
+    environment:
+      CLAMAV_NO_CLAMD:    "false"
+      CLAMAV_NO_FRESHCLAM: "false"
+      FRESHCLAM_CHECKS:   "1"
+    volumes:
+      - clamav_db:/var/lib/clamav
+    networks:
+      - smq_network
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 60s
+      timeout:  10s
+      retries:  3
+      start_period: 120s
 
   # ── Backend API (Node.js / Express) ─────────────────────────
   backend:
     build:
       context:    ./backend
       dockerfile: Dockerfile
-    # Tag versionné — incrémentez pour forcer le rebuild sur les nœuds distants
-    image: smq_ged-backend:sprint27
+    image: smq_ged-backend:sprint43
     container_name: smq_backend
     restart: unless-stopped
-    # All variables come from the root .env file (docker-compose default)
-    # Values defined there are used both for ${VAR} interpolation in this
-    # file and as container environment variables via env_file below.
     env_file:
       - .env
     environment:
-      # Ensure DB_HOST always points to the postgres service name,
-      # regardless of what is in .env
-      DB_HOST: postgres
+      DB_HOST:     postgres
+      DB_SSL:      "false"
       GROQ_API_KEY: ${GROQ_API_KEY}
-      UPLOAD_DIR: /app/storage
+      UPLOAD_DIR:  /app/storage
+      # ClamAV antivirus service (virusScanMiddleware)
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
     volumes:
-      # Disque réel ACTIA ES → monté dans le conteneur comme /app/storage
-      # Remplacez C:/ACTIA ES par le chemin réel de votre disque (ex: Q:/ACTIA ES)
       - "/app/storage:/app/storage"
-    ports:
-      # Exposed so Docker Desktop users can also test the API directly
-      - "4000:4000"
+    # Backend not exposed to host — only reachable via nginx (HTTPS + WAF)
+    expose:
+      - "4000"
     networks:
       - smq_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      clamav:
+        condition: service_started
 
-  # ── Frontend (React + Nginx) ─────────────────────────────────
+  # ── Backup automatique PostgreSQL (Gestion des sauvegardes) ──
+  backup:
+    image: postgres:16-alpine
+    container_name: smq_backup
+    restart: unless-stopped
+    environment:
+      PGPASSWORD:  ${DB_PASSWORD}
+      DB_HOST:     postgres
+      DB_USER:     ${DB_USER}
+      DB_NAME:     ${DB_NAME}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/docker-backup.sh:/docker-backup.sh:ro
+    networks:
+      - smq_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/docker-backup.sh"]
+
+  # ── Frontend (React + Nginx + WAF) ───────────────────────────
   frontend:
     build:
       context:    ./frontend
       dockerfile: Dockerfile
       args:
-        # These are baked into the JS bundle at build time by Vite
-        # Empty VITE_BACKEND_URL → relative paths (/download/, /preview/)
-        # proxied by Nginx to backend:4000
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
-    # Tag versionné — incrémentez pour forcer le rebuild sur les nœuds distants
-    image: smq_ged-frontend:sprint41
+    image: smq_ged-frontend:sprint43
     container_name: smq_frontend
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/certs:/etc/nginx/certs:ro
     networks:
       - smq_network
     depends_on:
       - backend
+
+  # ── Trivy — Scanner de vulnérabilités (profile audit) ────────
+  # Utilisation : docker compose --profile audit run --rm trivy
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: smq_trivy
+    profiles: ["audit"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - trivy-cache:/root/.cache/trivy
+      - ./reports/security:/reports
+    command: >
+      image --severity HIGH,CRITICAL --no-progress
+      smq_ged-backend:sprint43
+    networks:
+      - smq_network
 
 # ── Named Volumes ─────────────────────────────────────────────
 volumes:
@@ -124,8 +189,14 @@ volumes:
     name: smq_storage
   kafka_data:
     name: smq_kafka_data
+  clamav_db:
+    name: smq_clamav_db
+  trivy-cache:
+    name: smq_trivy_cache
+  # backups/ is a bind-mount (./backups) — not a named volume,
+  # so files are directly accessible on the host for archiving/transfer
 
-# ── Internal Network ─────────────────────────────────────────
+# ── Internal Network ──────────────────────────────────────────
 networks:
   smq_network:
     driver: bridge

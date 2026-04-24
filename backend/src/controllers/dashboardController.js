@@ -156,22 +156,27 @@ const getDashboardStats = async (_req, res) => {
 
       // Répartition par type documentaire
       pool.query(`
-        SELECT dt.code, dt.label, COUNT(*) AS count
+        SELECT dt.id, dt.code, dt.label, COUNT(*) AS count
         FROM documents d
         JOIN document_types dt ON dt.id = d.type_id
-        GROUP BY dt.code, dt.label
+        GROUP BY dt.id, dt.code, dt.label
         ORDER BY count DESC
       `),
 
-      // Répartition par processus (top 10) — via dossier parent
+      // Répartition par processus (top 10) — via folder_id → parent (niveau 2)
+      // f  = dossier direct du document (niveau 3 ex: PR_Procedures)
+      // f2 = parent de f (niveau 2 = processus principal ex: Concevoir_Developper)
+      // On groupe par le processus principal (niveau 2) pour éviter les doublons
       pool.query(`
         SELECT
-          COALESCE(fp.name, f.name, 'Non assigné') AS name,
+          COALESCE(f2.name, f.name, 'Non assigné') AS name,
+          COALESCE(f2.id,   f.id)                  AS id,
           COUNT(*) AS count
         FROM documents d
-        LEFT JOIN folders f  ON f.id  = d.process_id
-        LEFT JOIN folders fp ON fp.id = f.parent_id
-        GROUP BY fp.name, f.name
+        LEFT JOIN folders f  ON f.id  = d.folder_id
+        LEFT JOIN folders f2 ON f2.id = f.parent_id
+        GROUP BY COALESCE(f2.name, f.name, 'Non assigné'),
+                 COALESCE(f2.id,   f.id)
         ORDER BY count DESC
         LIMIT 10
       `),
@@ -183,8 +188,10 @@ const getDashboardStats = async (_req, res) => {
         count: parseInt(r.count, 10),
       })),
       by_type: byTypeRes.rows.map(r => ({
+        id:    r.id,
         code:  r.code,
         label: r.label,
+        name:  `${r.code} — ${r.label}`,
         count: parseInt(r.count, 10),
       })),
       by_process: byProcessRes.rows.map(r => ({

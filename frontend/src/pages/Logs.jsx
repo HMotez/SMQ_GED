@@ -2,26 +2,26 @@
 // pages/Logs.jsx — Consultation et export des logs (Admin)
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
 import { API } from "../config";
+import actiLogo from "../assets/Logo.png";
 import {
   LuRefreshCw, LuDownload, LuFileText, LuFilter, LuX, LuChevronDown,
 } from "react-icons/lu";
 
-// ── Known action types ────────────────────────────────────────
-const ACTION_OPTIONS = [
-  { value: "",                              label: "Toutes les actions" },
-  { value: "CREATE_DOCUMENT",              label: "Création document" },
-  { value: "NEW_VERSION",                  label: "Nouvelle version" },
-  { value: "VERSION_SUPERSEDED",           label: "Version remplacée" },
-  { value: "STATUS_CHANGE",                label: "Changement de statut" },
-  { value: "AUTO_ARCHIVE",                 label: "Archivage automatique" },
-  { value: "VALIDATION_CREATED",           label: "Validation créée" },
-  { value: "VALIDATION_EDIT_ATTEMPT_BLOCKED",   label: "Modification validation bloquée" },
-  { value: "VALIDATION_DELETE_ATTEMPT_BLOCKED", label: "Suppression validation bloquée" },
-];
+// ── Label map for known action types ─────────────────────────
+const ACTION_LABEL_MAP = {
+  CREATE_DOCUMENT:                    "Création document",
+  NEW_VERSION:                        "Nouvelle version",
+  VERSION_SUPERSEDED:                 "Version remplacée",
+  STATUS_CHANGE:                      "Changement de statut",
+  AUTO_ARCHIVE:                       "Archivage automatique",
+  VALIDATION_CREATED:                 "Validation créée",
+  VALIDATION_EDIT_ATTEMPT_BLOCKED:    "Modification validation bloquée",
+  VALIDATION_DELETE_ATTEMPT_BLOCKED:  "Suppression validation bloquée",
+};
 
 // ── Helpers ──────────────────────────────────────────────────
 function fmtDate(iso) {
@@ -33,8 +33,7 @@ function fmtDate(iso) {
 }
 
 function actionLabel(action) {
-  const found = ACTION_OPTIONS.find(o => o.value === action);
-  return found ? found.label : action;
+  return ACTION_LABEL_MAP[action] || action;
 }
 
 function actionColor(action) {
@@ -47,209 +46,150 @@ function actionColor(action) {
   return { color: "#a8bfd4", bg: "rgba(168,191,212,0.08)", border: "rgba(168,191,212,0.15)" };
 }
 
-// ── Smart details renderer ────────────────────────────────────
+// ── Inline text helpers ───────────────────────────────────────
+const TX  = { color: "rgba(200,218,235,0.75)", fontSize: 12 };
+const TXD = { color: "rgba(168,191,212,0.45)", fontSize: 12 };
+
+function B({ children, color }) {
+  return <strong style={{ color: color || "#dce8f5", fontWeight: 700 }}>{children}</strong>;
+}
+function Em({ children }) {
+  return <em style={{ color: "rgba(168,191,212,0.5)", fontStyle: "italic" }}>{children}</em>;
+}
+
+const STATUS_COLOR = {
+  "Brouillon": "#a8bfd4", "En rédaction": "#4ade80",
+  "Appel en relecture": "#fbbf24", "En relecture": "#60a5fa",
+  "En correction": "#f97316", "En validation": "#a5b4fc",
+  "Validé": "#4ab83f", "Diffusé": "#2dd4bf",
+  "Obsolète": "#fb923c", "Archivé": "#6b7280",
+};
+
+function Stat({ label }) {
+  const c = STATUS_COLOR[label] || "#a8bfd4";
+  return <B color={c}>{label || "—"}</B>;
+}
+function Ver({ v }) {
+  return <B color="#f59e0b">{v || "—"}</B>;
+}
+
+// ── Smart details renderer — professional sentence format ─────
 function ActionDetails({ action, details }) {
-  if (!details) return <span style={{ color: "rgba(168,191,212,0.25)" }}>—</span>;
-  const d = typeof details === "string" ? JSON.parse(details) : details;
+  if (!details) return <span style={TXD}>—</span>;
+  let d = {};
+  try { d = typeof details === "string" ? JSON.parse(details) : details; } catch { return <span style={TXD}>—</span>; }
 
-  // STATUS_CHANGE: from → to
+  const wrap = (children) => (
+    <span className="leading-snug" style={TX}>{children}</span>
+  );
+
   if (action === "STATUS_CHANGE") {
-    return (
-      <span className="flex flex-col gap-0.5">
-        <span className="flex items-center gap-1.5 flex-wrap">
-          <StatusPill label={d.from} />
-          <span style={{ color: "rgba(168,191,212,0.35)", fontSize: 10 }}>→</span>
-          <StatusPill label={d.to} />
-        </span>
-        {d.user_role && (
-          <span className="text-[10px]" style={{ color: "rgba(168,191,212,0.35)" }}>
-            Rôle : {d.user_role}
-          </span>
-        )}
-      </span>
-    );
+    return wrap(<>
+      Statut modifié de <Stat label={d.from} /> vers <Stat label={d.to} />
+      {d.user_role && d.user_role !== "SYSTEM" && <> — rôle <B color="#a5b4fc">{d.user_role}</B></>}
+    </>);
   }
 
-  // NEW_VERSION: vX → vY + résumé
   if (action === "NEW_VERSION") {
-    return (
-      <span className="flex flex-col gap-0.5">
-        <span className="flex items-center gap-1.5">
-          <VersionPill v={d.from || "—"} />
-          <span style={{ color: "rgba(168,191,212,0.35)", fontSize: 10 }}>→</span>
-          <VersionPill v={d.to || "—"} />
-        </span>
-        {d.change_summary && (
-          <span className="text-[10px] italic" style={{ color: "rgba(168,191,212,0.5)" }}>
-            {d.change_summary}
-          </span>
-        )}
-      </span>
-    );
+    return wrap(<>
+      Version mise à jour : <Ver v={d.from} /> → <Ver v={d.to} />
+      {d.change_summary && <> — <Em>{d.change_summary}</Em></>}
+    </>);
   }
 
-  // VERSION_SUPERSEDED
   if (action === "VERSION_SUPERSEDED") {
-    return (
-      <span className="flex items-center gap-1.5 text-[11px]" style={{ color: "rgba(245,158,11,0.8)" }}>
-        Version remplacée : <VersionPill v={d.superseded_version || "—"} />
-      </span>
-    );
+    return wrap(<>
+      La version <Ver v={d.superseded_version} /> a été remplacée par la version <Ver v={d.new_version} />
+      {d.reason && <> — <Em>{d.reason}</Em></>}
+    </>);
   }
 
-  // CREATE_DOCUMENT
   if (action === "CREATE_DOCUMENT") {
-    return (
-      <span className="flex flex-col gap-0.5 text-[11px]">
-        {d.typeCode && <span><Tag color="#4ab83f">{d.typeCode}</Tag></span>}
-        {d.origin   && <span style={{ color: "rgba(168,191,212,0.45)" }}>Origine : {d.origin}</span>}
-        {d.folderCode && <span style={{ color: "rgba(168,191,212,0.45)" }}>Dossier : {d.folderCode}</span>}
-      </span>
-    );
+    return wrap(<>
+      Document de type <B color="#4ab83f">{d.typeCode || "—"}</B> créé
+      {d.folderCode && <> dans le dossier <B color="#2dd4bf">{d.folderCode}</B></>}
+      {d.origin && <> — origine <B color={d.origin === "EXTERNE" ? "#fb923c" : "#60a5fa"}>{d.origin}</B></>}
+    </>);
   }
 
-  // AUTO_ARCHIVE
   if (action === "AUTO_ARCHIVE") {
-    return (
-      <span className="flex flex-col gap-0.5">
-        <span className="flex items-center gap-1.5">
-          <StatusPill label={d.from} />
-          <span style={{ color: "rgba(168,191,212,0.35)", fontSize: 10 }}>→</span>
-          <StatusPill label={d.to} />
-        </span>
-        {d.reason && (
-          <span className="text-[10px] italic" style={{ color: "rgba(167,139,250,0.6)" }}>
-            {d.reason}
-          </span>
-        )}
-      </span>
-    );
+    return wrap(<>
+      Archivage automatique : statut passé de <Stat label={d.from} /> à <Stat label={d.to} />
+      {d.reason && <> — <Em>{d.reason}</Em></>}
+    </>);
   }
 
-  // VALIDATION_CREATED
   if (action === "VALIDATION_CREATED") {
-    const decisionColor = d.decision === "APPROUVÉ" ? "#4ab83f"
-      : d.decision === "REJETÉ" ? "#f87171"
-      : "#f59e0b";
-    return (
-      <span className="flex flex-col gap-0.5 text-[11px]">
-        {d.decision && (
-          <span className="font-bold" style={{ color: decisionColor }}>{d.decision}</span>
-        )}
-        {d.validator_name && (
-          <span style={{ color: "rgba(168,191,212,0.5)" }}>Validateur : {d.validator_name}</span>
-        )}
-        {d.comment && (
-          <span className="italic" style={{ color: "rgba(168,191,212,0.45)" }}>"{d.comment}"</span>
-        )}
-      </span>
-    );
+    const dc = d.decision === "APPROUVÉ" ? "#4ab83f" : d.decision === "REJETÉ" ? "#f87171" : "#f59e0b";
+    return wrap(<>
+      {d.decision && <>Décision <B color={dc}>{d.decision}</B></>}
+      {d.validator_name && <> émise par <B>{d.validator_name}</B></>}
+      {d.comment && <> — <Em>"{d.comment}"</Em></>}
+    </>);
   }
 
-  // BLOCKED actions
   if (action?.includes("BLOCKED")) {
-    return (
-      <span className="text-[11px]" style={{ color: "#f87171" }}>
-        Tentative bloquée — opération non autorisée
-      </span>
-    );
+    return wrap(<>
+      <B color="#f87171">Tentative bloquée</B> — opération non autorisée par le système
+    </>);
   }
 
-  // Fallback: show key: value pairs
-  return (
-    <span className="flex flex-col gap-0.5 text-[10.5px]" style={{ color: "rgba(168,191,212,0.5)" }}>
-      {Object.entries(d).slice(0, 4).map(([k, v]) => (
-        <span key={k}>
-          <span style={{ color: "rgba(168,191,212,0.35)" }}>{k}: </span>
-          {typeof v === "object" ? JSON.stringify(v) : String(v)}
-        </span>
-      ))}
-    </span>
-  );
+  // Fallback: flat readable sentence
+  const entries = Object.entries(d)
+    .filter(([k]) => !["doc_code", "timestamp", "ISO_transition"].includes(k))
+    .slice(0, 4);
+  if (!entries.length) return <span style={TXD}>—</span>;
+  return wrap(<>
+    {entries.map(([k, v], i) => (
+      <span key={k}>{i > 0 && " — "}<span style={TXD}>{k} : </span><B>{typeof v === "object" ? JSON.stringify(v) : String(v)}</B></span>
+    ))}
+  </>);
 }
 
-function StatusPill({ label }) {
-  if (!label) return null;
-  const colors = {
-    "Brouillon":     "#a8bfd4",
-    "En rédaction":  "#60a5fa",
-    "En validation": "#f59e0b",
-    "Validé":        "#4ab83f",
-    "Diffusé":       "#2dd4bf",
-    "En révision":   "#f87171",
-    "Obsolète":      "#a78bfa",
-    "Archivé":       "#6b7280",
-  };
-  const c = colors[label] || "#a8bfd4";
-  return (
-    <span className="text-[10px] font-semibold px-1.5 py-px rounded-full"
-      style={{ color: c, background: `${c}18`, border: `1px solid ${c}30` }}>
-      {label}
-    </span>
-  );
-}
-
-function VersionPill({ v }) {
-  return (
-    <span className="text-[10px] font-bold font-mono px-1.5 py-px rounded"
-      style={{ color: "#f59e0b", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)" }}>
-      {v}
-    </span>
-  );
-}
-
-function Tag({ color, children }) {
-  return (
-    <span className="text-[10px] font-bold px-1.5 py-px rounded"
-      style={{ color, background: `${color}18`, border: `1px solid ${color}30` }}>
-      {children}
-    </span>
-  );
-}
-
-// ── Format details as readable text for CSV ───────────────────
+// ── Format details as plain ASCII sentence for PDF (jsPDF/Helvetica = Latin-1 only)
+// NO Unicode arrows (→), NO em-dashes (—), NO accented chars outside Latin-1
 function formatDetailsText(action, details) {
-  if (!details) return "";
-  const d = typeof details === "string" ? JSON.parse(details) : details;
+  if (!details) return "-";
+  let d = {};
+  try { d = typeof details === "string" ? JSON.parse(details) : details; } catch { return "-"; }
 
   if (action === "STATUS_CHANGE") {
-    const parts = [`${d.from || "?"} >> ${d.to || "?"}`];
-    if (d.user_role) parts.push(`Role: ${d.user_role}`);
-    return parts.join(" | ");
+    let s = `Statut modifie de "${d.from || "?"}" vers "${d.to || "?"}"`;
+    if (d.user_role && d.user_role !== "SYSTEM") s += ` | Role : ${d.user_role}`;
+    return s;
   }
   if (action === "NEW_VERSION") {
-    const parts = [`v${d.from || "?"} >> v${d.to || "?"}`];
-    if (d.change_summary) parts.push(`Resume: ${d.change_summary}`);
-    return parts.join(" | ");
+    let s = `Version mise a jour : ${d.from || "?"} >> ${d.to || "?"}`;
+    if (d.change_summary) s += ` | ${d.change_summary}`;
+    return s;
   }
   if (action === "VERSION_SUPERSEDED") {
-    return `Version remplacee: ${d.superseded_version || "?"}`;
+    return `Version ${d.superseded_version || "?"} remplacee par ${d.new_version || "?"}`;
   }
   if (action === "CREATE_DOCUMENT") {
-    const parts = [];
-    if (d.typeCode)    parts.push(`Type: ${d.typeCode}`);
-    if (d.origin)      parts.push(`Origine: ${d.origin}`);
-    if (d.folderCode)  parts.push(`Dossier: ${d.folderCode}`);
-    return parts.join(" | ");
+    let s = `Document de type "${d.typeCode || "?"}" cree`;
+    if (d.folderCode) s += ` dans le dossier ${d.folderCode}`;
+    if (d.origin)     s += ` | Origine : ${d.origin}`;
+    return s;
   }
   if (action === "AUTO_ARCHIVE") {
-    const parts = [`${d.from || "?"} >> ${d.to || "?"}`];
-    if (d.reason) parts.push(d.reason);
-    return parts.join(" | ");
+    let s = `Archivage automatique : "${d.from || "?"}" >> "${d.to || "?"}"`;
+    if (d.reason) s += ` | ${d.reason}`;
+    return s;
   }
   if (action === "VALIDATION_CREATED") {
-    const parts = [];
-    if (d.decision)       parts.push(`Décision: ${d.decision}`);
-    if (d.validator_name) parts.push(`Validateur: ${d.validator_name}`);
-    if (d.comment)        parts.push(`Commentaire: ${d.comment}`);
-    return parts.join(" | ");
+    let s = d.decision ? `Decision : ${d.decision}` : "";
+    if (d.validator_name) s += ` | Validateur : ${d.validator_name}`;
+    if (d.comment)        s += ` | "${d.comment}"`;
+    return s || "-";
   }
   if (action?.includes("BLOCKED")) {
-    return "Tentative bloquée — opération non autorisée";
+    return "Tentative d'operation non autorisee bloquee par le systeme";
   }
-  // Fallback: flatten key: value
+  // Fallback
   return Object.entries(d)
-    .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+    .filter(([k]) => !["doc_code", "timestamp", "ISO_transition"].includes(k))
+    .map(([k, v]) => `${k} : ${typeof v === "object" ? JSON.stringify(v) : v}`)
     .join(" | ");
 }
 
@@ -266,69 +206,81 @@ const ACTION_COLORS = {
 };
 
 // ── PDF export ────────────────────────────────────────────────
-async function exportPDF(logs) {
+async function exportPDF(logs, meta = {}) {
   const { default: jsPDF }     = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
 
-  const doc  = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const W    = doc.internal.pageSize.getWidth();   // 297
-  const H    = doc.internal.pageSize.getHeight();  // 210
+  const doc    = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const W      = doc.internal.pageSize.getWidth();   // 297
+  const H      = doc.internal.pageSize.getHeight();  // 210
   const MARGIN = 12;
+  const G      = [74, 184, 63]; // brand green
+
+  // ── Load ACTIA logo ────────────────────────────────────────
+  const logoEl = await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = actiLogo;
+  });
 
   // ══════════════════════════════════════════════
-  // HEADER
+  // HEADER — single clean band (0 → 28mm)
   // ══════════════════════════════════════════════
+  const HEADER_H = 28;
 
-  // Dark background
-  doc.setFillColor(8, 18, 36);
-  doc.rect(0, 0, W, 32, "F");
+  // Dark navy background
+  doc.setFillColor(6, 13, 26);
+  doc.rect(0, 0, W, HEADER_H, "F");
 
-  // Green left accent bar
-  doc.setFillColor(74, 184, 63);
-  doc.rect(0, 0, 4, 32, "F");
+  // Left green accent bar
+  doc.setFillColor(...G);
+  doc.rect(0, 0, 5, HEADER_H, "F");
 
   // Title
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(17);
   doc.setTextColor(255, 255, 255);
-  doc.text("Journal des Activités", MARGIN + 4, 12);
+  doc.text("JOURNAL DES ACTIVITES", MARGIN + 6, 12);
 
-  // Subtitle
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(74, 184, 63);
-  doc.text("SMQ GED — Système de Gestion Électronique des Documents", MARGIN + 4, 19);
-
-  // Date + count badge (right side)
+  // Subtitle — title, date, count in one clean line
+  const isFiltered = !!(meta.filterAction || meta.filterUser || meta.filterFrom || meta.filterTo);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(160, 190, 215);
-  doc.text(`Exporté le : ${fmtDate(new Date().toISOString())}`, W - MARGIN, 12, { align: "right" });
+  doc.setTextColor(...G);
+  doc.text(
+    `SMQ GED  |  Systeme de Gestion Electronique des Documents`,
+    MARGIN + 6, 19
+  );
 
-  // Count pill
-  doc.setFillColor(74, 184, 63);
-  doc.roundedRect(W - MARGIN - 38, 17, 38, 9, 2, 2, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
-  doc.text(`${logs.length} entrée${logs.length > 1 ? "s" : ""}`, W - MARGIN - 19, 23, { align: "center" });
+  // Meta line — date + count + filter hint
+  doc.setFontSize(7);
+  doc.setTextColor(100, 135, 170);
+  doc.text(
+    `Exporte le ${fmtDate(new Date().toISOString())}  ·  ${logs.length} entree${logs.length > 1 ? "s" : ""}${isFiltered ? "  ·  Filtres actifs" : ""}  ·  ${meta.exportedBy || "Admin"}`,
+    MARGIN + 6, 24.5
+  );
 
-  // Green separator line
-  doc.setDrawColor(74, 184, 63);
-  doc.setLineWidth(0.6);
-  doc.line(0, 32, W, 32);
+  // ACTIA logo — right side, centered vertically
+  const LH = 16;
+  const LW = 50;
+  doc.addImage(logoEl, "PNG", W - MARGIN - LW, (HEADER_H - LH) / 2, LW, LH);
+
+  // Bottom green line
+  doc.setDrawColor(...G);
+  doc.setLineWidth(0.7);
+  doc.line(0, HEADER_H, W, HEADER_H);
 
   // ══════════════════════════════════════════════
   // TABLE
   // ══════════════════════════════════════════════
 
   // Column widths — total usable: 297 - 2*12 = 273mm
-  // #(14) + Date(34) + Action(42) + Réf(32) + Titre(52) + User(26) + Détails(auto≈73)
-  const COL_W = { 0: 14, 1: 34, 2: 42, 3: 32, 4: 52, 5: 26 };
+  // #(12) + Date(32) + Action(40) + Ref(50) + Titre(40) + User(24) + Details(auto=75)
+  const COL_W = { 0: 12, 1: 32, 2: 40, 3: 50, 4: 40, 5: 30 };
 
   autoTable(doc, {
-    startY: 36,
-    margin: { left: MARGIN, right: MARGIN, bottom: 16 },
+    startY: HEADER_H + 4,
+    margin: { left: MARGIN, right: MARGIN, bottom: 14 },
     rowPageBreak: "auto",
     showHead: "everyPage",
 
@@ -343,7 +295,7 @@ async function exportPDF(logs) {
     ]],
 
     body: logs.map(r => [
-      String(r.id),
+      "",
       fmtDate(r.created_at),
       actionLabel(r.action),
       r.document_reference || "—",
@@ -361,6 +313,7 @@ async function exportPDF(logs) {
       cellPadding: { top: 6, bottom: 6, left: 5, right: 4 },
       lineColor:   [74, 184, 63],
       lineWidth:   { bottom: 0.6, top: 0, left: 0, right: 0 },
+      overflow:    "ellipsize",
     },
 
     // ── Body rows ────────────────────────────────────────────
@@ -406,11 +359,12 @@ async function exportPDF(logs) {
         data.cell.styles.fontStyle  = "bold";
         data.cell.styles.fontSize   = 8.5;
       }
-      // Réf. document — bold, dark blue-gray
+      // Réf. document — bold, dark blue-gray, no wrap
       if (data.column.index === 3) {
         data.cell.styles.textColor  = [30, 60, 110];
         data.cell.styles.fontStyle  = "bold";
         data.cell.styles.fontSize   = 7.5;
+        data.cell.styles.overflow   = "ellipsize";
       }
       // Titre document — black bold
       if (data.column.index === 4) {
@@ -447,38 +401,41 @@ async function exportPDF(logs) {
       const pageNum   = data.pageNumber;
       const pageTotal = doc.internal.getNumberOfPages();
 
-      // Re-draw header on pages > 1
+      // Re-draw mini header on pages > 1
       if (pageNum > 1) {
-        doc.setFillColor(8, 18, 36);
-        doc.rect(0, 0, W, 14, "F");
-        doc.setFillColor(74, 184, 63);
-        doc.rect(0, 0, 4, 14, "F");
+        const MH = 13;
+        doc.setFillColor(6, 13, 26);
+        doc.rect(0, 0, W, MH, "F");
+        doc.setFillColor(...G);
+        doc.rect(0, 0, 5, MH, "F");
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setTextColor(255, 255, 255);
-        doc.text("Journal des Activités — SMQ GED", MARGIN + 4, 9);
-        doc.setDrawColor(74, 184, 63);
-        doc.setLineWidth(0.4);
-        doc.line(0, 14, W, 14);
+        doc.text("JOURNAL DES ACTIVITES", MARGIN + 6, 8.5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6.5);
+        doc.setTextColor(...G);
+        doc.text("SMQ GED  |  ACTIA Engineering Services", MARGIN + 6, 12);
+        doc.setDrawColor(...G);
+        doc.setLineWidth(0.5);
+        doc.line(0, MH, W, MH);
       }
 
-      // Footer band
-      doc.setFillColor(240, 244, 250);
-      doc.rect(0, H - 12, W, 12, "F");
-      doc.setDrawColor(74, 184, 63);
-      doc.setLineWidth(0.3);
-      doc.line(0, H - 12, W, H - 12);
-
+      // Footer — simple dark band
+      const FH = 9;
+      doc.setFillColor(6, 13, 26);
+      doc.rect(0, H - FH, W, FH, "F");
+      doc.setDrawColor(...G);
+      doc.setLineWidth(0.4);
+      doc.line(0, H - FH, W, H - FH);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(100, 120, 155);
-      doc.text(
-        `SMQ GED — Journal des activités  ·  Exporté le ${fmtDate(new Date().toISOString())}`,
-        MARGIN, H - 5
-      );
+      doc.setFontSize(6.5);
+      doc.setTextColor(90, 120, 155);
+      doc.text("SMQ GED  |  ACTIA Engineering Services", MARGIN, H - 3);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(74, 184, 63);
-      doc.text(`Page ${pageNum} / ${pageTotal}`, W - MARGIN, H - 5, { align: "right" });
+      doc.setFontSize(7.5);
+      doc.setTextColor(...G);
+      doc.text(`Page ${pageNum} / ${pageTotal}`, W - MARGIN, H - 3, { align: "right" });
     },
 
     columnStyles: {
@@ -531,10 +488,11 @@ export default function Logs() {
   const { token, userRole, currentUser } = useUser();
   const navigate = useNavigate();
 
-  const [logs,    setLogs]    = useState([]);
-  const [total,   setTotal]   = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
+  const [logs,             setLogs]             = useState([]);
+  const [total,            setTotal]            = useState(0);
+  const [loading,          setLoading]          = useState(true);
+  const [error,            setError]            = useState(null);
+  const [availableActions, setAvailableActions] = useState([]);
 
   // Filters
   const [filterAction, setFilterAction] = useState("");
@@ -547,6 +505,15 @@ export default function Logs() {
   useEffect(() => {
     if (userRole && userRole !== "Admin") navigate("/", { replace: true });
   }, [userRole, navigate]);
+
+  // Fetch available action types from DB
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API}/logs/actions`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then(setAvailableActions)
+      .catch(() => {});
+  }, [token]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -576,7 +543,10 @@ export default function Logs() {
 
   const handleExport = async () => {
     if (logs.length === 0) return;
-    await exportPDF(logs);
+    await exportPDF(logs, {
+      filterAction, filterUser, filterFrom, filterTo,
+      exportedBy: currentUser?.name || "Admin",
+    });
   };
 
   const clearFilters = () => {
@@ -643,8 +613,9 @@ export default function Logs() {
                   value={filterAction}
                   onChange={e => setFilterAction(e.target.value)}
                 >
-                  {ACTION_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                  <option value="">Toutes les actions</option>
+                  {availableActions.map(a => (
+                    <option key={a} value={a}>{actionLabel(a)}</option>
                   ))}
                 </select>
                 <LuChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
@@ -721,7 +692,7 @@ export default function Logs() {
           {/* Header row */}
           <div className="grid px-5 py-3 text-[10px] font-bold tracking-widest uppercase"
             style={{
-              gridTemplateColumns: "52px 148px 160px 1fr 140px 1fr",
+              gridTemplateColumns: "48px 145px 155px 210px 115px 1fr",
               color: "rgba(168,191,212,0.4)",
               borderBottom: "1.5px solid rgba(255,255,255,0.06)",
               background: "rgba(0,0,0,0.15)",
@@ -757,7 +728,7 @@ export default function Logs() {
                 key={row.id}
                 className="log-row grid px-5 py-3 items-start"
                 style={{
-                  gridTemplateColumns: "52px 148px 160px 1fr 140px 1fr",
+                  gridTemplateColumns: "48px 145px 155px 210px 115px 1fr",
                   borderBottom: "1px solid rgba(255,255,255,0.04)",
                   animation: `fadeInUp 0.3s ${Math.min(i * 0.02, 0.3)}s both`,
                 }}
@@ -780,21 +751,36 @@ export default function Logs() {
                   </span>
                 </span>
 
-                {/* Document */}
-                <span className="pt-1">
-                  {row.document_title ? (
-                    <span className="flex flex-col gap-px">
-                      <span className="text-[11px] font-bold font-mono" style={{ color: "rgba(168,191,212,0.4)" }}>
-                        {row.document_reference}
-                      </span>
-                      <span className="text-xs" style={{ color: "rgba(220,235,248,0.75)" }}>
-                        {row.document_title}
-                      </span>
-                    </span>
+                {/* Document — single line: badge + title inline */}
+                <div className="pt-0.5 min-w-0 flex flex-col gap-0.5">
+                  {row.document_reference ? (
+                    <>
+                      <NavLink
+                        to={`/list?docCode=${encodeURIComponent(row.document_reference)}`}
+                        onClick={e => e.stopPropagation()}
+                        className="no-underline"
+                        title={`Voir ${row.document_reference}`}
+                      >
+                        <span
+                          className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-md whitespace-nowrap transition-all"
+                          style={{ color: "#4ab83f", background: "rgba(74,184,63,0.1)", border: "1px solid rgba(74,184,63,0.25)", display: "inline-block" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.2)"; e.currentTarget.style.borderColor = "rgba(74,184,63,0.5)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "rgba(74,184,63,0.1)"; e.currentTarget.style.borderColor = "rgba(74,184,63,0.25)"; }}
+                        >
+                          {row.document_reference}
+                        </span>
+                      </NavLink>
+                      {row.document_title && (
+                        <span className="text-[11px] truncate" style={{ color: "rgba(200,218,235,0.55)" }}
+                          title={row.document_title}>
+                          {row.document_title}
+                        </span>
+                      )}
+                    </>
                   ) : (
                     <span style={{ color: "rgba(168,191,212,0.2)" }}>—</span>
                   )}
-                </span>
+                </div>
 
                 {/* User */}
                 <span className="text-xs pt-1" style={{ color: "rgba(168,191,212,0.65)" }}>

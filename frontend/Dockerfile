@@ -1,7 +1,8 @@
 # =============================================================
 # SMQ_GED — Frontend Dockerfile  (ACTIA Engineering Services)
 # React 19 + Vite → bundle statique servi par Nginx
-# ======================================================# =============================================================
+# Sprint 42 — Endurcissement infrastructure : WAF + server_tokens
+# =============================================================
 
 # ── Stage 1: Build ───────────────────────────────────────────
 FROM node:20-slim AS builder
@@ -33,9 +34,10 @@ FROM nginx:stable-alpine AS production
 # Copy the compiled React SPA
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Replace default nginx config with our SPA + reverse-proxy config
+# Replace default nginx config with our SPA + reverse-proxy + WAF config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+EXPOSE 443
 
 CMD ["nginx", "-g", "daemon off;"]

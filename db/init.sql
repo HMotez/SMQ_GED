@@ -167,6 +167,27 @@ CREATE TABLE IF NOT EXISTS ai_query_logs (
 CREATE INDEX IF NOT EXISTS idx_ai_logs_user    ON ai_query_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_ai_logs_created ON ai_query_logs(created_at DESC);
 
+-- ── 14. Security Incidents — Détection des incidents ──────────
+CREATE TABLE IF NOT EXISTS security_incidents (
+  id           SERIAL PRIMARY KEY,
+  type         VARCHAR(50)  NOT NULL,
+  severity     VARCHAR(16)  NOT NULL DEFAULT 'warning'
+                 CHECK (severity IN ('info','warning','critical')),
+  description  TEXT         NOT NULL,
+  ip_address   VARCHAR(64),
+  user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  detected_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  status       VARCHAR(20)  NOT NULL DEFAULT 'open'
+                 CHECK (status IN ('open','in_progress','resolved')),
+  resolved_at  TIMESTAMP WITH TIME ZONE,
+  resolved_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  notes        TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_incidents_status      ON security_incidents(status);
+CREATE INDEX IF NOT EXISTS idx_incidents_severity    ON security_incidents(severity);
+CREATE INDEX IF NOT EXISTS idx_incidents_detected_at ON security_incidents(detected_at DESC);
+
 
 -- =============================================================
 -- SEED DATA — Données de référence obligatoires
@@ -254,3 +275,27 @@ INSERT INTO processes (code, strategic_process, main_process, sub_process) VALUE
   ('CDP-QT',  '01_PROCESSUS_STRATEGIQUE', 'Concevoir_Developper_Produits',              'PM_Qualification_Thermomecanique'),
   ('CDP-VA',  '01_PROCESSUS_STRATEGIQUE', 'Concevoir_Developper_Produits',              'PM_Validation'),
   ('CDP-IVS', '01_PROCESSUS_STRATEGIQUE', 'Concevoir_Developper_Produits',              'PM_Industrialisation_Vie_Serie');
+
+-- =============================================================
+-- PRINCIPE DU MOINDRE PRIVILÈGE — Gestion de la BD
+-- L'utilisateur applicatif n'a que les droits DML nécessaires.
+-- Aucun privilège DDL (CREATE, DROP, ALTER) ni superuser.
+-- =============================================================
+
+-- Révoquer tous les privilèges publics par défaut
+REVOKE ALL ON ALL TABLES    IN SCHEMA public FROM PUBLIC;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+
+-- Accorder uniquement SELECT, INSERT, UPDATE, DELETE à l'utilisateur applicatif
+DO $$
+DECLARE
+  app_user TEXT := current_user;
+BEGIN
+  EXECUTE format('GRANT USAGE ON SCHEMA public TO %I', app_user);
+  EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I', app_user);
+  EXECUTE format('GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO %I', app_user);
+  -- Appliquer sur les futures tables également
+  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', app_user);
+  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO %I', app_user);
+END $$;

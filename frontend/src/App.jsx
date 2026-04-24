@@ -1,6 +1,7 @@
 import { Navigate, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { UserProvider, useUser } from "./context/UserContext";
+import SessionManager from "./components/SessionManager";
 import Home           from "./pages/Home";
 import Login          from "./pages/Login";
 import Register        from "./pages/Register";
@@ -51,6 +52,8 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   return (
+    <>
+    <SessionManager />
     <Routes>
       {/* Public */}
       <Route path="/login"            element={<PublicRoute><Login /></PublicRoute>} />
@@ -76,6 +79,7 @@ function AppRoutes() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 

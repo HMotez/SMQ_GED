@@ -496,6 +496,63 @@ async function sendPasswordResetEmail({ to, name, token, expiresAt }) {
   );
 }
 
+// ── Security Alert Emails ──────────────────────────────────────
+async function sendSecurityAlert({ to, type, name, ip, previousIp, lockedUntil, time, incidentType, severity, description }) {
+  let subject, content;
+  const accent = "#ef4444";
+
+  if (type === "account_locked") {
+    subject = "⚠️ Compte bloqué — Tentatives de connexion suspectes";
+    content = `
+      <p>Bonjour <strong>${name}</strong>,</p>
+      <p>Votre compte a été <strong>temporairement bloqué</strong> suite à ${3} tentatives de connexion échouées consécutives.</p>
+      <table style="margin:16px 0;border-collapse:collapse;width:100%">
+        <tr><td style="padding:8px 12px;background:rgba(239,68,68,0.08);border-radius:6px;color:#fca5a5;font-size:13px">
+          <strong>IP de l'attaque :</strong> ${ip}<br/>
+          <strong>Bloqué jusqu'à :</strong> ${lockedUntil}
+        </td></tr>
+      </table>
+      <p style="color:rgba(168,191,212,0.7);font-size:13px">Si ce n'était pas vous, votre mot de passe pourrait être compromis. Contactez votre administrateur immédiatement.</p>`;
+  } else if (type === "new_ip_login") {
+    subject = "🔐 Nouvelle connexion depuis une adresse IP inconnue";
+    content = `
+      <p>Bonjour <strong>${name}</strong>,</p>
+      <p>Une connexion à votre compte a été détectée depuis une <strong>nouvelle adresse IP</strong>.</p>
+      <table style="margin:16px 0;border-collapse:collapse;width:100%">
+        <tr><td style="padding:8px 12px;background:rgba(239,68,68,0.08);border-radius:6px;color:#fca5a5;font-size:13px">
+          <strong>Nouvelle IP :</strong> ${ip}<br/>
+          <strong>IP habituelle :</strong> ${previousIp}<br/>
+          <strong>Date/heure :</strong> ${time}
+        </td></tr>
+      </table>
+      <p style="color:rgba(168,191,212,0.7);font-size:13px">Si ce n'était pas vous, changez votre mot de passe immédiatement et contactez votre administrateur.</p>`;
+  } else if (type === "incident_detected") {
+    const severityLabel = severity === "critical" ? "🔴 CRITIQUE" : "🟡 AVERTISSEMENT";
+    subject = `${severityLabel} — Incident de sécurité détecté : ${incidentType}`;
+    content = `
+      <p>Un incident de sécurité a été <strong>automatiquement détecté</strong> sur la plateforme SMQ GED.</p>
+      <table style="margin:16px 0;border-collapse:collapse;width:100%">
+        <tr><td style="padding:8px 12px;background:rgba(239,68,68,0.08);border-radius:6px;color:#fca5a5;font-size:13px">
+          <strong>Type :</strong> ${incidentType}<br/>
+          <strong>Sévérité :</strong> ${severityLabel}<br/>
+          <strong>Description :</strong> ${description}<br/>
+          <strong>IP concernée :</strong> ${ip || "N/A"}<br/>
+          <strong>Date/heure :</strong> ${time}
+        </td></tr>
+      </table>
+      <p style="color:rgba(168,191,212,0.7);font-size:13px">
+        Connectez-vous à l'interface d'administration pour traiter cet incident.
+      </p>`;
+  } else {
+    return;
+  }
+
+  const appUrl = process.env.APP_URL || "https://localhost";
+  await sendMail(to, subject,
+    buildEmailTemplate(subject, accent, "135deg,#7f1d1d 0%,#991b1b 60%,#b91c1c 100%", "shield", content)
+  );
+}
+
 // ── Core send ──────────────────────────────────────────────────
 async function sendMail(to, subject, html) {
   if (!process.env.SMTP_USER || process.env.SMTP_USER === "your.email@gmail.com") return;
@@ -523,4 +580,5 @@ module.exports = {
   sendExpirationDigestEmail,
   sendInactiveDocumentEmail,
   sendPasswordResetEmail,
+  sendSecurityAlert,
 };

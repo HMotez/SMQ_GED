@@ -1,6 +1,6 @@
 # =============================================================
-# SMQ_GED — Docker Compose STAGING
-# Environnement de test avant déploiement en production
+# SMQ_GED — Docker Compose STAGING  (ACTIA Engineering Services)
+# Sprint 42 — Miroir complet de la production
 # Usage : docker compose -f docker-compose.staging.yml up --build -d
 # =============================================================
 # RÈGLE : toute mise à jour doit être validée ici AVANT prod
@@ -18,6 +18,12 @@ services:
       POSTGRES_USER:     ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB:       ${DB_NAME}_staging
+    command: >
+      postgres
+        -c log_connections=on
+        -c log_disconnections=on
+        -c log_statement=ddl
+        -c log_min_duration_statement=2000
     volumes:
       - pgdata_staging:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -26,49 +32,120 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}_staging"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout:  5s
+      retries:  5
       start_period: 20s
 
-  # ── ClamAV Staging ───────────────────────────────────────────
+  # ── Apache Kafka Staging (KRaft mode) ────────────────────────
+  kafka_staging:
+    image: apache/kafka:3.7.0
+    container_name: smq_kafka_staging
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka_staging:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_staging:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    volumes:
+      - kafka_data_staging:/var/lib/kafka/data
+    networks:
+      - smq_staging_network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout:  10s
+      retries:  5
+      start_period: 30s
+
+  # ── ClamAV Antivirus Staging ─────────────────────────────────
   clamav_staging:
     image: clamav/clamav:stable
     container_name: smq_clamav_staging
     restart: unless-stopped
+    environment:
+      CLAMAV_NO_CLAMD:    "false"
+      CLAMAV_NO_FRESHCLAM: "false"
+      FRESHCLAM_CHECKS:   "1"
     volumes:
       - clamav_data_staging:/var/lib/clamav
     networks:
       - smq_staging_network
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 60s
+      timeout:  10s
+      retries:  3
+      start_period: 120s
 
   # ── Backend Staging ──────────────────────────────────────────
   backend_staging:
     build:
       context:    ./backend
       dockerfile: Dockerfile
-    image: smq_ged-backend:staging
+    image: smq_ged-backend:sprint43-staging
     container_name: smq_backend_staging
     restart: unless-stopped
     env_file:
       - .env.staging
     environment:
-      DB_HOST:      postgres_staging
-      NODE_ENV:     staging
-      UPLOAD_DIR:   /app/storage_staging
-      CLAMAV_HOST:  clamav_staging
-      CLAMAV_PORT:  "3310"
+      DB_HOST:     postgres_staging
+      DB_SSL:      "false"
+      NODE_ENV:    staging
+      UPLOAD_DIR:  /app/storage_staging
+      KAFKA_BROKER: kafka_staging:9092
+      CLAMAV_HOST: clamav_staging
+      CLAMAV_PORT: "3310"
     volumes:
       - storage_staging:/app/storage_staging
     expose:
       - "4000"
     networks:
       - smq_staging_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+      start_period: 20s
     depends_on:
       postgres_staging:
+        condition: service_healthy
+      kafka_staging:
         condition: service_healthy
       clamav_staging:
         condition: service_started
 
-  # ── Frontend Staging ─────────────────────────────────────────
+  # ── Backup automatique PostgreSQL Staging ────────────────────
+  backup_staging:
+    image: postgres:16-alpine
+    container_name: smq_backup_staging
+    restart: unless-stopped
+    environment:
+      PGPASSWORD:  ${DB_PASSWORD}
+      DB_HOST:     postgres_staging
+      DB_USER:     ${DB_USER}
+      DB_NAME:     ${DB_NAME}_staging
+    volumes:
+      - ./backups/staging:/backups
+      - ./scripts/docker-backup.sh:/docker-backup.sh:ro
+    networks:
+      - smq_staging_network
+    depends_on:
+      postgres_staging:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/docker-backup.sh"]
+
+  # ── Frontend Staging (React + Nginx + WAF) ───────────────────
   frontend_staging:
     build:
       context:    ./frontend
@@ -76,16 +153,34 @@ services:
       args:
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
-    image: smq_ged-frontend:staging
+    image: smq_ged-frontend:sprint43-staging
     container_name: smq_frontend_staging
     restart: unless-stopped
     ports:
-      - "8080:80"    # HTTP staging → 8080 (redirigé vers HTTPS)
+      - "8080:80"    # HTTP staging → 8080 (auto-redirect to HTTPS)
       - "8443:443"   # HTTPS staging → 8443
+    volumes:
+      - ./frontend/certs:/etc/nginx/certs:ro
     networks:
       - smq_staging_network
     depends_on:
       - backend_staging
+
+  # ── Trivy — Scanner de vulnérabilités staging (profile audit) ─
+  # Utilisation : docker compose -f docker-compose.staging.yml --profile audit run --rm trivy_staging
+  trivy_staging:
+    image: aquasec/trivy:latest
+    container_name: smq_trivy_staging
+    profiles: ["audit"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - trivy-cache-staging:/root/.cache/trivy
+      - ./reports/security:/reports
+    command: >
+      image --severity HIGH,CRITICAL --no-progress
+      smq_ged-backend:sprint43-staging
+    networks:
+      - smq_staging_network
 
 # ── Named Volumes Staging ────────────────────────────────────
 volumes:
@@ -93,8 +188,12 @@ volumes:
     name: smq_pgdata_staging
   storage_staging:
     name: smq_storage_staging
+  kafka_data_staging:
+    name: smq_kafka_data_staging
   clamav_data_staging:
     name: smq_clamav_data_staging
+  trivy-cache-staging:
+    name: smq_trivy_cache_staging
 
 # ── Staging Network (isolé de la prod) ───────────────────────
 networks:

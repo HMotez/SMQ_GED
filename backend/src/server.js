@@ -4,6 +4,7 @@ const path          = require("path");
 const fs            = require("fs");
 const os            = require("os");
 const { execFile }  = require("child_process");
+const rateLimit     = require("express-rate-limit");
 require("dotenv").config({ path: __dirname + "/../.env" });
 
 // ── LibreOffice executable path ───────────────────────────────
@@ -17,8 +18,37 @@ const PYTHON = process.env.PYTHON_PATH || "python3";
 const SCRIPTS_DIR = path.join(__dirname, "scripts");
 
 const app = express();
+const securityHeaders = require("./middleware/securityHeaders");
+const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+
+// Hide Express/Node.js version (Endurcissement infrastructure)
+app.disable("x-powered-by");
+
+app.use(securityHeaders);
 app.use(cors());
 app.use(express.json());
+
+// ── Rate limiting global : 100 requêtes/heure par IP (Passerelle API) ────────
+const globalLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Trop de requêtes. Limite : 100 requêtes/heure. Réessayez plus tard.", code: "RATE_LIMIT_EXCEEDED" },
+  skip: (req) => req.path.startsWith("/files") || req.path.startsWith("/public"),
+});
+
+// ── Rate limiting strict sur les routes d'authentification ───────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Trop de tentatives d'authentification. Réessayez dans 15 minutes.", code: "AUTH_RATE_LIMIT_EXCEEDED" },
+});
+
+app.use("/api", globalLimiter);
+app.use("/api/auth", authLimiter);
 
 console.log("PORT =", process.env.PORT);
 
@@ -72,92 +102,106 @@ app.get(/^\/download\/(.+)$/, (req, res) => {
 
 // ── Conversion route (LibreOffice) ───────────────────────────
 // GET /convert/<relative-path>?to=pdf|docx|xlsx|pptx
-app.get(/^\/convert\/(.+)$/, (req, res) => {
-  const filename  = decodeURIComponent(req.params[0]);
-  const targetFmt = (req.query.to || "pdf").toLowerCase();
-  const srcPath   = path.join(uploadDir, filename);
+app.get(/^\/convert\/(.+)$/, (req, res, next) => {
+  try {
+    const filename  = decodeURIComponent(req.params[0]);
+    const targetFmt = (req.query.to || "pdf").toLowerCase();
+    const srcPath   = path.join(uploadDir, filename);
 
-  const allowed = ["pdf", "docx", "xlsx", "pptx", "doc", "xls", "ppt"];
-  if (!allowed.includes(targetFmt)) {
-    return res.status(400).json({ error: "Format non supporté" });
-  }
-  if (!fs.existsSync(srcPath)) {
-    return res.status(404).json({ error: "Fichier introuvable" });
-  }
-
-  const tmpDir  = fs.mkdtempSync(path.join(os.tmpdir(), "ged-convert-"));
-  const srcExt  = path.extname(filename).slice(1).toLowerCase();
-  const baseName = path.basename(filename, path.extname(filename));
-
-  // ── Helper: send converted file then clean up ──────────────
-  const sendFile = (outFile, ext) => {
-    if (!fs.existsSync(outFile)) {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-      return res.status(422).json({ error: `Fichier converti introuvable (${ext})` });
+    const allowed = ["pdf", "docx", "xlsx", "pptx", "doc", "xls", "ppt"];
+    if (!allowed.includes(targetFmt)) {
+      const err = new Error("Format de conversion non supporté");
+      err.statusCode = 400;
+      return next(err);
     }
-    res.download(outFile, `${baseName}.${ext}`, (dlErr) => {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-      if (dlErr) console.error("Download error:", dlErr);
-    });
-  };
-
-  // ── PDF → DOCX : use pdf2docx (Python) for real text extraction ──
-  if (srcExt === "pdf" && ["docx", "doc"].includes(targetFmt)) {
-    const outFile  = path.join(tmpDir, `${baseName}.docx`);
-    const script   = path.join(SCRIPTS_DIR, "pdf_to_docx.py");
-    execFile(PYTHON, [script, srcPath, outFile], { timeout: 120000 }, (err, _stdout, stderr) => {
-      if (err) {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-        console.error("pdf_to_docx error:", stderr);
-        return res.status(500).json({ error: "Conversion PDF → Word échouée : " + (stderr || err.message) });
-      }
-      sendFile(outFile, "docx");
-    });
-    return;
-  }
-
-  // ── PDF → XLSX : use pdfplumber (Python) for table extraction ────
-  if (srcExt === "pdf" && ["xlsx", "xls"].includes(targetFmt)) {
-    const outFile = path.join(tmpDir, `${baseName}.xlsx`);
-    const script  = path.join(SCRIPTS_DIR, "pdf_to_xlsx.py");
-    execFile(PYTHON, [script, srcPath, outFile], { timeout: 120000 }, (err, _stdout, stderr) => {
-      if (err) {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-        console.error("pdf_to_xlsx error:", stderr);
-        return res.status(500).json({ error: "Conversion PDF → Excel échouée : " + (stderr || err.message) });
-      }
-      sendFile(outFile, "xlsx");
-    });
-    return;
-  }
-
-  // ── All other conversions : LibreOffice ───────────────────────────
-  let infilter = null;
-  if (srcExt === "pdf") {
-    if (["pptx", "ppt", "odp"].includes(targetFmt)) infilter = "impress_pdf_import";
-    else                                              infilter = "writer_pdf_import";
-  }
-  const infilterArgs = infilter ? [`--infilter=${infilter}`] : [];
-
-  execFile(
-    SOFFICE,
-    ["--headless", "--convert-to", targetFmt, "--outdir", tmpDir, ...infilterArgs, srcPath],
-    { timeout: 90000 },
-    (err) => {
-      if (err) {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-        return res.status(500).json({ error: "Conversion échouée : " + err.message });
-      }
-      const produced = fs.readdirSync(tmpDir).find(f => path.parse(f).name === baseName);
-      if (!produced) {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-        return res.status(422).json({
-          error: `Conversion ${srcExt.toUpperCase()} → ${targetFmt.toUpperCase()} non supportée`,
-        });
-      }
-      sendFile(path.join(tmpDir, produced), targetFmt);
+    if (!fs.existsSync(srcPath)) {
+      const err = new Error("Fichier source introuvable");
+      err.statusCode = 404;
+      return next(err);
     }
-  );
+
+    const tmpDir  = fs.mkdtempSync(path.join(os.tmpdir(), "ged-convert-"));
+    const srcExt  = path.extname(filename).slice(1).toLowerCase();
+    const baseName = path.basename(filename, path.extname(filename));
+
+    // ── Helper: send converted file then clean up ──────────────
+    const sendFile = (outFile, ext) => {
+      if (!fs.existsSync(outFile)) {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+        const err = new Error("Fichier converti non trouvé");
+        err.statusCode = 422;
+        return next(err);
+      }
+      res.download(outFile, `${baseName}.${ext}`, (dlErr) => {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+        if (dlErr && !res.headersSent) next(dlErr);
+      });
+    };
+
+    // ── PDF → DOCX : use pdf2docx (Python) for real text extraction ──
+    if (srcExt === "pdf" && ["docx", "doc"].includes(targetFmt)) {
+      const outFile  = path.join(tmpDir, `${baseName}.docx`);
+      const script   = path.join(SCRIPTS_DIR, "pdf_to_docx.py");
+      execFile(PYTHON, [script, srcPath, outFile], { timeout: 120000 }, (err, _stdout, stderr) => {
+        if (err) {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+          const error = new Error("Conversion de fichier échouée");
+          error.statusCode = 500;
+          return next(error);
+        }
+        sendFile(outFile, "docx");
+      });
+      return;
+    }
+
+    // ── PDF → XLSX : use pdfplumber (Python) for table extraction ────
+    if (srcExt === "pdf" && ["xlsx", "xls"].includes(targetFmt)) {
+      const outFile = path.join(tmpDir, `${baseName}.xlsx`);
+      const script  = path.join(SCRIPTS_DIR, "pdf_to_xlsx.py");
+      execFile(PYTHON, [script, srcPath, outFile], { timeout: 120000 }, (err, _stdout, stderr) => {
+        if (err) {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+          const error = new Error("Conversion de fichier échouée");
+          error.statusCode = 500;
+          return next(error);
+        }
+        sendFile(outFile, "xlsx");
+      });
+      return;
+    }
+
+    // ── All other conversions : LibreOffice ───────────────────────────
+    let infilter = null;
+    if (srcExt === "pdf") {
+      if (["pptx", "ppt", "odp"].includes(targetFmt)) infilter = "impress_pdf_import";
+      else                                              infilter = "writer_pdf_import";
+    }
+    const infilterArgs = infilter ? [`--infilter=${infilter}`] : [];
+
+    execFile(
+      SOFFICE,
+      ["--headless", "--convert-to", targetFmt, "--outdir", tmpDir, ...infilterArgs, srcPath],
+      { timeout: 90000 },
+      (err) => {
+        if (err) {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+          const error = new Error("Conversion de fichier échouée");
+          error.statusCode = 500;
+          return next(error);
+        }
+        const produced = fs.readdirSync(tmpDir).find(f => path.parse(f).name === baseName);
+        if (!produced) {
+          fs.rmSync(tmpDir, { recursive: true, force: true });
+          const error = new Error("Format de conversion non supporté pour cette combinaison");
+          error.statusCode = 422;
+          return next(error);
+        }
+        sendFile(path.join(tmpDir, produced), targetFmt);
+      }
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ── Debug route ──────────────────────────────────────────────
@@ -183,25 +227,39 @@ app.use("/api/dashboard",       require("./routes/dashboardRoutes"));  // Sprint
 app.use("/api/notifications",   require("./routes/notificationRoutes")); // Sprint 5 — Notifications
 app.use("/api/ai",              require("./routes/aiRoutes"));             // Sprint 6 — Module IA
 app.use("/api/logs",            require("./routes/logRoutes"));            // Logs Admin
+app.use("/api/health",          require("./routes/healthRoutes"));          // Supervision performances
+app.use("/api/incidents",       require("./routes/incidentRoutes"));        // Détection des incidents
 
-// ── Error handler ────────────────────────────────────────────
-app.use((err, _req, res, _next) => {
-  console.error("🔥", err.message);
-  res.status(500).json({ error: err.message });
-});
+// ── 404 handler (must come before error handler) ─────────────
+app.use(notFoundHandler);
+
+// ── Global error handler (must be LAST) ──────────────────────
+app.use(errorHandler);
 
 app.listen(process.env.PORT || 4000, async () => {
   console.log("✅ Server running on port " + (process.env.PORT || 4000));
+
+  // ── Journaux d'audit — colonnes sécurité (ip, user_agent, severity) ──
+  const { ensureAuditColumns } = require("./controllers/logController");
+  await ensureAuditColumns();
 
   // ── Rôles ISO EF06 — doit tourner EN PREMIER (seedDefaultUsers en dépend) ──
   const { ensureRoles } = require("./controllers/roleController");
   await ensureRoles();
 
   // ── Auth JWT Sprint 3 — colonnes + seed utilisateurs ───────
-  const { ensureAuthColumns, ensureResetTokensTable, seedDefaultUsers } = require("./controllers/authController");
+  const {
+    ensureAuthColumns, ensureResetTokensTable, ensureTokenBlacklistTable,
+    cleanupExpiredBlacklistedTokens, seedDefaultUsers,
+  } = require("./controllers/authController");
   await ensureAuthColumns();
   await ensureResetTokensTable();
+  await ensureTokenBlacklistTable();
   await seedDefaultUsers();
+
+  // Nettoyage des tokens blacklistés expirés toutes les 6h
+  await cleanupExpiredBlacklistedTokens();
+  setInterval(cleanupExpiredBlacklistedTokens, 6 * 60 * 60 * 1000);
 
   // ── Table validations EF05 ─────────────────────────────────
   const { ensureValidationsTable } = require("./controllers/validationController");
@@ -237,6 +295,12 @@ app.listen(process.env.PORT || 4000, async () => {
   // ── Module IA Sprint 6 — tables IA ─────────────────────────
   const { ensureAITables } = require("./controllers/aiController");
   await ensureAITables();
+
+  // ── Détection des incidents de sécurité ───────────────────
+  const { ensureIncidentsTable } = require("./controllers/incidentController");
+  await ensureIncidentsTable();
+  const { startIncidentDetector } = require("./utils/incidentDetector");
+  startIncidentDetector();
 
   // ── Kafka + Email Sprint 8 ────────────────────────────────
   if (process.env.KAFKA_BROKER) {

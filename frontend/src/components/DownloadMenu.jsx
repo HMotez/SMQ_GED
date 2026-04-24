@@ -39,7 +39,7 @@ export default function DownloadMenu({ filename, size = "normal" }) {
       const blob    = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const link    = document.createElement("a");
-      const base    = filename.replace(/\.[^/.]+$/, "");
+      const base    = filename.split("/").pop().replace(/\.[^/.]+$/, "");
       link.href     = blobUrl;
       link.download = `${base}.${ext}`;
       document.body.appendChild(link);

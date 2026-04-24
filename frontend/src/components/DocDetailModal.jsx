@@ -276,7 +276,7 @@ export default function DocDetailModal({ docId, onClose }) {
                               </div>
                             );
                           }
-                          return v.sharepoint_link ? (
+                          return v.sharepoint_link && v.version_letter !== "-" ? (
                             <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold no-underline transition-all flex-shrink-0"
                               style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)" }}

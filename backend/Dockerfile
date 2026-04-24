@@ -1,7 +1,7 @@
 # =============================================================
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
 # Node.js 20 + Express + LibreOffice + Module IA Groq (llama-3.3-70b)
-# Sprint 27 — Admin activity journal (GET /api/logs + PDF export)
+# Sprint 31 — Endurcissement infrastructure : non-root user
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────
@@ -38,6 +38,12 @@ COPY scripts/ ./scripts/
 
 # Create storage directory (will be mounted as a named volume)
 RUN mkdir -p /app/storage
+
+# ── Non-root user (Endurcissement infrastructure) ─────────────
+# App never runs as root — eliminates default OS account risk
+RUN groupadd -r appgroup && useradd -r -g appgroup -u 1001 appuser \
+  && chown -R appuser:appgroup /app
+USER appuser
 
 # Expose API port
 EXPOSE 4000

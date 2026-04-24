@@ -26,13 +26,20 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 /* ── Animation styles ──────────────────────────────────── */
 const ANIMATION_STYLES = `
-  @keyframes floatY {
-    0%,100% { transform: translateY(0); }
-    50%     { transform: translateY(-6px); }
-  }
+  @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
   .dot-float { animation: floatY 3s ease-in-out infinite; }
-
-
+  @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { opacity: 0; transform: scale(0.86); } to { opacity: 1; transform: scale(1); } }
+  @keyframes shimmerPass { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+  @keyframes pulseGlowDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.7); } }
+  .anim-slide-up { animation: fadeSlideUp 0.55s cubic-bezier(.22,.68,0,1.2) both; }
+  .anim-fade-in  { animation: fadeIn 0.45s ease both; }
+  .anim-scale-in { animation: scaleIn 0.52s cubic-bezier(.34,1.56,.64,1) both; }
+  .chart-row { cursor:pointer; border-radius:10px; padding:6px 10px; margin:-6px -10px; transition:background 0.18s,transform 0.18s; position:relative; overflow:hidden; }
+  .chart-row:hover  { background:rgba(255,255,255,0.05); transform:translateX(4px); }
+  .chart-row:active { transform:translateX(4px) scale(0.98); }
+  .dot-pulse { animation: pulseGlowDot 1.8s ease-in-out infinite; }
 `;
 
 const GREEN      = "#4ab83f";
@@ -393,15 +400,103 @@ function AlertRow({ doc, accent, onClick }) {
 
 const CHART_COLORS = ["#3b82f6","#10b981","#f59e0b","#6d28d9","#ef4444","#0f766e","#4ab83f","#c2410c","#475569","#1d4ed8"];
 
-/* ── Gradient Area Chart (like the image) ─────────────────── */
-function makeGradientPlugin(colors) {
+/* ── useCountUp ────────────────────────────────────────────────────────── */
+function useCountUp(target, delay) {
+  const d = delay || 0;
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let start = null;
+    const dur = 950;
+    const tick = ts => {
+      if (!start) start = ts + d;
+      const el = ts - start;
+      if (el < 0) { requestAnimationFrame(tick); return; }
+      const p = Math.min(el / dur, 1);
+      setVal(Math.round((1 - Math.pow(1 - p, 3)) * target));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    const id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [target, d]);
+  return val;
+}
+
+/* ── StatusBarChart ─────────────────────────────────────────────── */
+function StatusBarRow({ d, i, max, visible }) {
+  const navigate = useNavigate();
+  const color = STATUS_COLORS[d.name] || "#60a5fa";
+  const pct   = (d.count / max) * 100;
+  const count = useCountUp(d.count, i * 80);
+  const [hov, setHov] = useState(false);
+  return (
+    <div className="anim-slide-up chart-row" style={{ animationDelay: i * 60 + "ms" }}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onClick={() => navigate("/list?statusName=" + encodeURIComponent(d.name))}
+    >
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5, alignItems:"center" }}>
+        <span style={{ color: hov ? "#fff" : "rgba(168,191,212,0.85)", fontSize:12, fontWeight:500, transition:"color 0.2s", display:"flex", alignItems:"center", gap:6 }}>
+          <span style={{ width:7, height:7, borderRadius:"50%", background:color, display:"inline-block", flexShrink:0 }} className={hov ? "dot-pulse" : ""} />
+          {d.name}
+        </span>
+        <span style={{ color, fontSize:14, fontWeight:800, minWidth:22, textAlign:"right", transform: hov ? "scale(1.2)" : "scale(1)", transition:"transform 0.2s", display:"inline-block" }}>{count}</span>
+      </div>
+      <div style={{ height:8, borderRadius:99, background:"rgba(255,255,255,0.06)", overflow:"hidden", position:"relative" }}>
+        <div style={{
+          height:"100%", borderRadius:99,
+          background: "linear-gradient(90deg," + color + "88," + color + ")",
+          width: visible ? pct + "%" : "0%",
+          transition: "width 0.9s cubic-bezier(.22,.68,0,1.2) " + (i * 80) + "ms",
+          boxShadow: hov ? "0 0 18px " + color : "0 0 10px " + color + "66",
+          position:"relative", overflow:"hidden",
+        }}>
+          {visible && <div style={{ position:"absolute", top:0, left:0, height:"100%", width:"50%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent)", animation: "shimmerPass 1.1s ease " + (0.9 + i * 0.1) + "s both", borderRadius:99 }} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+function StatusBarChart({ data }) {
+  const max = Math.max(...data.map(d => d.count), 1);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 100); return () => clearTimeout(t); }, []);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:12 }}>
+      {data.map((d, i) => <StatusBarRow key={d.name} d={d} i={i} max={max} visible={visible} />)}
+    </div>
+  );
+}
+
+/* ── TypeAreaChart — Gradient area chart like reference image ────── */
+const TYPE_COLORS = ["#4ab83f","#f472b6","#60a5fa","#fbbf24","#a78bfa","#2dd4bf","#fb923c","#e879f9"];
+
+const crosshairPlugin = {
+  id: "crosshair",
+  afterDraw(chart) {
+    const active = chart.tooltip?._active ?? [];
+    if (!active.length) return;
+    const ctx  = chart.ctx;
+    const x    = active[0].element.x;
+    const { top, bottom } = chart.chartArea;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.lineWidth   = 1.5;
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
+function makeTypeGradPlugin(pairs) {
   return {
-    id: "areaGradient_" + Math.random(),
+    id: "typeAreaGrad_" + Math.random(),
     beforeDatasetsDraw(chart) {
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
       chart.data.datasets.forEach((ds, i) => {
-        const [c1, c2] = colors[i] || ["rgba(96,165,250,0.55)", "rgba(96,165,250,0)"];
+        const [c1, c2] = pairs[i] || ["rgba(96,165,250,0.5)", "rgba(96,165,250,0)"];
         const grad = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
         grad.addColorStop(0, c1);
         grad.addColorStop(1, c2);
@@ -411,79 +506,162 @@ function makeGradientPlugin(colors) {
   };
 }
 
-function AreaCard({ datasets, title }) {
-  const pluginRef = useRef(null);
-  if (!datasets || datasets.every(d => !d.data || d.data.length === 0)) return (
-    <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+function TypeAreaChart({ data, total }) {
+  const navigate   = useNavigate();
+  const gradRef    = useRef(null);
+
+  if (!data || data.length === 0) return (
+    <p style={{ color:"rgba(168,191,212,0.4)", textAlign:"center", padding:"32px 0", fontSize:12 }}>Aucune donnée</p>
   );
 
-  if (!pluginRef.current) {
-    pluginRef.current = makeGradientPlugin(datasets.map(d => d.gradientColors));
+  if (!gradRef.current) {
+    gradRef.current = makeTypeGradPlugin([
+      ["rgba(74,184,63,0.65)",  "rgba(74,184,63,0.02)"],
+      ["rgba(244,114,182,0.45)","rgba(244,114,182,0.01)"],
+    ]);
   }
 
+  const labels = data.map(d => d.code || d.label || "—");
+  const counts = data.map(d => d.count);
+  const trend  = counts.map((v, i, arr) => {
+    const slice = arr.slice(Math.max(0, i - 1), i + 2);
+    return Math.round(slice.reduce((a, b) => a + b, 0) / slice.length * 10) / 10;
+  });
+
   const chartData = {
-    labels: datasets[0].labels,
-    datasets: datasets.map(d => ({
-      label: d.label || title,
-      data: d.data,
-      borderColor: d.lineColor,
-      backgroundColor: "transparent",
-      fill: true,
-      tension: 0.45,
-      borderWidth: 3,
-      pointBackgroundColor: "#fff",
-      pointBorderColor: d.lineColor,
-      pointBorderWidth: 2.5,
-      pointRadius: 5,
-      pointHoverRadius: 8,
-      pointHoverBackgroundColor: d.lineColor,
-    })),
+    labels,
+    datasets: [
+      {
+        label: "Documents",
+        data: counts,
+        borderColor:              "#4ab83f",
+        backgroundColor:          "transparent",
+        fill:                     true,
+        tension:                  0.46,
+        borderWidth:              3,
+        pointBackgroundColor:     "#fff",
+        pointBorderColor:         "#4ab83f",
+        pointBorderWidth:         2.5,
+        pointRadius:              5,
+        pointHoverRadius:         9,
+        pointHoverBackgroundColor:"#4ab83f",
+      },
+      {
+        label: "Tendance",
+        data: trend,
+        borderColor:              "#f472b6",
+        backgroundColor:          "transparent",
+        fill:                     true,
+        tension:                  0.46,
+        borderWidth:              2.5,
+        pointBackgroundColor:     "#fff",
+        pointBorderColor:         "#f472b6",
+        pointBorderWidth:         2,
+        pointRadius:              4,
+        pointHoverRadius:         8,
+        pointHoverBackgroundColor:"#f472b6",
+      },
+    ],
   };
 
-  const options = {
-    animation: { duration: 1400, easing: "easeInOutQuart" },
+  const opts = {
+    animation: { duration: 1500, easing: "easeInOutQuart" },
     plugins: {
-      legend: { display: datasets.length > 1, labels: { color: "rgba(168,191,212,0.8)", usePointStyle: true, pointStyleWidth: 8, font: { size: 11 } } },
+      legend: {
+        display: true,
+        labels: { color:"rgba(168,191,212,0.85)", usePointStyle:true, pointStyleWidth:8, font:{ size:11 }, boxHeight:8 },
+      },
       tooltip: {
-        backgroundColor: "rgba(8,18,32,0.96)",
-        titleColor: "#fff",
-        bodyColor: "rgba(168,191,212,0.9)",
-        borderColor: "rgba(255,255,255,0.12)",
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 12,
-        displayColors: true,
+        mode:            "index",
+        intersect:       false,
+        backgroundColor: "rgba(6,14,26,0.97)",
+        titleColor:      "#fff",
+        bodyColor:       "rgba(168,191,212,0.9)",
+        borderColor:     "rgba(255,255,255,0.1)",
+        borderWidth:     1,
+        padding:         14,
+        cornerRadius:    12,
         callbacks: {
-          label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.y} document${ctx.parsed.y !== 1 ? "s" : ""}`,
+          title: ([ctx]) => {
+            const d = data[ctx.dataIndex];
+            return (d ? (d.label || d.code) : ctx.label) || ctx.label;
+          },
+          label: ctx => "  " + ctx.dataset.label + ": " + ctx.parsed.y + " document" + (ctx.parsed.y !== 1 ? "s" : ""),
         },
       },
     },
     scales: {
       x: {
-        grid: { color: "rgba(255,255,255,0.06)", borderDash: [4, 4], drawTicks: false },
-        ticks: { color: "rgba(168,191,212,0.65)", font: { size: 11 }, maxRotation: 0, padding: 8 },
-        border: { display: false },
+        grid:   { color:"rgba(255,255,255,0.06)", borderDash:[4,4], drawTicks:false },
+        ticks:  { color:"rgba(168,191,212,0.65)", font:{ size:11 }, maxRotation:0, padding:6 },
+        border: { display:false },
       },
       y: {
-        grid: { color: "rgba(255,255,255,0.05)", drawTicks: false },
-        ticks: { color: "rgba(168,191,212,0.45)", font: { size: 10 }, stepSize: 1, padding: 8 },
-        border: { display: false },
-        beginAtZero: true,
+        grid:       { color:"rgba(255,255,255,0.05)", drawTicks:false },
+        ticks:      { color:"rgba(168,191,212,0.45)", font:{ size:10 }, stepSize:1, padding:8 },
+        border:     { display:false },
+        beginAtZero:true,
       },
     },
-    responsive: true,
+    responsive:       true,
     maintainAspectRatio: false,
-    interaction: { mode: "index", intersect: false },
+    interaction: { mode:"index", intersect:false },
+    onClick: (_e, els) => {
+      if (els.length > 0) navigate("/list?typeId=" + encodeURIComponent(data[els[0].index]?.id || ""));
+    },
   };
 
   return (
-    <div style={{ height: 230 }}>
-      <Line data={chartData} options={options} plugins={[pluginRef.current]} />
+    <div style={{ height:240, marginTop:8, cursor:"pointer" }}>
+      <Line data={chartData} options={opts} plugins={[gradRef.current, crosshairPlugin]} />
     </div>
   );
 }
 
-/* ══════════════════════════════════════════════════════════ */
+/* ── ProcessBarChart ─────────────────────────────────────────────── */
+const PROC_COLORS = ["#38bdf8","#34d399","#fbbf24","#a78bfa","#f472b6","#fb923c","#2dd4bf"];
+function ProcessBarRow({ d, i, max, visible }) {
+  const navigate = useNavigate();
+  const color = PROC_COLORS[i % PROC_COLORS.length];
+  const pct   = (d.count / max) * 100;
+  const count = useCountUp(d.count, i * 80);
+  const [hov, setHov] = useState(false);
+  const fmt = s => String(s || "—").replace(/_/g, " ");
+  return (
+    <div className="anim-slide-up chart-row" style={{ animationDelay: i * 65 + "ms" }}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onClick={() => navigate("/list?folderId=" + encodeURIComponent(d.id || ""))}
+    >
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4, alignItems:"center" }}>
+        <span style={{ color: hov ? "#fff" : "rgba(168,191,212,0.85)", fontSize:11, fontWeight:500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"78%", transition:"color 0.2s" }} title={fmt(d.name)}>{fmt(d.name)}</span>
+        <span style={{ color, fontSize:13, fontWeight:800, flexShrink:0, transform: hov ? "scale(1.15)" : "scale(1)", transition:"transform 0.2s", display:"inline-block" }}>{count}</span>
+      </div>
+      <div style={{ height:7, borderRadius:99, background:"rgba(255,255,255,0.06)", overflow:"hidden", position:"relative" }}>
+        <div style={{
+          height:"100%", borderRadius:99,
+          background: "linear-gradient(90deg," + color + "77," + color + ")",
+          width: visible ? pct + "%" : "0%",
+          transition: "width 0.95s cubic-bezier(.22,.68,0,1.2) " + (i * 85) + "ms",
+          boxShadow: hov ? "0 0 16px " + color : "0 0 8px " + color + "55",
+          position:"relative", overflow:"hidden",
+        }}>
+          {visible && <div style={{ position:"absolute", top:0, left:0, height:"100%", width:"50%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent)", animation: "shimmerPass 1.1s ease " + (0.95 + i * 0.1) + "s both", borderRadius:99 }} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+function ProcessBarChart({ data }) {
+  const max = Math.max(...data.map(d => d.count), 1);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 150); return () => clearTimeout(t); }, []);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:12 }}>
+      {data.slice(0, 7).map((d, i) => <ProcessBarRow key={d.id || i} d={d} i={i} max={max} visible={visible} />)}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -561,16 +739,22 @@ export default function Dashboard() {
 
           {/* KPI Cards */}
           <div className="flex gap-4 flex-wrap">
-            <KpiCard icon={LuTriangleAlert} label="Documents expirés"    value={loadingOv?"…":expired.count}      sub="date de révision dépassée" accent={expired.count>0?"#f87171":"#4ade80"}      pulse={expired.count>0}      onClick={() => navigate("/list?overdue=true")} />
-            <KpiCard icon={LuClipboardCheck} label="En validation"       value={loadingOv?"…":inValidation.count} sub="en attente d'approbation"  accent={inValidation.count>0?"#a5b4fc":"#4ade80"} pulse={inValidation.count>0} onClick={() => navigate(canValidate ? "/validations" : "/list?statusName=En%20validation")} />
-            <KpiCard icon={LuCircleAlert}   label="En retard de révision" value={loadingOv?"…":overdue.count}      sub="révision dépassée"         accent={overdue.count>0?"#fb923c":"#4ade80"}     pulse={overdue.count>0}      onClick={() => navigate("/list?overdue=true")} />
-            <KpiCard icon={LuCircleCheck}   label="Total documents"       value={loadingOv?"…":totalDocs||0}       sub="dans le système"           accent="#60a5fa"                                                           onClick={() => navigate("/list")} />
+            {[
+              { icon:LuTriangleAlert,  label:"Documents expirés",     value:loadingOv?"…":expired.count,       sub:"date de révision dépassée", accent:expired.count>0?"#f87171":"#4ade80",       pulse:expired.count>0,       onClick:()=>navigate("/list?overdue=true"),  delay:"0ms"   },
+              { icon:LuClipboardCheck, label:"En validation",          value:loadingOv?"…":inValidation.count,  sub:"en attente d'approbation",  accent:inValidation.count>0?"#a5b4fc":"#4ade80",  pulse:inValidation.count>0,  onClick:()=>navigate(canValidate?"/validations":"/list?statusName=En%20validation"), delay:"80ms"  },
+              { icon:LuCircleAlert,    label:"En retard de révision",  value:loadingOv?"…":overdue.count,       sub:"révision dépassée",         accent:overdue.count>0?"#fb923c":"#4ade80",       pulse:overdue.count>0,       onClick:()=>navigate("/list?overdue=true"),  delay:"160ms" },
+              { icon:LuCircleCheck,    label:"Total documents",        value:loadingOv?"…":totalDocs||0,        sub:"dans le système",           accent:"#60a5fa",                                 pulse:false,                 onClick:()=>navigate("/list"),               delay:"240ms" },
+            ].map(({ icon, label, value, sub, accent, pulse, onClick, delay }) => (
+              <div key={label} className="anim-slide-up flex-1" style={{ animationDelay: delay }}>
+                <KpiCard icon={icon} label={label} value={value} sub={sub} accent={accent} pulse={pulse} onClick={onClick} />
+              </div>
+            ))}
           </div>
 
           {/* Alerts: Expired + In validation */}
           <div className="grid grid-cols-2 gap-5">
             {/* Expired */}
-            <GlassCard className="p-6">
+            <GlassCard className="p-6 anim-slide-up" style={{ animationDelay:"100ms" }}>
               <div className="flex justify-between items-center mb-5">
                 <SectionLabel icon={LuTriangleAlert} title="Documents expirés" accent="#f87171" />
                 <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.25)" }}>
@@ -587,7 +771,7 @@ export default function Dashboard() {
             </GlassCard>
 
             {/* In validation */}
-            <GlassCard className="p-6">
+            <GlassCard className="p-6 anim-slide-up" style={{ animationDelay:"180ms" }}>
               <div className="flex justify-between items-center mb-5">
                 <SectionLabel icon={LuClipboardCheck} title="En attente de validation" accent="#a5b4fc" />
                 <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(165,180,252,0.12)", color:"#a5b4fc", border:"1px solid rgba(165,180,252,0.25)" }}>
@@ -605,7 +789,7 @@ export default function Dashboard() {
           </div>
 
           {/* Recent docs */}
-          <GlassCard className="p-6">
+          <GlassCard className="p-6 anim-slide-up" style={{ animationDelay:"220ms" }}>
             <div className="flex justify-between items-center mb-5">
               <SectionLabel icon={LuClock} title="Documents récemment modifiés" accent="#60a5fa" />
               <NavLink to="/list" className="text-xs font-semibold no-underline flex items-center gap-1" style={{ color:"#4ab83f" }}>
@@ -638,68 +822,41 @@ export default function Dashboard() {
             }
           </GlassCard>
 
-          {/* Charts */}
+                    {/* Charts */}
           <div>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-0.5 h-5 rounded-full" style={{ background:"#4ab83f" }} />
               <h2 className="m-0 text-lg font-black text-white" style={{ letterSpacing:-0.3 }}>Statistiques & Répartitions</h2>
             </div>
             <div className="grid gap-5" style={{ gridTemplateColumns:"1fr 1fr 1fr" }}>
-              <GlassCard className="p-6">
+
+              <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"100ms" }}>
                 <SectionLabel icon={LuList} title="Par statut" accent="#60a5fa" />
-                {loadingSt ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                  : <AreaCard title="Statut" datasets={[{
-                      labels: byStatus.map(d => d.name || d.label || "—"),
-                      data: byStatus.map(d => d.count),
-                      label: "Documents",
-                      lineColor: "#38bdf8",
-                      gradientColors: ["rgba(56,189,248,0.55)", "rgba(56,189,248,0.02)"],
-                    }, {
-                      labels: byStatus.map(d => d.name || d.label || "—"),
-                      data: byStatus.map(d => Math.max(0, d.count - 1)),
-                      label: "Tendance",
-                      lineColor: "#c084fc",
-                      gradientColors: ["rgba(192,132,252,0.4)", "rgba(192,132,252,0.01)"],
-                    }]} />}
+                {loadingSt
+                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                  : byStatus.length === 0
+                    ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+                    : <StatusBarChart data={byStatus} />}
               </GlassCard>
 
-              <GlassCard className="p-6">
+              <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"200ms" }}>
                 <SectionLabel icon={LuSearch} title="Par type documentaire" accent="#a78bfa" />
-                {loadingSt ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                  : <AreaCard title="Type" datasets={[{
-                      labels: byType.map(d => d.name || d.label || d.code || "—"),
-                      data: byType.map(d => d.count),
-                      label: "Documents",
-                      lineColor: "#f472b6",
-                      gradientColors: ["rgba(244,114,182,0.55)", "rgba(244,114,182,0.02)"],
-                    }, {
-                      labels: byType.map(d => d.name || d.label || d.code || "—"),
-                      data: byType.map(d => Math.max(0, d.count - 1)),
-                      label: "Tendance",
-                      lineColor: "#fb923c",
-                      gradientColors: ["rgba(251,146,60,0.4)", "rgba(251,146,60,0.01)"],
-                    }]} />}
+                {loadingSt
+                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                  : byType.length === 0
+                    ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+                    : <TypeAreaChart data={byType} total={totalDocs} />}
               </GlassCard>
 
-              <GlassCard className="p-6">
+              <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"300ms" }}>
                 <SectionLabel icon={LuUsers} title="Par processus" accent="#2dd4bf" />
-                {loadingSt ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                {loadingSt
+                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
                   : byProcess.length === 0
                     ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
-                    : <AreaCard title="Processus" datasets={[{
-                        labels: byProcess.map(d => d.name || d.label || d.code || "—"),
-                        data: byProcess.map(d => d.count),
-                        label: "Documents",
-                        lineColor: "#34d399",
-                        gradientColors: ["rgba(52,211,153,0.55)", "rgba(52,211,153,0.02)"],
-                      }, {
-                        labels: byProcess.map(d => d.name || d.label || d.code || "—"),
-                        data: byProcess.map(d => Math.max(0, d.count - 1)),
-                        label: "Tendance",
-                        lineColor: "#2dd4bf",
-                        gradientColors: ["rgba(45,212,191,0.4)", "rgba(45,212,191,0.01)"],
-                      }]} />}
+                    : <ProcessBarChart data={byProcess} />}
               </GlassCard>
+
             </div>
           </div>
 

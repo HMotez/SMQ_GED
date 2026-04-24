@@ -9,19 +9,39 @@ const bcrypt       = require("bcryptjs");
 const jwt          = require("jsonwebtoken");
 const crypto       = require("crypto");
 const emailService = require("../services/emailService");
-const pool   = require("../db");
+const pool         = require("../db");
+const { auditLog }          = require("../utils/auditLog");
+const { validatePassword }  = require("../utils/passwordPolicy");
 
-const JWT_SECRET  = process.env.JWT_SECRET  || "actia-ged-fallback-secret";
+// ── JWT_SECRET — REQUIRED, no fallback (Endurcissement infra) ──
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error("❌ FATAL: JWT_SECRET environment variable is required. Set it in .env and restart.");
+  process.exit(1);
+}
 const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || "8h";
 
-// ─────────────────────────────────────────────────────────────
-// Default users — seeded at startup
-// ─────────────────────────────────────────────────────────────
+// ── Default users — credentials from .env only ───────────────
+// Generate a secure random password if env var not set (first-run only)
+function _defaultPwd(envVar, label) {
+  if (process.env[envVar]) return process.env[envVar];
+  const generated = require("crypto").randomBytes(12).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 14) + "!A1";
+  console.warn(`[Auth] ⚠️  ${envVar} not set — generated password for ${label}: ${generated}  (set this in .env!)`);
+  return generated;
+}
 const DEFAULT_USERS = [
-  { name:"Admin",        email:"admin@test.com",       password:"Admin123!", role:"Admin"        },
-  { name:"Ing Qualité",  email:"ing@test.com",        password:"Ing123!",   role:"Ing. Qualité" },
-  { name:"Reviewer",     email:"reviewer@test.com",   password:"Rev123!",   role:"Reviewer"     },
+  { name:"Admin",       email: process.env.ADMIN_EMAIL    || "admin@actia.ged",    password: _defaultPwd("ADMIN_PASSWORD",    "Admin"),       role:"Admin"        },
+  { name:"Ing Qualité", email: process.env.ING_EMAIL      || "ing@actia.ged",      password: _defaultPwd("ING_PASSWORD",      "Ing. Qualité"), role:"Ing. Qualité" },
+  { name:"Reviewer",    email: process.env.REVIEWER_EMAIL || "reviewer@actia.ged", password: _defaultPwd("REVIEWER_PASSWORD", "Reviewer"),    role:"Reviewer"     },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// Politique de complexité du mot de passe
+// ─────────────────────────────────────────────────────────────
+function validatePasswordComplexity(password) {
+  const { errors } = validatePassword(password);
+  return errors;
+}
 
 // ─────────────────────────────────────────────────────────────
 // ensureAuthColumns — ajoute password_hash à users si absent
@@ -36,6 +56,17 @@ async function ensureAuthColumns() {
   await pool.query(`
     ALTER TABLE users
       ADD COLUMN IF NOT EXISTS requested_role VARCHAR(100);
+  `);
+  // Colonne IP de dernière connexion (alerte nouvelle IP)
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR(64);
+  `);
+  // Colonnes anti-brute-force
+  await pool.query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS login_attempts INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP WITH TIME ZONE;
   `);
   // Migration : activer les comptes existants qui ont déjà un rôle assigné
   await pool.query(`
@@ -113,6 +144,11 @@ function signToken(user) {
 // POST /api/auth/login
 // Body: { email, password }
 // ─────────────────────────────────────────────────────────────
+const BRUTE_MAX_ATTEMPTS = 3;
+const BRUTE_LOCK_MINUTES = 15;
+// Message générique — masque les différences valide/invalide (anti-énumération)
+const GENERIC_AUTH_ERROR = "Email ou mot de passe incorrect.";
+
 async function login(req, res) {
   const { email, password } = req.body;
 
@@ -125,7 +161,8 @@ async function login(req, res) {
 
   try {
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.password_hash, u.is_active, r.name AS role
+      `SELECT u.id, u.name, u.email, u.password_hash, u.is_active,
+              u.login_attempts, u.locked_until, r.name AS role
        FROM users u
        LEFT JOIN roles r ON r.id = u.role_id
        WHERE LOWER(u.email) = LOWER($1)`,
@@ -134,17 +171,19 @@ async function login(req, res) {
 
     const user = result.rows[0];
 
-    if (!user) {
-      return res.status(401).json({
-        error: "Email ou mot de passe incorrect.",
-        code:  "INVALID_CREDENTIALS",
-      });
+    // Utilisateur introuvable — même message que mot de passe incorrect (anti-énumération)
+    if (!user || !user.password_hash) {
+      await bcrypt.compare(password, "$2b$10$invalidhashplaceholderXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+      auditLog({ action: "LOGIN_FAILURE", severity: "warning", details: { email, reason: "user_not_found" }, req });
+      return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
     }
 
-    if (!user.password_hash) {
-      return res.status(401).json({
-        error: "Compte non configuré. Contactez l'administrateur.",
-        code:  "NO_PASSWORD",
+    // Vérification du verrou brute-force
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const remaining = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
+      return res.status(429).json({
+        error: `Compte temporairement bloqué suite à trop de tentatives. Réessayez dans ${remaining} minute(s).`,
+        code:  "ACCOUNT_LOCKED",
       });
     }
 
@@ -155,19 +194,60 @@ async function login(req, res) {
       });
     }
 
+    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "inconnu";
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      return res.status(401).json({
-        error: "Email ou mot de passe incorrect.",
-        code:  "INVALID_CREDENTIALS",
-      });
+      const newAttempts = (user.login_attempts || 0) + 1;
+      if (newAttempts >= BRUTE_MAX_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + BRUTE_LOCK_MINUTES * 60 * 1000);
+        await pool.query(
+          "UPDATE users SET login_attempts = $1, locked_until = $2 WHERE id = $3",
+          [newAttempts, lockedUntil, user.id]
+        );
+        console.warn(`[Auth][BruteForce] Compte bloqué 15min : ${user.email} (IP: ${clientIp})`);
+        auditLog({ action: "ACCOUNT_LOCKED", userId: user.id, severity: "critical",
+          details: { email: user.email, attempts: newAttempts, locked_until: lockedUntil }, req });
+        emailService.sendSecurityAlert({
+          to: user.email, type: "account_locked",
+          name: user.name, ip: clientIp,
+          lockedUntil: lockedUntil.toLocaleString("fr-FR"),
+        }).catch(() => {});
+        return res.status(429).json({
+          error: `Compte bloqué pendant ${BRUTE_LOCK_MINUTES} minutes suite à ${BRUTE_MAX_ATTEMPTS} tentatives échouées.`,
+          code:  "ACCOUNT_LOCKED",
+        });
+      }
+      await pool.query(
+        "UPDATE users SET login_attempts = $1 WHERE id = $2",
+        [newAttempts, user.id]
+      );
+      auditLog({ action: "LOGIN_FAILURE", userId: user.id, severity: "warning",
+        details: { email: user.email, attempt: newAttempts, reason: "wrong_password" }, req });
+      return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
     }
 
-    // Mise à jour last_login
+    // ── Connexion réussie ──────────────────────────────────────
+    const ipRes = await pool.query("SELECT last_login_ip FROM users WHERE id = $1", [user.id]);
+    const lastIp = ipRes.rows[0]?.last_login_ip;
+    const newIpLogin = lastIp && lastIp !== clientIp;
+    if (newIpLogin) {
+      auditLog({ action: "LOGIN_NEW_IP", userId: user.id, severity: "warning",
+        details: { email: user.email, current_ip: clientIp, previous_ip: lastIp }, req });
+      emailService.sendSecurityAlert({
+        to: user.email, type: "new_ip_login",
+        name: user.name, ip: clientIp, previousIp: lastIp,
+        time: new Date().toLocaleString("fr-FR"),
+      }).catch(() => {});
+    }
+
     await pool.query(
-      "UPDATE users SET last_login = NOW() WHERE id = $1",
-      [user.id]
+      "UPDATE users SET last_login = NOW(), last_login_ip = $1, login_attempts = 0, locked_until = NULL WHERE id = $2",
+      [clientIp, user.id]
     );
+
+    auditLog({ action: "LOGIN_SUCCESS", userId: user.id, severity: "info",
+      details: { email: user.email, role: user.role, ip: clientIp }, req });
 
     const token = signToken(user);
 
@@ -197,6 +277,10 @@ async function me(req, res) {
 
   const token = authHeader.slice(7);
   try {
+    // Vérifier si le token a été invalidé (déconnexion explicite)
+    if (await isTokenBlacklisted(token)) {
+      return res.status(401).json({ error: "Session invalidée. Reconnectez-vous.", code: "SESSION_INVALIDATED" });
+    }
     const payload = jwt.verify(token, JWT_SECRET);
 
     // Re-fetch pour avoir les données à jour (rôle peut changer)
@@ -246,8 +330,10 @@ async function register(req, res) {
   if (email && !emailRegex.test(email.trim()))
     errors.push("Format d'email invalide.");
 
-  if (password && password.length < 6)
-    errors.push("Le mot de passe doit contenir au moins 6 caractères.");
+  if (password) {
+    const pwdErrors = validatePasswordComplexity(password);
+    errors.push(...pwdErrors);
+  }
 
   if (password && confirmPassword && password !== confirmPassword)
     errors.push("Les mots de passe ne correspondent pas.");
@@ -296,10 +382,29 @@ async function register(req, res) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/auth/logout — stateless JWT : juste un 200
+// POST /api/auth/logout — invalide le token côté serveur
 // ─────────────────────────────────────────────────────────────
-async function logout(_req, res) {
-  return res.json({ message: "Déconnexion réussie." });
+async function logout(req, res) {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    try {
+      const decoded = jwt.decode(token);
+      if (decoded?.exp) {
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+        const expiresAt = new Date(decoded.exp * 1000);
+        await pool.query(
+          "INSERT INTO token_blacklist (token_hash, expires_at) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+          [tokenHash, expiresAt]
+        );
+      }
+    } catch { /* ignore — token malformé */ }
+  }
+  if (req.currentUser) {
+    auditLog({ action: "LOGOUT", userId: req.currentUser.id, severity: "info",
+      details: { email: req.currentUser.email }, req });
+  }
+  return res.json({ message: "Déconnexion réussie. Session détruite." });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -307,6 +412,42 @@ async function logout(_req, res) {
 // ─────────────────────────────────────────────────────────────
 function verifyToken(token) {
   return jwt.verify(token, JWT_SECRET);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Token blacklist — invalide les tokens après déconnexion
+// ─────────────────────────────────────────────────────────────
+async function ensureTokenBlacklistTable() {
+  // Créer la table si absente (colonne jti = hash SHA-256 du token)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS token_blacklist (
+      jti        VARCHAR(64) NOT NULL PRIMARY KEY,
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_token_blacklist_expires
+      ON token_blacklist(expires_at)
+  `);
+  console.log("[Auth] Table token_blacklist vérifiée.");
+}
+
+async function isTokenBlacklisted(token) {
+  const hash = crypto.createHash("sha256").update(token).digest("hex");
+  const result = await pool.query(
+    "SELECT jti FROM token_blacklist WHERE jti = $1 AND expires_at > NOW()",
+    [hash]
+  );
+  return result.rows.length > 0;
+}
+
+async function cleanupExpiredBlacklistedTokens() {
+  const result = await pool.query(
+    "DELETE FROM token_blacklist WHERE expires_at <= NOW()"
+  );
+  if (result.rowCount > 0)
+    console.log(`[Auth] ${result.rowCount} token(s) expirés supprimés de la blacklist.`);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -398,8 +539,9 @@ async function resetPassword(req, res) {
   if (password !== confirmPassword) {
     return res.status(400).json({ error: "Les mots de passe ne correspondent pas.", code: "PASSWORD_MISMATCH" });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: "Le mot de passe doit contenir au moins 6 caractères.", code: "PASSWORD_TOO_SHORT" });
+  const pwdErrors = validatePasswordComplexity(password);
+  if (pwdErrors.length > 0) {
+    return res.status(400).json({ error: pwdErrors.join(" "), errors: pwdErrors, code: "PASSWORD_WEAK" });
   }
 
   const client = await pool.connect();
@@ -461,6 +603,9 @@ async function resetPassword(req, res) {
 module.exports = {
   ensureAuthColumns,
   ensureResetTokensTable,
+  ensureTokenBlacklistTable,
+  cleanupExpiredBlacklistedTokens,
+  isTokenBlacklisted,
   seedDefaultUsers,
   login,
   register,
@@ -469,4 +614,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyToken,
+  validatePasswordComplexity,
 };
