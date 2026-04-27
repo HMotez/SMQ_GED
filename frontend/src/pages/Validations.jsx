@@ -575,7 +575,8 @@ export default function Validations() {
       style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
-
+        @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
+        .row-slide-in { animation: rowSlideIn 0.38s cubic-bezier(.22,.68,0,1.1) both; }
       `}</style>
 
       <AppSidebar user={currentUser} badges={{ "/validations": pendingDocs.length }} bottomContent={sidebarBottom} />
@@ -747,13 +748,19 @@ export default function Validations() {
                       ))}
                     </div>
                     {/* rows */}
-                    {validatedDocs.map((doc, i) => (
-                      <div key={doc.id} className="grid px-5 py-3 items-center cursor-pointer transition-all duration-150"
-                        style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", borderBottom: i < validatedDocs.length-1 ? ROW_BORDER : "none", background:"transparent" }}
+                    {validatedDocs.map((doc, i) => {
+                      const sc = statusCfg(doc.status_name);
+                      const rowBg = `${sc.text}08`;
+                      return (
+                      <div key={doc.id} className="row-slide-in relative grid pl-7 pr-5 py-3 items-center cursor-pointer transition-all duration-200 overflow-hidden"
+                        style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", borderBottom: i < validatedDocs.length-1 ? `1px solid ${sc.text}15` : "none", background: rowBg, animationDelay:`${i*0.04}s` }}
                         onClick={() => setSelectedDocId(doc.id)}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                        <span className="font-mono font-bold text-[13px]" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
+                        onMouseEnter={e => e.currentTarget.style.background = `${sc.text}16`}
+                        onMouseLeave={e => e.currentTarget.style.background = rowBg}>
+                        {/* Left status bar */}
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+                          style={{ background:`linear-gradient(to bottom,${sc.text},${sc.text}55)` }} />
+                        <span className="font-mono font-bold text-[13px]" style={{ color: sc.text }}>{doc.doc_code}</span>
                         <div className="overflow-hidden pr-3">
                           <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
                           {doc.folder_name && <p className="m-0 text-xs flex items-center gap-1" style={{ color:"rgba(168,191,212,0.45)" }}><LuFolder size={10}/> {doc.folder_name}</p>}
@@ -768,7 +775,8 @@ export default function Validations() {
                           {doc.current_version ? (doc.current_version === "v-" ? "Initiale" : doc.current_version) : "—"}
                         </span>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}
@@ -803,12 +811,15 @@ export default function Validations() {
                     {allHistory.map((v, i) => {
                       const dcfg = DECISION_CFG[v.decision] || DECISION_CFG["EN_ATTENTE"];
                       const DI = dcfg.Icon;
+                      const rowBg = `${dcfg.text}08`;
                       return (
-                        <div key={v.id} className="grid px-5 py-3 items-center transition-all duration-150 cursor-pointer"
-                          style={{ gridTemplateColumns:"110px 130px 1fr 1fr 140px", borderBottom: i < allHistory.length-1 ? ROW_BORDER : "none" }}
+                        <div key={v.id} className="row-slide-in relative grid pl-7 pr-5 py-3 items-center transition-all duration-200 cursor-pointer overflow-hidden"
+                          style={{ gridTemplateColumns:"110px 130px 1fr 1fr 140px", borderBottom: i < allHistory.length-1 ? `1px solid ${dcfg.text}15` : "none", background: rowBg, animationDelay:`${i*0.04}s` }}
                           onClick={() => setSelectedHistoryEntry(v)}
-                          onMouseEnter={e => { e.currentTarget.style.background="rgba(165,180,252,0.06)"; e.currentTarget.style.cursor="pointer"; }}
-                          onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                          onMouseEnter={e => e.currentTarget.style.background=`${dcfg.text}16`}
+                          onMouseLeave={e => e.currentTarget.style.background=rowBg}>
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+                          style={{ background:`linear-gradient(to bottom,${dcfg.text},${dcfg.text}55)` }} />
                           <div>
                             <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
                               {new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}

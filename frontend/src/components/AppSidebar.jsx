@@ -34,7 +34,7 @@ import {
 // Navigation items per role — each role sees only relevant items
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
-    { icon: LuHouse,           label: "Accueil",          href: "/dashboard",     end: true  },
+    { icon: LuHouse,           label: "Accueil",          href: "/",     end: true  },
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFilePlus,        label: "Nouveau document", href: "/create",        end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
@@ -45,7 +45,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
   "Ing. Qualité": [
-    { icon: LuHouse,           label: "Accueil",          href: "/dashboard",     end: true  },
+    { icon: LuHouse,           label: "Accueil",          href: "/",     end: true  },
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFilePlus,        label: "Nouveau document", href: "/create",        end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
@@ -56,7 +56,7 @@ const NAV_ITEMS_BY_ROLE = {
     { icon: LuCpu,             label: "Assistant IA",     href: "/ai",            end: false },
   ],
   "Reviewer": [
-    { icon: LuHouse,           label: "Accueil",          href: "/dashboard",     end: true  },
+    { icon: LuHouse,           label: "Accueil",          href: "/",     end: true  },
     { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
     { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",   end: false },
@@ -69,7 +69,7 @@ const NAV_ITEMS_BY_ROLE = {
 
 // Visitor / Lecteur nav — read-only access (no create/edit)
 const NAV_ITEMS_VISITOR = [
-  { icon: LuHouse,          label: "Accueil",          href: "/dashboard",   end: true  },
+  { icon: LuHouse,          label: "Accueil",          href: "/",   end: true  },
   { icon: LuFileText,       label: "Liste documents",  href: "/list",        end: false },
   { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
   { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
@@ -294,6 +294,41 @@ export function SidebarNav({ badges = {}, user }) {
             )}
           </NavLink>
         ))}
+
+        {/* Ing. Qualité: Journaux documentaires */}
+        {user?.role === "Ing. Qualité" && (
+          <>
+            <SectionLabel>Qualité</SectionLabel>
+            <NavLink
+              to="/admin/logs"
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
+                  isActive
+                    ? "text-teal-400 font-semibold"
+                    : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
+                }`
+              }
+              style={({ isActive }) => isActive ? {
+                background: "rgba(45,212,191,0.1)",
+                border: "1.5px solid rgba(45,212,191,0.22)",
+              } : {
+                background: "transparent",
+                border: "1.5px solid transparent",
+              }}
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-r-full"
+                      style={{ background: "linear-gradient(to bottom, #2dd4bf, #14b8a6)" }} />
+                  )}
+                  <LuScrollText size={14} className={`flex-shrink-0 ${isActive ? "text-teal-400" : "text-[#a8bfd4]/45"}`} />
+                  <span className="flex-1 leading-none">Journaux</span>
+                </>
+              )}
+            </NavLink>
+          </>
+        )}
 
         {/* Admin-only: Administration */}
         {isAdmin && (

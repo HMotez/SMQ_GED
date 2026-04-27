@@ -547,13 +547,20 @@ export default function Archive() {
   );
 
   /* ── Shared doc table row renderer ───────────────────────── */
-  const DocRow = ({ doc, i, total, showDaysOverdue = false, showArchivedAt = false, showArchiveBtn = false }) => (
-    <div className="grid px-5 py-3 items-center cursor-pointer transition-all duration-150"
-      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", borderBottom: i < total - 1 ? ROW_BORDER : "none", background:"transparent" }}
+  const DocRow = ({ doc, i, total, showDaysOverdue = false, showArchivedAt = false, showArchiveBtn = false }) => {
+    const sc = statusCfg(doc.status_name);
+    const rowBg = `${sc.text}08`;
+    const rowBgHov = `${sc.text}16`;
+    return (
+    <div className="row-slide-in relative grid pl-7 pr-5 py-3 items-center cursor-pointer transition-all duration-200 overflow-hidden"
+      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", borderBottom: i < total - 1 ? `1px solid ${sc.text}15` : "none", background: rowBg, animationDelay:`${i*0.04}s` }}
       onClick={() => setSelectedDocId(doc.id)}
-      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-      <span className="font-mono font-bold text-[13px]" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
+      onMouseEnter={e => e.currentTarget.style.background = rowBgHov}
+      onMouseLeave={e => e.currentTarget.style.background = rowBg}>
+      {/* Left status bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ background:`linear-gradient(to bottom,${sc.text},${sc.text}55)` }} />
+      <span className="font-mono font-bold text-[13px]" style={{ color: sc.text }}>{doc.doc_code}</span>
       <div className="overflow-hidden pr-3">
         <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
         {doc.folder_name && (
@@ -591,7 +598,8 @@ export default function Archive() {
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   const TableHeader = ({ lastCol = "Révision" }) => (
     <div className="grid px-5 py-2.5 border-b"
@@ -608,6 +616,8 @@ export default function Archive() {
       style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+        @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
+        .row-slide-in { animation: rowSlideIn 0.38s cubic-bezier(.22,.68,0,1.1) both; }
       `}</style>
 
       <AppSidebar user={currentUser} bottomContent={sidebarBottom} />

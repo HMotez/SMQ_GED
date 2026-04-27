@@ -500,10 +500,10 @@ export default function Logs() {
   const [filterFrom,   setFilterFrom]   = useState("");
   const [filterTo,     setFilterTo]     = useState("");
 
-
-  // Redirect non-admin
+  // Redirect if rôle non autorisé
   useEffect(() => {
-    if (userRole && userRole !== "Admin") navigate("/", { replace: true });
+    if (userRole && userRole !== "Admin" && userRole !== "Ing. Qualité")
+      navigate("/", { replace: true });
   }, [userRole, navigate]);
 
   // Fetch available action types from DB
@@ -571,7 +571,9 @@ export default function Logs() {
           <div>
             <h1 className="text-2xl font-black text-white m-0 leading-tight">Journal des activités</h1>
             <p className="text-sm mt-1 m-0" style={{ color: "rgba(168,191,212,0.5)" }}>
-              Consultation et export des logs système — Admin uniquement
+              {userRole === "Admin"
+                ? "Tous les événements système — Administration"
+                : "Activités documentaires — Ingénieur Qualité"}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

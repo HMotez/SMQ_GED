@@ -23,7 +23,7 @@ const ROLE_PERMISSIONS = {
   ],
   "Ing. Qualité": [
     "document:read", "document:create", "document:update",
-    "document:status", "validation:create",
+    "document:status", "validation:create", "audit:read",
   ],
   "Reviewer": [
     "document:read", "validation:create",

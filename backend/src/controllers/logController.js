@@ -1,6 +1,13 @@
 // ============================================================
-// controllers/logController.js — Journaux d'audit (Admin)
+// controllers/logController.js — Journaux d'audit (Admin + Ing. Qualité)
 // ============================================================
+
+// Actions exclues pour Ing. Qualité (sécurité/auth — réservées Admin)
+const SECURITY_ACTIONS = [
+  "LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGIN_NEW_IP",
+  "LOGOUT", "ACCOUNT_LOCKED",
+  "ACCESS_DENIED_401", "ACCESS_DENIED_403",
+];
 
 const pool = require("../db");
 
@@ -44,6 +51,11 @@ const getLogs = async (req, res) => {
   const conditions = [];
   const params     = [];
   let   idx        = 1;
+
+  // Exclure les actions sécurité/auth pour tous les rôles
+  const placeholders = SECURITY_ACTIONS.map(() => `$${idx++}`).join(", ");
+  SECURITY_ACTIONS.forEach(a => params.push(a));
+  conditions.push(`l.action NOT IN (${placeholders})`);
 
   if (action) {
     conditions.push(`l.action ILIKE $${idx++}`);
@@ -122,8 +134,10 @@ const getLogs = async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 const getLogActions = async (_req, res) => {
   try {
+    const placeholders = SECURITY_ACTIONS.map((_, i) => `$${i + 1}`).join(", ");
     const result = await pool.query(
-      `SELECT DISTINCT action FROM logs ORDER BY action`
+      `SELECT DISTINCT action FROM logs WHERE action NOT IN (${placeholders}) ORDER BY action`,
+      SECURITY_ACTIONS
     );
     return res.json(result.rows.map(r => r.action));
   } catch (err) {

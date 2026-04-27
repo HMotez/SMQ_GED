@@ -43,6 +43,14 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function AdminOrQualiteRoute({ children }) {
+  const { isAuthenticated, authLoading, userRole } = useUser();
+  if (authLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (userRole !== "Admin" && userRole !== "Ing. Qualité") return <Navigate to="/" replace />;
+  return children;
+}
+
 function PublicRoute({ children }) {
   const { isAuthenticated, authLoading } = useUser();
   if (authLoading) return null;
@@ -74,7 +82,7 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/ai"            element={<AIAssistant />} />
       <Route path="/admin/users"   element={<AdminRoute><UserManagement /></AdminRoute>} />
-      <Route path="/admin/logs"    element={<AdminRoute><Logs /></AdminRoute>} />
+      <Route path="/admin/logs"    element={<AdminOrQualiteRoute><Logs /></AdminOrQualiteRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

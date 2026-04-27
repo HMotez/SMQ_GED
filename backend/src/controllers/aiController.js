@@ -1015,7 +1015,7 @@ async function fetchDBSnapshot(userId = null) {
     // 0 — docs by status
     pool.query(`SELECT s.name, COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id GROUP BY s.name ORDER BY count DESC`),
     // 1 — expired count
-    pool.query(`SELECT COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id WHERE d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Archivé','Obsolète')`),
+    pool.query(`SELECT COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id WHERE d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Obsolète')`),
     // 2 — pending validation docs
     pool.query(`SELECT d.doc_code, d.title FROM documents d JOIN status s ON s.id=d.status_id WHERE s.name='En validation' LIMIT 5`),
     // 3 — recent docs
@@ -1779,7 +1779,7 @@ async function computeImprovements() {
       SUM(CASE WHEN s.name = 'Obsolète'      THEN 1 ELSE 0 END) AS obsolete,
       SUM(CASE WHEN s.name = 'Archivé'       THEN 1 ELSE 0 END) AS archive,
       SUM(CASE WHEN d.next_review_date < CURRENT_DATE
-               AND s.name NOT IN ('Archivé','Obsolète')
+               AND s.name NOT IN ('Obsolète')
                THEN 1 ELSE 0 END) AS expired_count
     FROM documents d
     JOIN status s ON s.id = d.status_id

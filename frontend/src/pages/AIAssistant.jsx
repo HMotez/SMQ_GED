@@ -8,10 +8,19 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
 import AppSidebar from "../components/AppSidebar";
 import DocDetailModal from "../components/DocDetailModal";
 import { toast } from "sonner";
 import { API } from "../config";
+import {
+  Chart as ChartJS,
+  ArcElement, Tooltip, Legend,
+  CategoryScale, LinearScale, BarElement,
+} from "chart.js";
+import { Doughnut, Bar } from "react-chartjs-2";
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 import {
   LuBot, LuSend, LuRefreshCw, LuUser, LuSparkles,
   LuTriangleAlert, LuClock, LuEye, LuLayers,
@@ -99,6 +108,190 @@ function Card({ children, style = {} }) {
   );
 }
 
+
+// ── Animated counter hook ────────────────────────────────────
+function useCountUp(target, duration = 900) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf;
+    const t0 = performance.now();
+    const animate = (now) => {
+      const p = Math.min((now - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+// ── Half-circle Score Gauge ──────────────────────────────────
+function ScoreGauge({ score, color, label }) {
+  const animated = useCountUp(score, 1400);
+  const data = {
+    datasets: [{
+      data: [score, 100 - score],
+      backgroundColor: [color, "rgba(255,255,255,0.06)"],
+      borderWidth: 0,
+      cutout: "78%",
+    }],
+  };
+  const options = {
+    rotation: -90,
+    circumference: 180,
+    animation: { duration: 1400, easing: "easeOutQuart" },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+  return (
+    <div style={{ position: "relative", width: "100%", height: 120 }}>
+      <Doughnut data={data} options={options} />
+      <div style={{
+        position: "absolute", bottom: 0, left: "50%",
+        transform: "translateX(-50%)", textAlign: "center", pointerEvents: "none",
+      }}>
+        <div style={{
+          fontSize: 44, fontWeight: 900, color, fontFamily: "monospace", lineHeight: 1,
+          textShadow: `0 0 28px ${color}80, 0 0 60px ${color}30`,
+        }}>
+          {animated}
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(168,191,212,0.4)", fontWeight: 600, marginTop: 2 }}>/100</div>
+      </div>
+    </div>
+  );
+}
+
+// ── KPI Stat Card (animated counter + progress bar + glow) ───
+function KpiStatCard({ label, value, color, maxValue, onClick }) {
+  const animated = useCountUp(value, 1000);
+  const pct = maxValue > 0 ? Math.min((value / maxValue) * 100, 100) : 0;
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: `${color}09`,
+        border: `1px solid ${color}28`,
+        borderRadius: 14,
+        padding: "16px 18px",
+        display: "flex", flexDirection: "column", gap: 10,
+        position: "relative", overflow: "hidden",
+        transition: "transform 0.2s, box-shadow 0.2s",
+        cursor: onClick ? "pointer" : "default",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${color}22`; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+    >
+      {/* Background glow blob */}
+      <div style={{
+        position: "absolute", bottom: -24, right: -16, width: 80, height: 80,
+        borderRadius: "50%", background: `${color}18`, filter: "blur(22px)", pointerEvents: "none",
+      }} />
+      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "rgba(168,191,212,0.4)" }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 38, fontWeight: 900, color, fontFamily: "monospace", lineHeight: 1,
+        textShadow: value > 0 ? `0 0 18px ${color}60` : "none",
+      }}>
+        {animated}
+      </div>
+      {/* Animated gradient progress bar */}
+      <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{
+          width: `${pct}%`, height: "100%",
+          background: `linear-gradient(90deg, ${color}55, ${color})`,
+          borderRadius: 2,
+          boxShadow: `0 0 8px ${color}80`,
+          transition: "width 1.1s cubic-bezier(0.4,0,0.2,1)",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Distribution doughnut chart ──────────────────────────────
+function DistributionChart({ kpis }) {
+  const active = kpis.filter(k => k.value > 0);
+  const total  = kpis.reduce((s, k) => s + k.value, 0);
+  const animTotal = useCountUp(total, 1100);
+  const chartRef = useRef(null);
+
+  if (active.length === 0) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "rgba(168,191,212,0.3)", fontSize: 13 }}>
+      Aucune donnée
+    </div>
+  );
+
+  function handleChartClick(event) {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const elements = chart.getElementsAtEventForMode(event.nativeEvent, "nearest", { intersect: true }, false);
+    if (elements.length === 0) return;
+    const idx = elements[0].index;
+    const clicked = active[idx];
+    if (clicked?.onClick) clicked.onClick();
+  }
+
+  const data = {
+    labels: active.map(k => k.label),
+    datasets: [{
+      data: active.map(k => k.value),
+      backgroundColor: active.map(k => k.color + "cc"),
+      borderColor: active.map(k => k.color),
+      borderWidth: 2,
+      cutout: "62%",
+      hoverOffset: 8,
+    }],
+  };
+  const options = {
+    animation: { duration: 1100, easing: "easeOutQuart" },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.label} : ${ctx.parsed} doc(s)` },
+        backgroundColor: "rgba(10,20,32,0.95)",
+        titleColor: "rgba(220,235,248,0.9)",
+        bodyColor: "rgba(168,191,212,0.8)",
+        borderColor: "rgba(255,255,255,0.1)",
+        borderWidth: 1,
+        padding: 10,
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: true,
+    onHover: (event, elements) => {
+      event.native.target.style.cursor = elements.length > 0 ? "pointer" : "default";
+    },
+  };
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <Doughnut ref={chartRef} data={data} options={options} onClick={handleChartClick} />
+      {/* Center label */}
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        transform: "translate(-50%, -50%)",
+        textAlign: "center", pointerEvents: "none",
+      }}>
+        <div style={{
+          fontSize: 28, fontWeight: 900, color: "rgba(220,235,248,0.92)",
+          fontFamily: "monospace", lineHeight: 1,
+        }}>
+          {animTotal}
+        </div>
+        <div style={{
+          fontSize: 10, fontWeight: 700, color: "rgba(168,191,212,0.4)",
+          textTransform: "uppercase", letterSpacing: "0.8px", marginTop: 3,
+        }}>
+          Total
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════
 // SECTION 1 — CHATBOT QUALITÉ
@@ -833,6 +1026,7 @@ function ImprovementsSection({ token }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(null);
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -863,52 +1057,106 @@ function ImprovementsSection({ token }) {
 
   const healthColor = data.health_score >= 80 ? GREEN : data.health_score >= 60 ? "#fbbf24" : "#f87171";
   const KPIS = [
-    { label: "Total",         value: data.kpis.total,         color: "rgba(168,191,212,0.7)" },
-    { label: "Diffusés",      value: data.kpis.diffuse,       color: "#2dd4bf" },
-    { label: "En validation", value: data.kpis.en_validation, color: "#a5b4fc" },
-    { label: "Obsolètes",     value: data.kpis.obsolete,      color: "#fb923c" },
-    { label: "Expirés",       value: data.kpis.expired,       color: "#f87171" },
-    { label: "Archivés",      value: data.kpis.archive,       color: "#94a3b8" },
+    { label: "Total",         value: data.kpis.total,         color: "rgba(168,191,212,0.7)", onClick: null },
+    { label: "Diffusés",      value: data.kpis.diffuse,       color: "#2dd4bf",  onClick: () => navigate("/list?statusName=Diffus%C3%A9") },
+    { label: "En validation", value: data.kpis.en_validation, color: "#a5b4fc",  onClick: () => navigate("/validations") },
+    { label: "Obsolètes",     value: data.kpis.obsolete,      color: "#fb923c",  onClick: () => navigate("/list?statusName=Obsol%C3%A8te") },
+    { label: "Expirés",       value: data.kpis.expired,       color: "#f87171",  onClick: () => navigate("/list?overdue=true") },
+    { label: "Archivés",      value: data.kpis.archive,       color: "#94a3b8",  onClick: () => navigate("/archive") },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Header row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr auto", gap: 12, alignItems: "stretch" }}>
-        {/* Health score */}
-        <Card style={{ padding: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gridColumn: "span 1", gap: 6 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "rgba(168,191,212,0.45)" }}>Score Qualité</div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: healthColor, lineHeight: 1, fontFamily: "monospace" }}>
-            {data.health_score}
+      {/* ── Row 1 : Gauge + KPI cards ─────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "230px 1fr", gap: 16, alignItems: "stretch" }}>
+
+        {/* Score half-gauge */}
+        <Card style={{ padding: "22px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
+          {/* Background glow */}
+          <div style={{ position: "absolute", top: -40, left: "50%", transform: "translateX(-50%)", width: 180, height: 180, borderRadius: "50%", background: `${healthColor}10`, filter: "blur(40px)", pointerEvents: "none" }} />
+          <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "rgba(168,191,212,0.4)" }}>
+            Score Qualité
           </div>
-          <div style={{ fontSize: 11, color: healthColor, fontWeight: 700 }}>{data.health_label}</div>
+          <ScoreGauge score={data.health_score} color={healthColor} label={data.health_label} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: healthColor, boxShadow: `0 0 8px ${healthColor}` }} />
+            <span style={{ fontSize: 13, color: healthColor, fontWeight: 800 }}>{data.health_label}</span>
+          </div>
+          <button onClick={load} style={{
+            marginTop: 2,
+            background: "rgba(74,184,63,0.08)", border: `1px solid ${GREEN}30`,
+            borderRadius: 10, padding: "7px 0", cursor: "pointer",
+            color: GREEN, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            fontSize: 12, fontWeight: 600, width: "100%", transition: "all 0.2s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.16)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(74,184,63,0.08)"; }}
+          >
+            <LuRefreshCw size={13} /> Actualiser
+          </button>
         </Card>
 
-        {/* KPIs */}
-        {KPIS.slice(1).map(kpi => (
-          <Card key={kpi.label} style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(168,191,212,0.4)" }}>
-              {kpi.label}
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: kpi.color, fontFamily: "monospace", lineHeight: 1 }}>
-              {kpi.value}
-            </div>
-          </Card>
-        ))}
-
-        {/* Refresh */}
-        <button
-          onClick={load}
-          style={{
-            background: "rgba(74,184,63,0.08)", border: `1px solid ${GREEN}25`,
-            borderRadius: 12, padding: "0 16px", cursor: "pointer",
-            color: GREEN, display: "flex", alignItems: "center", gap: 7,
-            fontSize: 13, fontWeight: 600,
-          }}
-        >
-          <LuRefreshCw size={14} /> Actualiser
-        </button>
+        {/* KPI stat cards grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, alignContent: "stretch" }}>
+          {KPIS.slice(1).map(kpi => (
+            <KpiStatCard
+              key={kpi.label}
+              label={kpi.label}
+              value={kpi.value}
+              color={kpi.color}
+              maxValue={Math.max(...KPIS.slice(1).map(k => k.value), 1)}
+              onClick={kpi.onClick}
+            />
+          ))}
+        </div>
       </div>
+
+      {/* ── Row 2 : Distribution doughnut + legend ─────────── */}
+      <Card style={{ padding: "20px 24px" }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "rgba(168,191,212,0.4)", marginBottom: 18 }}>
+          Distribution par statut
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+          {/* Doughnut */}
+          <div style={{ width: 200, height: 200, flexShrink: 0 }}>
+            <DistributionChart kpis={KPIS.slice(1)} />
+          </div>
+          {/* Legend + detail */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+            {KPIS.slice(1).map(kpi => {
+              const total = KPIS.slice(1).reduce((s, k) => s + k.value, 0);
+              const pct = total > 0 ? ((kpi.value / total) * 100).toFixed(1) : "0.0";
+              return (
+                <div
+                  key={kpi.label}
+                  onClick={kpi.onClick || undefined}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    cursor: kpi.onClick ? "pointer" : "default",
+                    borderRadius: 8, padding: "4px 6px", margin: "-4px -6px",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={e => { if (kpi.onClick) e.currentTarget.style.background = `${kpi.color}12`; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: kpi.color, flexShrink: 0, boxShadow: `0 0 6px ${kpi.color}80` }} />
+                  <span style={{ fontSize: 12, color: "rgba(168,191,212,0.65)", minWidth: 100 }}>{kpi.label}</span>
+                  <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{
+                      width: `${pct}%`, height: "100%",
+                      background: `linear-gradient(90deg, ${kpi.color}55, ${kpi.color})`,
+                      borderRadius: 3, boxShadow: `0 0 6px ${kpi.color}60`,
+                      transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)",
+                    }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: kpi.color, fontFamily: "monospace", minWidth: 30, textAlign: "right" }}>{kpi.value}</span>
+                  <span style={{ fontSize: 11, color: "rgba(168,191,212,0.35)", minWidth: 40, textAlign: "right" }}>{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
 
       {/* ── AI Synthesis Block ─────────────────────────────────── */}
       {data.ai_synthesis && (

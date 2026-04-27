@@ -40,6 +40,10 @@ const ANIMATION_STYLES = `
   .chart-row:hover  { background:rgba(255,255,255,0.05); transform:translateX(4px); }
   .chart-row:active { transform:translateX(4px) scale(0.98); }
   .dot-pulse { animation: pulseGlowDot 1.8s ease-in-out infinite; }
+  @keyframes rowSlideIn { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+  .row-slide-in { animation: rowSlideIn 0.4s cubic-bezier(.22,.68,0,1.1) both; }
+  @keyframes sectionFadeIn { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  .section-fade-in { animation: sectionFadeIn 0.5s cubic-bezier(.22,.68,0,1.1) both; }
 `;
 
 const GREEN      = "#4ab83f";
@@ -73,7 +77,6 @@ const ROLE_COLOR = {
 
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
-    { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
@@ -81,6 +84,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Ing. Qualité": [
+    { to: "/",            label: "Accueil",                    Icon: LuHouse,          end: true },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
@@ -89,6 +93,7 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
   "Reviewer": [
+    { to: "/",            label: "Accueil",                    Icon: LuHouse,          end: true },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
@@ -308,44 +313,80 @@ function GlassCard({ children, className = "", style = {} }) {
   );
 }
 
+/* ── Mini SVG ring ────────────────────────────────────────── */
+function MiniRing({ pct, accent, size = 52 }) {
+  const r = (size - 7) / 2;
+  const circ = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} style={{ transform:"rotate(-90deg)", flexShrink:0 }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={5} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={accent} strokeWidth={5}
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - Math.min(pct, 1))}
+        style={{ transition:"stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)", filter:`drop-shadow(0 0 5px ${accent}90)` }}
+      />
+    </svg>
+  );
+}
+
 /* ── KPI Card ─────────────────────────────────────────────── */
-function KpiCard({ icon: Icon, label, value, sub, accent, pulse, onClick }) {
+function KpiCard({ icon: Icon, label, value, sub, accent, pulse, onClick, ringMax }) {
   const [hov, setHov] = useState(false);
+  const num = typeof value === "number" ? value : 0;
+  const pct = ringMax > 0 ? num / ringMax : 0;
   return (
     <div
       onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      className="flex-1 min-w-[200px] rounded-2xl border p-6 transition-all duration-200 relative overflow-hidden cursor-pointer"
+      className="flex-1 min-w-[200px] rounded-2xl border p-5 transition-all duration-200 relative overflow-hidden cursor-pointer"
       style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
         background:"rgba(255,255,255,0.04)",
         backdropFilter:"blur(20px)",
-        borderColor: hov ? `${accent}40` : "rgba(255,255,255,0.08)",
-        boxShadow: hov ? `0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px ${accent}30` : "0 8px 32px rgba(0,0,0,0.2)",
-        transform: hov ? "translateY(-3px)" : "none",
+        borderColor: hov ? `${accent}45` : "rgba(255,255,255,0.08)",
+        boxShadow: hov ? `0 20px 56px rgba(0,0,0,0.4), 0 0 0 1px ${accent}30, 0 0 40px ${accent}10` : "0 8px 32px rgba(0,0,0,0.2)",
+        transform: hov ? "translateY(-4px)" : "none",
       }}
     >
-      {/* Top accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background:`linear-gradient(90deg,${accent},transparent)` }} />
+      {/* Top gradient bar */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-2xl"
+        style={{ background:`linear-gradient(90deg,${accent},${accent}44,transparent)` }} />
+      {/* Background glow */}
+      <div style={{ position:"absolute", bottom:-30, right:-20, width:100, height:100, borderRadius:"50%", background:`${accent}0e`, filter:"blur(28px)", pointerEvents:"none" }} />
 
-      <div className="flex justify-between items-start mb-5 mt-1">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background:`${accent}18`, border:`1px solid ${accent}30` }}>
+      <div className="flex justify-between items-start mb-4">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background:`${accent}16`, border:`1px solid ${accent}30` }}>
           <Icon size={20} style={{ color:accent }} />
         </div>
-        {pulse && value > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background:`${accent}15`, border:`1px solid ${accent}35` }}>
-            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background:accent, boxShadow:`0 0 6px ${accent}` }} />
-            <span className="text-xs font-bold" style={{ color:accent }}>Actif</span>
-          </div>
-        )}
+        <MiniRing pct={pct} accent={accent} />
       </div>
 
-      <p className="font-black text-5xl m-0 leading-none text-white" style={{ letterSpacing:-2 }}>{value}</p>
+      <p className="font-black text-5xl m-0 leading-none text-white"
+        style={{ letterSpacing:-2, textShadow: num>0 ? `0 0 24px ${accent}60` : "none" }}>
+        {value}
+      </p>
       <p className="text-white font-semibold text-base m-0 mt-2" style={{ letterSpacing:-0.2 }}>{label}</p>
-      {sub && <p className="text-sm m-0 mt-1" style={{ color:"rgba(168,191,212,0.55)" }}>{sub}</p>}
+      {sub && <p className="text-sm m-0 mt-1" style={{ color:"rgba(168,191,212,0.5)" }}>{sub}</p>}
+
+      {/* Spacer — pushes badge to bottom so all cards have equal height */}
+      <div style={{ flex: 1 }} />
+
+      {pulse && num > 0 ? (
+        <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 mt-3 w-fit"
+          style={{ background:`${accent}12`, border:`1px solid ${accent}30` }}>
+          <span className="w-1.5 h-1.5 rounded-full inline-block dot-pulse" style={{ background:accent }} />
+          <span className="text-xs font-bold" style={{ color:accent }}>Nécessite attention</span>
+        </div>
+      ) : (
+        <div style={{ height: 28, marginTop: 12 }} />
+      )}
 
       {onClick && (
-        <div className="flex items-center gap-1 mt-4 text-xs font-semibold transition-opacity" style={{ color:accent, opacity:hov?1:0 }}>
+        <div className="flex items-center gap-1 mt-2 text-xs font-semibold transition-opacity" style={{ color:accent, opacity:hov?1:0 }}>
           Voir la liste <LuArrowRight size={11} />
         </div>
       )}
@@ -377,23 +418,43 @@ function SectionLabel({ icon: Icon, title, accent = GREEN }) {
 }
 
 /* ── Alert row ────────────────────────────────────────────── */
-function AlertRow({ doc, accent, onClick }) {
-  const [hov, setHov] = useState(false);
+function AlertRow({ doc, accent, onClick, index = 0 }) {
+  const sc = STATUS_CFG[doc.status_name] || {};
+  const rowAccent = sc.text || accent;
   return (
-    <div onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-150"
-      style={{ background:hov?`${accent}10`:"rgba(255,255,255,0.03)", borderColor:hov?`${accent}35`:"rgba(255,255,255,0.06)" }}>
-      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background:accent, boxShadow:`0 0 6px ${accent}60` }} />
-      <div className="flex-1 overflow-hidden">
-        <p className="m-0 font-bold text-sm font-mono" style={{ color:"#4ab83f" }}>{doc.doc_code}</p>
-        <p className="m-0 mt-0.5 text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.title}</p>
+    <div
+      onClick={onClick}
+      className="row-slide-in group relative flex items-center justify-between rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+      style={{
+        padding: "10px 14px 10px 18px",
+        background: `linear-gradient(105deg, ${rowAccent}0d 0%, rgba(255,255,255,0.02) 100%)`,
+        border: `1px solid ${rowAccent}25`,
+        animationDelay: `${index * 0.07}s`,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = `linear-gradient(105deg, ${rowAccent}18 0%, rgba(255,255,255,0.04) 100%)`;
+        e.currentTarget.style.borderColor = `${rowAccent}45`;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = `linear-gradient(105deg, ${rowAccent}0d 0%, rgba(255,255,255,0.02) 100%)`;
+        e.currentTarget.style.borderColor = `${rowAccent}25`;
+      }}
+    >
+      {/* Left colored bar — always visible */}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ background: `linear-gradient(to bottom, ${rowAccent}, ${rowAccent}55)` }} />
+      <div className="flex-1 overflow-hidden min-w-0">
+        <p className="m-0 font-bold text-[12px] font-mono leading-tight" style={{ color: rowAccent }}>{doc.doc_code}</p>
+        <p className="m-0 mt-0.5 text-sm truncate" style={{ color:"rgba(168,191,212,0.7)" }}>{doc.title}</p>
       </div>
-      {doc.days_overdue != null && (
-        <span className="text-xs font-bold rounded-md px-2 py-0.5 flex-shrink-0" style={{ color:accent, background:`${accent}15`, border:`1px solid ${accent}30` }}>
-          +{doc.days_overdue}j
-        </span>
-      )}
-      {doc.status_name && <StatusPill name={doc.status_name} />}
+      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+        {doc.days_overdue != null && (
+          <span className="text-xs font-black rounded-lg px-2 py-0.5" style={{ color:accent, background:`${accent}18`, border:`1px solid ${accent}35` }}>
+            +{doc.days_overdue}j
+          </span>
+        )}
+        {doc.status_name && <StatusPill name={doc.status_name} />}
+      </div>
     </div>
   );
 }
@@ -421,47 +482,93 @@ function useCountUp(target, delay) {
   return val;
 }
 
-/* ── StatusBarChart ─────────────────────────────────────────────── */
-function StatusBarRow({ d, i, max, visible }) {
+/* ── StatusDoughnutChart ────────────────────────────────────── */
+function StatusDoughnutChart({ data }) {
   const navigate = useNavigate();
-  const color = STATUS_COLORS[d.name] || "#60a5fa";
-  const pct   = (d.count / max) * 100;
-  const count = useCountUp(d.count, i * 80);
-  const [hov, setHov] = useState(false);
+  const total = data.reduce((s, d) => s + d.count, 0);
+  const chartData = {
+    labels: data.map(d => d.name),
+    datasets: [{
+      data: data.map(d => d.count),
+      backgroundColor: data.map(d => (STATUS_COLORS[d.name] || "#60a5fa") + "d0"),
+      borderColor:     data.map(d =>  STATUS_COLORS[d.name] || "#60a5fa"),
+      borderWidth: 2.5,
+      hoverOffset: 16,
+      hoverBorderWidth: 3,
+      cutout: "68%",
+    }],
+  };
+  const TOOLTIP_BASE = {
+    backgroundColor: "rgba(4,10,20,0.97)",
+    titleColor: "#ffffff",
+    bodyColor: "rgba(168,191,212,0.95)",
+    borderColor: "rgba(74,184,63,0.3)",
+    borderWidth: 1,
+    padding: 14,
+    cornerRadius: 12,
+    displayColors: true,
+    boxWidth: 8,
+    boxHeight: 8,
+    boxPadding: 5,
+  };
+  const opts = {
+    animation: { duration: 1200, easing: "easeOutQuart" },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        ...TOOLTIP_BASE,
+        callbacks: {
+          title: ([ctx]) => ctx.label,
+          label: ctx => `  ${ctx.parsed} document${ctx.parsed !== 1 ? "s" : ""}  ·  ${total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0}%`,
+          labelColor: ctx => ({ borderColor:"transparent", backgroundColor: STATUS_COLORS[ctx.label] || "#60a5fa", borderRadius:3 }),
+        },
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: true,
+    onClick: (_e, els) => {
+      if (els.length > 0) navigate("/list?statusName=" + encodeURIComponent(data[els[0].index].name));
+    },
+  };
   return (
-    <div className="anim-slide-up chart-row" style={{ animationDelay: i * 60 + "ms" }}
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      onClick={() => navigate("/list?statusName=" + encodeURIComponent(d.name))}
-    >
-      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5, alignItems:"center" }}>
-        <span style={{ color: hov ? "#fff" : "rgba(168,191,212,0.85)", fontSize:12, fontWeight:500, transition:"color 0.2s", display:"flex", alignItems:"center", gap:6 }}>
-          <span style={{ width:7, height:7, borderRadius:"50%", background:color, display:"inline-block", flexShrink:0 }} className={hov ? "dot-pulse" : ""} />
-          {d.name}
-        </span>
-        <span style={{ color, fontSize:14, fontWeight:800, minWidth:22, textAlign:"right", transform: hov ? "scale(1.2)" : "scale(1)", transition:"transform 0.2s", display:"inline-block" }}>{count}</span>
-      </div>
-      <div style={{ height:8, borderRadius:99, background:"rgba(255,255,255,0.06)", overflow:"hidden", position:"relative" }}>
-        <div style={{
-          height:"100%", borderRadius:99,
-          background: "linear-gradient(90deg," + color + "88," + color + ")",
-          width: visible ? pct + "%" : "0%",
-          transition: "width 0.9s cubic-bezier(.22,.68,0,1.2) " + (i * 80) + "ms",
-          boxShadow: hov ? "0 0 18px " + color : "0 0 10px " + color + "66",
-          position:"relative", overflow:"hidden",
-        }}>
-          {visible && <div style={{ position:"absolute", top:0, left:0, height:"100%", width:"50%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent)", animation: "shimmerPass 1.1s ease " + (0.9 + i * 0.1) + "s both", borderRadius:99 }} />}
+    <div style={{ display:"flex", gap:20, alignItems:"flex-start", marginTop:12 }}>
+      {/* Doughnut */}
+      <div style={{ position:"relative", width:170, height:170, flexShrink:0 }}>
+        <Doughnut data={chartData} options={opts} />
+        <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", textAlign:"center", pointerEvents:"none" }}>
+          <div style={{ fontSize:32, fontWeight:900, color:"#4ab83f", lineHeight:1, textShadow:"0 0 20px rgba(74,184,63,0.5)" }}>{total}</div>
+          <div style={{ fontSize:10, color:"rgba(168,191,212,0.5)", fontWeight:700, marginTop:4, letterSpacing:1.5, textTransform:"uppercase" }}>docs</div>
         </div>
       </div>
-    </div>
-  );
-}
-function StatusBarChart({ data }) {
-  const max = Math.max(...data.map(d => d.count), 1);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 100); return () => clearTimeout(t); }, []);
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:12 }}>
-      {data.map((d, i) => <StatusBarRow key={d.name} d={d} i={i} max={max} visible={visible} />)}
+      {/* Legend rows with progress bars */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:6, paddingTop:4 }}>
+        {data.filter(d => d.count > 0).map((d) => {
+          const color = STATUS_COLORS[d.name] || "#60a5fa";
+          const pct = total > 0 ? ((d.count / total) * 100) : 0;
+          return (
+            <div key={d.name}
+              onClick={() => navigate("/list?statusName=" + encodeURIComponent(d.name))}
+              style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", padding:"5px 8px", borderRadius:8,
+                background:`${color}08`, border:`1px solid ${color}18`, transition:"all 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.background=`${color}14`; e.currentTarget.style.borderColor=`${color}35`; }}
+              onMouseLeave={e => { e.currentTarget.style.background=`${color}08`; e.currentTarget.style.borderColor=`${color}18`; }}
+            >
+              {/* Left accent bar */}
+              <div style={{ width:3, height:28, borderRadius:2, background:color, flexShrink:0, boxShadow:`0 0 8px ${color}70` }} />
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                  <span style={{ fontSize:11, fontWeight:700, color:"rgba(168,191,212,0.85)" }}>{d.name}</span>
+                  <span style={{ fontSize:12, fontWeight:900, color, fontFamily:"monospace" }}>{d.count}</span>
+                </div>
+                <div style={{ height:3, background:"rgba(255,255,255,0.07)", borderRadius:2, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${color}99,${color})`, borderRadius:2, transition:"width 1s ease" }} />
+                </div>
+              </div>
+              <span style={{ fontSize:10, fontWeight:800, color:`${color}99`, minWidth:32, textAlign:"right" }}>{pct.toFixed(0)}%</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -516,17 +623,12 @@ function TypeAreaChart({ data, total }) {
 
   if (!gradRef.current) {
     gradRef.current = makeTypeGradPlugin([
-      ["rgba(74,184,63,0.65)",  "rgba(74,184,63,0.02)"],
-      ["rgba(244,114,182,0.45)","rgba(244,114,182,0.01)"],
+      ["rgba(74,184,63,0.65)", "rgba(74,184,63,0.02)"],
     ]);
   }
 
   const labels = data.map(d => d.code || d.label || "—");
   const counts = data.map(d => d.count);
-  const trend  = counts.map((v, i, arr) => {
-    const slice = arr.slice(Math.max(0, i - 1), i + 2);
-    return Math.round(slice.reduce((a, b) => a + b, 0) / slice.length * 10) / 10;
-  });
 
   const chartData = {
     labels,
@@ -546,31 +648,13 @@ function TypeAreaChart({ data, total }) {
         pointHoverRadius:         9,
         pointHoverBackgroundColor:"#4ab83f",
       },
-      {
-        label: "Tendance",
-        data: trend,
-        borderColor:              "#f472b6",
-        backgroundColor:          "transparent",
-        fill:                     true,
-        tension:                  0.46,
-        borderWidth:              2.5,
-        pointBackgroundColor:     "#fff",
-        pointBorderColor:         "#f472b6",
-        pointBorderWidth:         2,
-        pointRadius:              4,
-        pointHoverRadius:         8,
-        pointHoverBackgroundColor:"#f472b6",
-      },
     ],
   };
 
   const opts = {
     animation: { duration: 1500, easing: "easeInOutQuart" },
     plugins: {
-      legend: {
-        display: true,
-        labels: { color:"rgba(168,191,212,0.85)", usePointStyle:true, pointStyleWidth:8, font:{ size:11 }, boxHeight:8 },
-      },
+      legend: { display: false },
       tooltip: {
         mode:            "index",
         intersect:       false,
@@ -618,46 +702,60 @@ function TypeAreaChart({ data, total }) {
   );
 }
 
-/* ── ProcessBarChart ─────────────────────────────────────────────── */
+/* ── ProcessHBarChart — Chart.js horizontal bar ──────────────── */
 const PROC_COLORS = ["#38bdf8","#34d399","#fbbf24","#a78bfa","#f472b6","#fb923c","#2dd4bf"];
-function ProcessBarRow({ d, i, max, visible }) {
+function ProcessHBarChart({ data }) {
   const navigate = useNavigate();
-  const color = PROC_COLORS[i % PROC_COLORS.length];
-  const pct   = (d.count / max) * 100;
-  const count = useCountUp(d.count, i * 80);
-  const [hov, setHov] = useState(false);
-  const fmt = s => String(s || "—").replace(/_/g, " ");
+  const sliced = data.slice(0, 7);
+  const chartData = {
+    labels: sliced.map(d => String(d.name || "—").replace(/_/g, " ")),
+    datasets: [{
+      data: sliced.map(d => d.count),
+      backgroundColor: sliced.map((_, i) => PROC_COLORS[i % PROC_COLORS.length] + "99"),
+      borderColor:     sliced.map((_, i) => PROC_COLORS[i % PROC_COLORS.length]),
+      borderWidth: 1.5,
+      borderRadius: 6,
+      borderSkipped: false,
+    }],
+  };
+  const opts = {
+    indexAxis: "y",
+    animation: { duration: 1100, easing: "easeOutQuart" },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.parsed.x} document${ctx.parsed.x !== 1 ? "s" : ""}` },
+        backgroundColor: "rgba(6,14,26,0.97)",
+        titleColor: "#fff",
+        bodyColor: "rgba(168,191,212,0.9)",
+        borderColor: "rgba(255,255,255,0.1)",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 10,
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "rgba(255,255,255,0.05)" },
+        ticks: { color: "rgba(168,191,212,0.5)", font: { size: 10 }, stepSize: 1 },
+        border: { display: false },
+        beginAtZero: true,
+      },
+      y: {
+        grid: { display: false },
+        ticks: { color: "rgba(168,191,212,0.9)", font: { size: 11, weight: "700" } },
+        border: { display: false },
+      },
+    },
+    responsive: true,
+    maintainAspectRatio: false,
+    onClick: (_e, els) => {
+      if (els.length > 0) navigate("/list?folderId=" + encodeURIComponent(sliced[els[0].index]?.id || ""));
+    },
+  };
   return (
-    <div className="anim-slide-up chart-row" style={{ animationDelay: i * 65 + "ms" }}
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      onClick={() => navigate("/list?folderId=" + encodeURIComponent(d.id || ""))}
-    >
-      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4, alignItems:"center" }}>
-        <span style={{ color: hov ? "#fff" : "rgba(168,191,212,0.85)", fontSize:11, fontWeight:500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"78%", transition:"color 0.2s" }} title={fmt(d.name)}>{fmt(d.name)}</span>
-        <span style={{ color, fontSize:13, fontWeight:800, flexShrink:0, transform: hov ? "scale(1.15)" : "scale(1)", transition:"transform 0.2s", display:"inline-block" }}>{count}</span>
-      </div>
-      <div style={{ height:7, borderRadius:99, background:"rgba(255,255,255,0.06)", overflow:"hidden", position:"relative" }}>
-        <div style={{
-          height:"100%", borderRadius:99,
-          background: "linear-gradient(90deg," + color + "77," + color + ")",
-          width: visible ? pct + "%" : "0%",
-          transition: "width 0.95s cubic-bezier(.22,.68,0,1.2) " + (i * 85) + "ms",
-          boxShadow: hov ? "0 0 16px " + color : "0 0 8px " + color + "55",
-          position:"relative", overflow:"hidden",
-        }}>
-          {visible && <div style={{ position:"absolute", top:0, left:0, height:"100%", width:"50%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent)", animation: "shimmerPass 1.1s ease " + (0.95 + i * 0.1) + "s both", borderRadius:99 }} />}
-        </div>
-      </div>
-    </div>
-  );
-}
-function ProcessBarChart({ data }) {
-  const max = Math.max(...data.map(d => d.count), 1);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 150); return () => clearTimeout(t); }, []);
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:4, marginTop:12 }}>
-      {data.slice(0, 7).map((d, i) => <ProcessBarRow key={d.id || i} d={d} i={i} max={max} visible={visible} />)}
+    <div style={{ height: Math.max(sliced.length * 38, 160), marginTop: 8 }}>
+      <Bar data={chartData} options={opts} />
     </div>
   );
 }
@@ -740,13 +838,13 @@ export default function Dashboard() {
           {/* KPI Cards */}
           <div className="flex gap-4 flex-wrap">
             {[
-              { icon:LuTriangleAlert,  label:"Documents expirés",     value:loadingOv?"…":expired.count,       sub:"date de révision dépassée", accent:expired.count>0?"#f87171":"#4ade80",       pulse:expired.count>0,       onClick:()=>navigate("/list?overdue=true"),  delay:"0ms"   },
-              { icon:LuClipboardCheck, label:"En validation",          value:loadingOv?"…":inValidation.count,  sub:"en attente d'approbation",  accent:inValidation.count>0?"#a5b4fc":"#4ade80",  pulse:inValidation.count>0,  onClick:()=>navigate(canValidate?"/validations":"/list?statusName=En%20validation"), delay:"80ms"  },
-              { icon:LuCircleAlert,    label:"En retard de révision",  value:loadingOv?"…":overdue.count,       sub:"révision dépassée",         accent:overdue.count>0?"#fb923c":"#4ade80",       pulse:overdue.count>0,       onClick:()=>navigate("/list?overdue=true"),  delay:"160ms" },
-              { icon:LuCircleCheck,    label:"Total documents",        value:loadingOv?"…":totalDocs||0,        sub:"dans le système",           accent:"#60a5fa",                                 pulse:false,                 onClick:()=>navigate("/list"),               delay:"240ms" },
-            ].map(({ icon, label, value, sub, accent, pulse, onClick, delay }) => (
-              <div key={label} className="anim-slide-up flex-1" style={{ animationDelay: delay }}>
-                <KpiCard icon={icon} label={label} value={value} sub={sub} accent={accent} pulse={pulse} onClick={onClick} />
+              { icon:LuTriangleAlert,  label:"Documents expirés",     value:loadingOv?"…":expired.count,       sub:"date de révision dépassée", accent:expired.count>0?"#f87171":"#4ade80",       pulse:expired.count>0,       onClick:()=>navigate("/list?overdue=true"),  delay:"0ms",   ringMax: Math.max(expired.count, inValidation.count, overdue.count, totalDocs, 1) },
+              { icon:LuClipboardCheck, label:"En validation",          value:loadingOv?"…":inValidation.count,  sub:"en attente d'approbation",  accent:inValidation.count>0?"#a5b4fc":"#4ade80",  pulse:inValidation.count>0,  onClick:()=>navigate(canValidate?"/validations":"/list?statusName=En%20validation"), delay:"80ms",  ringMax: Math.max(expired.count, inValidation.count, overdue.count, totalDocs, 1) },
+              { icon:LuCircleAlert,    label:"En retard de révision",  value:loadingOv?"…":overdue.count,       sub:"révision dépassée",         accent:overdue.count>0?"#fb923c":"#4ade80",       pulse:overdue.count>0,       onClick:()=>navigate("/list?overdue=true"),  delay:"160ms", ringMax: Math.max(expired.count, inValidation.count, overdue.count, totalDocs, 1) },
+              { icon:LuCircleCheck,    label:"Total documents",        value:loadingOv?"…":totalDocs||0,        sub:"dans le système",           accent:"#60a5fa",                                 pulse:false,                 onClick:()=>navigate("/list"),               delay:"240ms", ringMax: Math.max(totalDocs, 1) },
+            ].map(({ icon, label, value, sub, accent, pulse, onClick, delay, ringMax }) => (
+              <div key={label} className="anim-slide-up flex-1" style={{ animationDelay: delay, display: "flex", flexDirection: "column" }}>
+                <KpiCard icon={icon} label={label} value={value} sub={sub} accent={accent} pulse={pulse} onClick={onClick} ringMax={ringMax} />
               </div>
             ))}
           </div>
@@ -754,73 +852,130 @@ export default function Dashboard() {
           {/* Alerts: Expired + In validation */}
           <div className="grid grid-cols-2 gap-5">
             {/* Expired */}
-            <GlassCard className="p-6 anim-slide-up" style={{ animationDelay:"100ms" }}>
+            <div className="rounded-2xl p-6 section-fade-in" style={{
+              background:"linear-gradient(135deg,rgba(15,30,48,0.95) 0%,rgba(20,38,58,0.98) 100%)",
+              border:"1px solid rgba(248,113,113,0.2)",
+              boxShadow:"0 4px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)",
+              animationDelay:"0.1s",
+            }}>
               <div className="flex justify-between items-center mb-5">
-                <SectionLabel icon={LuTriangleAlert} title="Documents expirés" accent="#f87171" />
-                <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.25)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(248,113,113,0.15)", border:"1px solid rgba(248,113,113,0.3)" }}>
+                    <LuTriangleAlert size={13} style={{ color:"#f87171" }} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Documents expirés</p>
+                </div>
+                <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.28)" }}>
                   {expired.count} doc{expired.count!==1?"s":""}
                 </span>
               </div>
-              {loadingOv ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                : expired.list.length === 0 ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document expiré</p>
-                : <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">{expired.list.map(doc => <AlertRow key={doc.id} doc={doc} accent="#f87171" onClick={() => setSelectedDoc(doc.id)} />)}</div>
+              {loadingOv
+                ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+                : expired.list.length === 0
+                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document expiré ✓</p>
+                  : <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">{expired.list.map((doc,i) => <AlertRow key={doc.id} doc={doc} accent="#f87171" onClick={() => setSelectedDoc(doc.id)} index={i} />)}</div>
               }
-              <NavLink to="/list?overdue=true" className="flex items-center gap-1.5 mt-4 text-xs font-semibold no-underline" style={{ color:"#f87171" }}>
+              <NavLink to="/list?overdue=true" className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                style={{ color:"#f87171", background:"rgba(248,113,113,0.1)", border:"1px solid rgba(248,113,113,0.2)" }}>
                 Voir tous <LuArrowRight size={11} />
               </NavLink>
-            </GlassCard>
+            </div>
 
             {/* In validation */}
-            <GlassCard className="p-6 anim-slide-up" style={{ animationDelay:"180ms" }}>
+            <div className="rounded-2xl p-6 section-fade-in" style={{
+              background:"linear-gradient(135deg,rgba(15,30,48,0.95) 0%,rgba(20,38,58,0.98) 100%)",
+              border:"1px solid rgba(165,180,252,0.2)",
+              boxShadow:"0 4px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)",
+              animationDelay:"0.18s",
+            }}>
               <div className="flex justify-between items-center mb-5">
-                <SectionLabel icon={LuClipboardCheck} title="En attente de validation" accent="#a5b4fc" />
-                <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(165,180,252,0.12)", color:"#a5b4fc", border:"1px solid rgba(165,180,252,0.25)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(165,180,252,0.15)", border:"1px solid rgba(165,180,252,0.3)" }}>
+                    <LuClipboardCheck size={13} style={{ color:"#a5b4fc" }} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>En attente de validation</p>
+                </div>
+                <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(165,180,252,0.12)", color:"#a5b4fc", border:"1px solid rgba(165,180,252,0.28)" }}>
                   {inValidation.count} doc{inValidation.count!==1?"s":""}
                 </span>
               </div>
-              {loadingOv ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                : inValidation.list.length === 0 ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun en attente</p>
-                : <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">{inValidation.list.map(doc => <AlertRow key={doc.id} doc={doc} accent="#a5b4fc" onClick={() => setSelectedDoc(doc.id)} />)}</div>
+              {loadingOv
+                ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+                : inValidation.list.length === 0
+                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun en attente ✓</p>
+                  : <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">{inValidation.list.map((doc,i) => <AlertRow key={doc.id} doc={doc} accent="#a5b4fc" onClick={() => setSelectedDoc(doc.id)} index={i} />)}</div>
               }
-              <NavLink to="/validations" className="flex items-center gap-1.5 mt-4 text-xs font-semibold no-underline" style={{ color:"#a5b4fc" }}>
+              <NavLink to="/validations" className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                style={{ color:"#a5b4fc", background:"rgba(165,180,252,0.1)", border:"1px solid rgba(165,180,252,0.2)" }}>
                 Gérer les validations <LuArrowRight size={11} />
               </NavLink>
-            </GlassCard>
+            </div>
           </div>
 
           {/* Recent docs */}
-          <GlassCard className="p-6 anim-slide-up" style={{ animationDelay:"220ms" }}>
+          <div className="rounded-2xl p-6 section-fade-in" style={{
+            background:"linear-gradient(135deg,rgba(15,30,48,0.95) 0%,rgba(20,38,58,0.98) 100%)",
+            border:"1px solid rgba(96,165,250,0.18)",
+            boxShadow:"0 4px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)",
+            animationDelay:"0.22s",
+          }}>
             <div className="flex justify-between items-center mb-5">
-              <SectionLabel icon={LuClock} title="Documents récemment modifiés" accent="#60a5fa" />
-              <NavLink to="/list" className="text-xs font-semibold no-underline flex items-center gap-1" style={{ color:"#4ab83f" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(96,165,250,0.15)", border:"1px solid rgba(96,165,250,0.3)" }}>
+                  <LuClock size={13} style={{ color:"#60a5fa" }} />
+                </div>
+                <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Documents récemment modifiés</p>
+              </div>
+              <NavLink to="/list" className="inline-flex items-center gap-1.5 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                style={{ color:"#4ab83f", background:"rgba(74,184,63,0.1)", border:"1px solid rgba(74,184,63,0.2)" }}>
                 Voir tout <LuArrowRight size={11} />
               </NavLink>
             </div>
-            {loadingOv ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-              : recentDocs.length === 0 ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document</p>
-              : (
-                <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))" }}>
-                  {recentDocs.map(doc => (
-                    <div key={doc.id} onClick={() => setSelectedDoc(doc.id)}
-                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all"
-                      style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.06)" }}
-                      onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor="rgba(74,184,63,0.2)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.06)"; }}>
-                      <div className="overflow-hidden">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-mono text-sm font-bold" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
-                          <span style={{ color:"rgba(255,255,255,0.15)" }}>·</span>
-                          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>{doc.current_version}</span>
+            {loadingOv
+              ? <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))" }}>{[1,2,3,4,5,6].map(n=><div key={n} className="h-14 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+              : recentDocs.length === 0
+                ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document</p>
+                : (
+                  <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))" }}>
+                    {recentDocs.map((doc, i) => {
+                      const sc = STATUS_CFG[doc.status_name] || {};
+                      return (
+                      <div key={doc.id} onClick={() => setSelectedDoc(doc.id)}
+                        className="row-slide-in group relative flex items-center justify-between rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+                        style={{
+                          padding:"10px 14px 10px 18px",
+                          background:`linear-gradient(105deg,${sc.text?sc.text+"0d":"rgba(74,184,63,0.05)"} 0%,rgba(255,255,255,0.02) 100%)`,
+                          border:`1px solid ${sc.text?sc.text+"25":"rgba(255,255,255,0.07)"}`,
+                          animationDelay:`${i*0.05+0.22}s`,
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background=`linear-gradient(105deg,${sc.text?sc.text+"18":"rgba(74,184,63,0.1)"} 0%,rgba(255,255,255,0.04) 100%)`;
+                          e.currentTarget.style.borderColor=sc.text?`${sc.text}45`:"rgba(74,184,63,0.3)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background=`linear-gradient(105deg,${sc.text?sc.text+"0d":"rgba(74,184,63,0.05)"} 0%,rgba(255,255,255,0.02) 100%)`;
+                          e.currentTarget.style.borderColor=sc.text?`${sc.text}25`:"rgba(255,255,255,0.07)";
+                        }}
+                      >
+                        {/* Left status bar — always visible */}
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+                          style={{ background:`linear-gradient(to bottom,${sc.text||"#4ab83f"},${sc.text||"#4ab83f"}55)` }} />
+                        <div className="overflow-hidden flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-mono text-[12px] font-bold leading-tight" style={{ color:sc.text||"#4ab83f" }}>{doc.doc_code}</span>
+                            <span style={{ color:"rgba(255,255,255,0.15)" }}>·</span>
+                            <span className="text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.current_version}</span>
+                          </div>
+                          <p className="m-0 text-sm truncate max-w-[220px]" style={{ color:"rgba(168,191,212,0.7)" }}>{doc.title}</p>
                         </div>
-                        <p className="m-0 text-sm truncate max-w-[220px]" style={{ color:"rgba(168,191,212,0.7)" }}>{doc.title}</p>
+                        <StatusPill name={doc.status_name} />
                       </div>
-                      <StatusPill name={doc.status_name} />
-                    </div>
-                  ))}
-                </div>
-              )
+                      );
+                    })}
+                  </div>
+                )
             }
-          </GlassCard>
+          </div>
 
                     {/* Charts */}
           <div>
@@ -828,49 +983,67 @@ export default function Dashboard() {
               <div className="w-0.5 h-5 rounded-full" style={{ background:"#4ab83f" }} />
               <h2 className="m-0 text-lg font-black text-white" style={{ letterSpacing:-0.3 }}>Statistiques & Répartitions</h2>
             </div>
-            <div className="grid gap-5" style={{ gridTemplateColumns:"1fr 1fr 1fr" }}>
+
+            {/* Row 1 : Doughnut statut (1/3) + Area chart types (2/3) */}
+            <div className="grid gap-5 mb-5" style={{ gridTemplateColumns:"1fr 2fr" }}>
 
               <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"100ms" }}>
                 <SectionLabel icon={LuList} title="Par statut" accent="#60a5fa" />
                 {loadingSt
-                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
                   : byStatus.length === 0
-                    ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
-                    : <StatusBarChart data={byStatus} />}
+                    ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+                    : <StatusDoughnutChart data={byStatus} />}
               </GlassCard>
 
               <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"200ms" }}>
                 <SectionLabel icon={LuSearch} title="Par type documentaire" accent="#a78bfa" />
                 {loadingSt
-                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
                   : byType.length === 0
-                    ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+                    ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
                     : <TypeAreaChart data={byType} total={totalDocs} />}
               </GlassCard>
-
-              <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"300ms" }}>
-                <SectionLabel icon={LuUsers} title="Par processus" accent="#2dd4bf" />
-                {loadingSt
-                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
-                  : byProcess.length === 0
-                    ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
-                    : <ProcessBarChart data={byProcess} />}
-              </GlassCard>
-
             </div>
+
+            {/* Row 2 : Processus full-width horizontal bar */}
+            <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"300ms" }}>
+              <div className="flex justify-between items-center mb-1">
+                <SectionLabel icon={LuUsers} title="Par processus" accent="#2dd4bf" />
+                {byProcess.length > 0 && (
+                  <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(45,212,191,0.1)", color:"#2dd4bf", border:"1px solid rgba(45,212,191,0.25)" }}>
+                    {byProcess.length} processus
+                  </span>
+                )}
+              </div>
+              {loadingSt
+                ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                : byProcess.length === 0
+                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
+                  : <ProcessHBarChart data={byProcess} />}
+            </GlassCard>
           </div>
 
           {/* Overdue section */}
           {overdue.list.length > 0 && (
-            <div className="rounded-2xl border p-6" style={{ background:"rgba(251,146,60,0.06)", borderColor:"rgba(251,146,60,0.2)" }}>
+            <div className="rounded-2xl p-6 section-fade-in" style={{
+              background:"linear-gradient(135deg,rgba(20,15,10,0.95) 0%,rgba(30,20,10,0.98) 100%)",
+              border:"1px solid rgba(251,146,60,0.25)",
+              boxShadow:"0 4px 32px rgba(251,146,60,0.08),inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}>
               <div className="flex justify-between items-center mb-5">
-                <SectionLabel icon={LuCircleAlert} title="Retard de révision — Diffusés expirés" accent="#fb923c" />
-                <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(251,146,60,0.12)", color:"#fb923c", border:"1px solid rgba(251,146,60,0.25)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(251,146,60,0.15)", border:"1px solid rgba(251,146,60,0.3)" }}>
+                    <LuCircleAlert size={13} className="animate-pulse" style={{ color:"#fb923c" }} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Retard de révision — Diffusés expirés</p>
+                </div>
+                <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(251,146,60,0.12)", color:"#fb923c", border:"1px solid rgba(251,146,60,0.28)" }}>
                   {overdue.count} doc{overdue.count!==1?"s":""}
                 </span>
               </div>
               <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))" }}>
-                {overdue.list.map(doc => <AlertRow key={doc.id} doc={doc} accent="#fb923c" onClick={() => setSelectedDoc(doc.id)} />)}
+                {overdue.list.map((doc,i) => <AlertRow key={doc.id} doc={doc} accent="#fb923c" onClick={() => setSelectedDoc(doc.id)} index={i} />)}
               </div>
             </div>
           )}

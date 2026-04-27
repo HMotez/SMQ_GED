@@ -432,6 +432,8 @@ export default function DocumentList() {
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         .animate-fade-in { animation: fadeIn 0.2s ease; }
+        @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
+        .row-slide-in { animation: rowSlideIn 0.38s cubic-bezier(.22,.68,0,1.1) both; }
       `}</style>
 
       <AppSidebar user={currentUser} middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
@@ -557,18 +559,26 @@ export default function DocumentList() {
                   ))}
                 </div>
                 {/* Rows */}
-                {documents.map((doc, i) => (
+                {documents.map((doc, i) => {
+                  const sc = sCfg(doc.status_name);
+                  const rowBg = doc.is_overdue ? "rgba(251,146,60,0.08)" : `${sc.text}08`;
+                  const rowBgHov = doc.is_overdue ? "rgba(251,146,60,0.15)" : `${sc.text}15`;
+                  return (
                   <div key={doc.id} onClick={() => openDoc(doc)}
-                    className="grid px-5 py-3 items-center cursor-pointer transition-all duration-150"
+                    className="row-slide-in relative grid pl-7 pr-5 py-3 items-center cursor-pointer transition-all duration-200 overflow-hidden"
                     style={{
                       gridTemplateColumns:"240px 1fr 120px 80px 130px 105px 28px",
-                      borderBottom: i < documents.length-1 ? "1px solid rgba(255,255,255,0.05)" : "none",
-                      background: doc.is_overdue ? "rgba(251,146,60,0.04)" : "transparent",
+                      borderBottom: i < documents.length-1 ? `1px solid ${sc.text}15` : "none",
+                      background: rowBg,
+                      animationDelay: `${i * 0.04}s`,
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-                    onMouseLeave={e => e.currentTarget.style.background = doc.is_overdue?"rgba(251,146,60,0.04)":"transparent"}
+                    onMouseEnter={e => e.currentTarget.style.background = rowBgHov}
+                    onMouseLeave={e => e.currentTarget.style.background = rowBg}
                   >
-                    <span className="font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{doc.doc_code}</span>
+                    {/* Left status bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-[3px]"
+                      style={{ background:`linear-gradient(to bottom,${sc.text},${sc.text}55)` }} />
+                    <span className="font-mono font-bold text-sm" style={{ color: sc.text }}>{doc.doc_code}</span>
                     <div className="overflow-hidden pr-3">
                       <p className="m-0 text-sm font-medium text-white truncate" title={doc.title}>{doc.title}</p>
                       {doc.folder_name && (
@@ -589,7 +599,8 @@ export default function DocumentList() {
                       {doc.is_overdue && <LuClock size={13} style={{ color:"#fb923c" }} />}
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <Pagination page={pagination.page} totalPages={pagination.totalPages} onChange={p => setPage(p)} />
             </>

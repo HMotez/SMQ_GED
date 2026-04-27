@@ -1,5 +1,5 @@
 // ============================================================
-// routes/logRoutes.js — Logs Admin
+// routes/logRoutes.js — Logs Admin + Ing. Qualité
 // ============================================================
 
 const express = require("express");
@@ -7,10 +7,10 @@ const router  = express.Router();
 const { getLogs, getLogActions } = require("../controllers/logController");
 const { loadUser, requireRole } = require("../middleware/roleMiddleware");
 
-// GET /api/logs/actions — distinct action types in DB (must be before /)
-router.get("/actions", loadUser, requireRole("Admin"), getLogActions);
+// GET /api/logs/actions — types d'actions distincts (filtré selon rôle)
+router.get("/actions", loadUser, requireRole("Admin", "Ing. Qualité"), getLogActions);
 
-// GET /api/logs — réservé Admin
-router.get("/", loadUser, requireRole("Admin"), getLogs);
+// GET /api/logs — Admin : tous les logs | Ing. Qualité : logs documentaires uniquement
+router.get("/", loadUser, requireRole("Admin", "Ing. Qualité"), getLogs);
 
 module.exports = router;
