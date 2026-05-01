@@ -69,12 +69,9 @@ const NAV_ITEMS_BY_ROLE = {
 
 // Visitor / Lecteur nav — read-only access (no create/edit)
 const NAV_ITEMS_VISITOR = [
-  { icon: LuHouse,          label: "Accueil",          href: "/",   end: true  },
-  { icon: LuFileText,       label: "Liste documents",  href: "/list",        end: false },
-  { icon: LuClipboardCheck, label: "Validations",      href: "/validations", end: false },
-  { icon: LuArchive,        label: "Archivage",        href: "/archive",     end: false },
-  { icon: LuGitBranch,      label: "Workflow",         href: "/workflow",    end: false },
-  { icon: LuCpu,            label: "Assistant IA",     href: "/ai",          end: false },
+  { icon: LuHouse,    label: "Accueil",          href: "/",        end: true  },
+  { icon: LuFileText, label: "Documents archivés", href: "/list",    end: false },
+  { icon: LuArchive,  label: "Archivage",         href: "/archive", end: false },
 ];
 
 // Fallback for unknown/old roles — show full Admin nav
@@ -247,7 +244,7 @@ export function SidebarNav({ badges = {}, user }) {
   const notifCount = useNotifCount();
   // treat any unknown/old role (e.g. "Admin GED") as Admin for nav display
   const isAdmin = user?.role === "Admin" || (!user && false) || (user && !NAV_ITEMS_BY_ROLE[user?.role]);
-  const roleItems = !user ? NAV_ITEMS_VISITOR : (NAV_ITEMS_BY_ROLE[user?.role] || NAV_ITEMS_DEFAULT);
+  const roleItems = (!user || user?.role === "Visiteur") ? NAV_ITEMS_VISITOR : (NAV_ITEMS_BY_ROLE[user?.role] || NAV_ITEMS_DEFAULT);
   return (
     <nav className="px-2 pt-1">
       <SectionLabel>Navigation</SectionLabel>

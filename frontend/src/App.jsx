@@ -71,16 +71,18 @@ function AppRoutes() {
 
       {/* Visitor-accessible */}
       <Route path="/"           element={<Home />} />
-      <Route path="/list"       element={<DocumentList />} />
       <Route path="/archive"    element={<Archive />} />
+
+      {/* All roles including Visiteur — pages handle their own filtering */}
+      <Route path="/list"        element={<DocumentList />} />
       <Route path="/validations" element={<Validations />} />
-      <Route path="/workflow"   element={<Workflow />} />
+      <Route path="/workflow"    element={<Workflow />} />
+      <Route path="/dashboard"   element={<Dashboard />} />
+      <Route path="/ai"          element={<AIAssistant />} />
 
       {/* Auth-required */}
       <Route path="/create"        element={<ProtectedRoute><CreateDocument /></ProtectedRoute>} />
-      <Route path="/dashboard"     element={<Dashboard />} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-      <Route path="/ai"            element={<AIAssistant />} />
       <Route path="/admin/users"   element={<AdminRoute><UserManagement /></AdminRoute>} />
       <Route path="/admin/logs"    element={<AdminOrQualiteRoute><Logs /></AdminOrQualiteRoute>} />
 

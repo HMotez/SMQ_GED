@@ -15,13 +15,14 @@ import {
   LuTriangleAlert, LuCircleHelp, LuCheck, LuClock, LuRefreshCw,
   LuInbox, LuX, LuLock, LuPlus, LuFile, LuDownload,
   LuFolder, LuArrowRight, LuArchive, LuFileText, LuClipboardCheck, LuChevronDown,
+  LuShieldCheck,
 } from "react-icons/lu";
 import { toast } from "sonner";
 
 import { API, BACKEND } from "../config";
 
-const ISO_LIFECYCLE   = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Diffusé","Obsolète","Archivé"];
-const LOCKED_STATUSES = ["Validé","Diffusé","Obsolète","Archivé"];
+const ISO_LIFECYCLE   = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Approuvé","Diffusé","Obsolète","Archivé"];
+const LOCKED_STATUSES = ["Validé","Approuvé","Diffusé","Obsolète","Archivé"];
 const TERMINAL_STATUS = "Archivé";
 const ALLOWED_TRANSITIONS = {
   "Brouillon":           ["En rédaction"],
@@ -30,7 +31,8 @@ const ALLOWED_TRANSITIONS = {
   "En relecture":        ["En correction", "En validation"],
   "En correction":       ["Appel en relecture"],
   "En validation":       ["Validé"],
-  "Validé":              ["Diffusé"],
+  "Validé":              ["Approuvé"],
+  "Approuvé":            ["Diffusé"],
   "Diffusé":             ["Obsolète"],
   "Obsolète":            ["Archivé"],
   "Archivé":             [],
@@ -45,6 +47,7 @@ const STATUS_CFG = {
   "En correction":       { bg:"rgba(255,237,213,0.08)", text:"#f97316", border:"rgba(253,186,116,0.2)",  Icon:LuPenLine         },
   "En validation":       { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon:LuClipboardCheck  },
   "Validé":              { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon:LuCircleCheckBig  },
+  "Approuvé":            { bg:"rgba(238,242,255,0.10)", text:"#818cf8", border:"rgba(165,180,252,0.3)",  Icon:LuShieldCheck     },
   "Diffusé":             { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2          },
   "Obsolète":            { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert   },
   "Archivé":             { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive         },
@@ -212,7 +215,7 @@ const SIDEBAR_OVERRIDE_STYLES = `
 
 /* ══════════════════════════════════════════════════════════ */
 export default function DocumentList() {
-  const { can, currentUser } = useUser();
+  const { can, currentUser, userRole } = useUser();
   const { canPerformAction, getBlockReason, canTransitionStatus } = useRoleCheck();
   const location = useLocation();
 
@@ -234,6 +237,14 @@ export default function DocumentList() {
   })();
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
+  const isVisiteur = userRole === "Visiteur";
+
+  useEffect(() => {
+    if (isVisiteur) {
+      setFilters(f => ({ ...f, statusName: "Archivé", overdue: false }));
+      setPage(1);
+    }
+  }, [isVisiteur]);
   const LIMIT = 15;
 
   const [linkedDocId,    setLinkedDocId]    = useState(null); // opened via email link
@@ -299,9 +310,17 @@ export default function DocumentList() {
   useEffect(() => { debounce(() => fetchDocuments(filters, page)); }, [filters, page]); // eslint-disable-line
 
   const refreshStats = async () => { try { const st = await axios.get(`${API}/documents/stats`); setStats(st.data); } catch { /* silent */ } };
-  const setFilter = (key, value) => { setFilters(f => ({ ...f, [key]:value })); setPage(1); };
-  const clearAllFilters = () => { setFilters({ keyword:"",docCode:"",typeId:"",statusName:"",processId:"",responsible:"",overdue:false }); setPage(1); };
-  const hasActiveFilters = Object.values(filters).some(v => v !== "" && v !== false);
+  const setFilter = (key, value) => {
+    if (isVisiteur && (key === "statusName" || key === "overdue")) return;
+    setFilters(f => ({ ...f, [key]:value })); setPage(1);
+  };
+  const clearAllFilters = () => {
+    setFilters({ keyword:"",docCode:"",typeId:"",statusName:isVisiteur?"Archivé":"",processId:"",responsible:"",overdue:false });
+    setPage(1);
+  };
+  const hasActiveFilters = Object.entries(filters).some(([k, v]) =>
+    isVisiteur && (k === "statusName" || k === "overdue") ? false : (v !== "" && v !== false)
+  );
 
   const openDoc = async (doc) => {
     setSelected(doc); setVersions([]); setTimeline([]); setActiveTab("detail");
@@ -384,30 +403,33 @@ export default function DocumentList() {
   /* ── Sidebar middle content ───────────────────────────────── */
   const sidebarMiddle = (
     <div className="px-2.5 pt-1 pb-2 flex flex-col gap-1">
-      <button onClick={() => setFilter("overdue", !filters.overdue)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold border transition-all"
-        style={{
-          background:filters.overdue?"rgba(251,146,60,0.12)":"transparent",
-          borderColor:filters.overdue?"rgba(251,146,60,0.3)":"rgba(255,255,255,0.08)",
-          color:filters.overdue?"#fb923c":"rgba(168,191,212,0.7)",
-        }}>
-        <span className="flex items-center gap-1.5"><LuClock size={13} /> En retard</span>
-        {stats.overdue > 0 && <span className="rounded-full px-1.5 py-px text-[11px] font-bold" style={{ background:"#ea580c", color:"white" }}>{stats.overdue}</span>}
-      </button>
+      {!isVisiteur && (
+        <button onClick={() => setFilter("overdue", !filters.overdue)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold border transition-all"
+          style={{
+            background:filters.overdue?"rgba(251,146,60,0.12)":"transparent",
+            borderColor:filters.overdue?"rgba(251,146,60,0.3)":"rgba(255,255,255,0.08)",
+            color:filters.overdue?"#fb923c":"rgba(168,191,212,0.7)",
+          }}>
+          <span className="flex items-center gap-1.5"><LuClock size={13} /> En retard</span>
+          {stats.overdue > 0 && <span className="rounded-full px-1.5 py-px text-[11px] font-bold" style={{ background:"#ea580c", color:"white" }}>{stats.overdue}</span>}
+        </button>
+      )}
       <p className="text-[10px] uppercase tracking-[1px] font-bold px-1 mt-2 mb-1" style={{ color:"rgba(168,191,212,0.4)" }}>Par statut</p>
-      {ISO_LIFECYCLE.map(s => {
+      {ISO_LIFECYCLE.filter(s => !isVisiteur || s === "Archivé").map(s => {
         const cnt = stats.byStatus?.[s] || 0;
         if (!cnt) return null;
         const cfg = sCfg(s);
         const CI = cfg.Icon;
-        const active = filters.statusName === s;
+        const active = isVisiteur ? true : filters.statusName === s;
         return (
-          <button key={s} onClick={() => setFilter("statusName", active?"":s)}
+          <button key={s} onClick={() => !isVisiteur && setFilter("statusName", active?"":s)}
             className="flex justify-between items-center w-full px-2 py-1.5 rounded-md text-xs transition-all border"
             style={{
               background:active?`${cfg.bg}`:"transparent",
               borderColor:active?cfg.border:"transparent",
               color:active?cfg.text:"rgba(168,191,212,0.6)",
+              cursor:isVisiteur?"default":"pointer",
             }}>
             <span className="flex items-center gap-1"><CI size={10} /> {s}</span>
             <span className="rounded-full px-1.5 py-px text-[11px]" style={{ color:"rgba(168,191,212,0.5)" }}>{cnt}</span>
@@ -449,11 +471,13 @@ export default function DocumentList() {
               <LuFileText size={19} style={{ color:"#4ab83f" }} />
             </div>
             <div>
-              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Documents</h1>
+              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>
+                {isVisiteur ? "Documents archivés" : "Documents"}
+              </h1>
               <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
                 {pagination.total} document{pagination.total>1?"s":""}
-                {filters.overdue    && <span style={{ color:"#fb923c" }}> · En retard</span>}
-                {filters.statusName && <span style={{ color:"rgba(168,191,212,0.7)" }}> · {filters.statusName}</span>}
+                {!isVisiteur && filters.overdue    && <span style={{ color:"#fb923c" }}> · En retard</span>}
+                {!isVisiteur && filters.statusName && <span style={{ color:"rgba(168,191,212,0.7)" }}> · {filters.statusName}</span>}
               </p>
             </div>
           </div>
@@ -486,30 +510,38 @@ export default function DocumentList() {
             </select>
           </div>
           <div className="flex gap-2.5 flex-wrap items-center">
-            {[
-              { value:filters.typeId,     onChange:(e)=>setFilter("typeId",e.target.value),     placeholder:"Type",   options:types.map(t=>({value:t.id,label:`${t.code} — ${t.label}`})) },
-              { value:filters.statusName, onChange:(e)=>setFilter("statusName",e.target.value), placeholder:"Statut", options:ISO_LIFECYCLE.map(s=>({value:s,label:s})) },
-            ].map(({ value, onChange, placeholder, options }) => (
-              <select key={placeholder} value={value} onChange={onChange} className="px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer" style={inputStyle(!!value)}>
-                <option value="">{placeholder}</option>
-                {options.map(o => <option key={o.value} value={o.value} style={{ background:"#1a2f4a" }}>{o.label}</option>)}
+            <select value={filters.typeId} onChange={(e)=>setFilter("typeId",e.target.value)} className="px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer" style={inputStyle(!!filters.typeId)}>
+              <option value="">Type</option>
+              {types.map(t => <option key={t.id} value={t.id} style={{ background:"#1a2f4a" }}>{t.code} — {t.label}</option>)}
+            </select>
+            {isVisiteur ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border"
+                style={{ background:"rgba(148,163,184,0.08)", borderColor:"rgba(203,213,225,0.2)", color:"#94a3b8" }}>
+                <LuArchive size={13} /> Archivé
+              </span>
+            ) : (
+              <select value={filters.statusName} onChange={(e)=>setFilter("statusName",e.target.value)} className="px-3 py-2 rounded-lg border text-sm outline-none cursor-pointer" style={inputStyle(!!filters.statusName)}>
+                <option value="">Statut</option>
+                {ISO_LIFECYCLE.map(s => <option key={s} value={s} style={{ background:"#1a2f4a" }}>{s}</option>)}
               </select>
-            ))}
+            )}
 
             <ProcessDropdown
               folderTree={folderTree}
               value={filters.processId}
               onChange={(v) => setFilter("processId", v)}
             />
-            <button onClick={() => setFilter("overdue", !filters.overdue)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold border transition-all"
-              style={{
-                background:filters.overdue?"rgba(251,146,60,0.1)":"rgba(255,255,255,0.04)",
-                borderColor:filters.overdue?"rgba(251,146,60,0.35)":"rgba(255,255,255,0.1)",
-                color:filters.overdue?"#fb923c":"rgba(168,191,212,0.6)",
-              }}>
-              <LuClock size={13} /> En retard {filters.overdue && <LuCheck size={12} />}
-            </button>
+            {!isVisiteur && (
+              <button onClick={() => setFilter("overdue", !filters.overdue)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold border transition-all"
+                style={{
+                  background:filters.overdue?"rgba(251,146,60,0.1)":"rgba(255,255,255,0.04)",
+                  borderColor:filters.overdue?"rgba(251,146,60,0.35)":"rgba(255,255,255,0.1)",
+                  color:filters.overdue?"#fb923c":"rgba(168,191,212,0.6)",
+                }}>
+                <LuClock size={13} /> En retard {filters.overdue && <LuCheck size={12} />}
+              </button>
+            )}
             {hasActiveFilters && (
               <button onClick={clearAllFilters} className="ml-auto flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm border transition-all"
                 style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)" }}>
@@ -523,7 +555,7 @@ export default function DocumentList() {
               {filters.docCode     && <ActiveTag label={`Réf: "${filters.docCode}"`}           onRemove={() => setFilter("docCode","")} />}
               {filters.responsible && <ActiveTag label={`Responsable: ${filters.responsible}`} onRemove={() => setFilter("responsible","")} />}
               {filters.typeId      && <ActiveTag label={`Type: ${types.find(t=>t.id==filters.typeId)?.code||filters.typeId}`} onRemove={() => setFilter("typeId","")} />}
-              {filters.statusName  && <ActiveTag label={`Statut: ${filters.statusName}`}       onRemove={() => setFilter("statusName","")} />}
+              {filters.statusName && !isVisiteur && <ActiveTag label={`Statut: ${filters.statusName}`} onRemove={() => setFilter("statusName","")} />}
               {filters.processId   && <ActiveTag label={`Processus: ${(folderTree.flatMap(s=>s.children||[]).find(f=>f.id==filters.processId)?.name || filters.processId).replace(/_/g," ")}`} onRemove={() => setFilter("processId","")} />}
               {filters.overdue     && <ActiveTag label="En retard"                             onRemove={() => setFilter("overdue",false)} />}
             </div>
@@ -827,15 +859,12 @@ export default function DocumentList() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>🕐 Historique versions</p></div>
                   {versions.map((v, idx) => {
-                    const isFirst   = idx === 0;
-                    const isCurrent = idx === versions.length - 1;
-                    const canInteract = isFirst || isCurrent;
                     return (
                     <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex justify-between items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-white">{v.version_letter === "-" ? "v-" : v.version_letter}</span>
+                        <span className="font-mono font-bold text-sm text-white">{v.version_letter || "-"}</span>
                         <span className="text-sm flex-1" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
-                        {canInteract && (
+                        {v.file_path && (
                           <div className="flex gap-1.5">
                             <button onClick={() => { setPreviewFile(v.file_path); setPreviewOpen(true); }}
                               className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
@@ -966,18 +995,18 @@ export default function DocumentList() {
             <h3 className="m-0 text-white text-base font-bold flex items-center gap-1.5"><LuPlus size={15} /> Nouvelle version — {selected.doc_code}</h3>
             <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
               Version actuelle : <strong className="text-white">{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>{(() => {
-                const raw = selected.current_version || "v-";
-                const c = raw.replace(/^v/, "");           // strip leading 'v'
-                const v = (selected.validated_version || "").replace(/^v/, "");
-                if (c === "-") return "vA";
-                if (/^[A-Z]$/i.test(c)) return `v${c}1`;
+                const raw = selected.current_version || "-";
+                const c = raw.replace(/^v/, "");
+                const vv = (selected.validated_version || "").replace(/^v/, "");
+                if (c === "-") return "A";
+                if (/^[A-Z]$/i.test(c)) return `${c.toUpperCase()}1`;
                 const m = c.match(/^([A-Z])(\d+)$/i);
-                if (!m) return "vA";
+                if (!m) return "A";
                 const [, letter, num] = m;
-                if (v && c === v) return `v${String.fromCharCode(letter.charCodeAt(0) + 1)}`;
+                if (vv && c === vv) return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
                 const n = parseInt(num);
-                if (n < 9) return `v${letter}${n + 1}`;
-                return `v${String.fromCharCode(letter.charCodeAt(0) + 1)}`;
+                if (n < 9) return `${letter.toUpperCase()}${n + 1}`;
+                return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
               })()}</strong>
             </p>
             <div>

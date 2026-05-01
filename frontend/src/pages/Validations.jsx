@@ -147,7 +147,7 @@ function DocDetailModal({ docId, onClose }) {
                       {doc.current_version && (
                         <span className="rounded-md px-2 py-0.5 text-xs font-bold border"
                           style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
-                          {doc.current_version === "v-" ? "Initiale" : doc.current_version}
+                          {doc.current_version === "-" || !doc.current_version ? "Initiale" : doc.current_version.replace(/^v/, "")}
                         </span>
                       )}
                     </div>
@@ -772,7 +772,7 @@ export default function Validations() {
                         </span>
                         <StatusBadge name={doc.status_name} />
                         <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.6)" }}>
-                          {doc.current_version ? (doc.current_version === "v-" ? "Initiale" : doc.current_version) : "—"}
+                          {doc.current_version ? (doc.current_version === "-" ? "Initiale" : doc.current_version.replace(/^v/, "")) : "—"}
                         </span>
                       </div>
                       );

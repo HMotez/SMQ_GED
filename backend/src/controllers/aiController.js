@@ -334,6 +334,7 @@ async function buildSQLForIntent(intent, entities, role) {
         sql: BASE_SELECT + `
           WHERE d.next_review_date IS NOT NULL
             AND d.next_review_date < CURRENT_DATE
+            AND s.name NOT IN ('Archivé', 'Obsolète')
           ORDER BY d.next_review_date ASC
           LIMIT 20
         `,
@@ -449,6 +450,7 @@ async function buildSQLForIntent(intent, entities, role) {
           LEFT JOIN processes p  ON p.id  = d.process_id
           WHERE d.next_review_date IS NOT NULL
             AND d.next_review_date < CURRENT_DATE
+            AND s.name NOT IN ('Archivé', 'Obsolète')
           ORDER BY days_overdue DESC
           LIMIT 20
         `,
@@ -1015,7 +1017,7 @@ async function fetchDBSnapshot(userId = null) {
     // 0 — docs by status
     pool.query(`SELECT s.name, COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id GROUP BY s.name ORDER BY count DESC`),
     // 1 — expired count
-    pool.query(`SELECT COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id WHERE d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Obsolète')`),
+    pool.query(`SELECT COUNT(*) as count FROM documents d JOIN status s ON s.id=d.status_id WHERE d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Archivé', 'Obsolète')`),
     // 2 — pending validation docs
     pool.query(`SELECT d.doc_code, d.title FROM documents d JOIN status s ON s.id=d.status_id WHERE s.name='En validation' LIMIT 5`),
     // 3 — recent docs

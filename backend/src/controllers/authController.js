@@ -9,6 +9,7 @@ const bcrypt       = require("bcryptjs");
 const jwt          = require("jsonwebtoken");
 const crypto       = require("crypto");
 const emailService = require("../services/emailService");
+const ldapService  = require("../services/ldapService");
 const pool         = require("../db");
 const { auditLog }          = require("../utils/auditLog");
 const { validatePassword }  = require("../utils/passwordPolicy");
@@ -196,35 +197,50 @@ async function login(req, res) {
 
     const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || "inconnu";
 
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      const newAttempts = (user.login_attempts || 0) + 1;
-      if (newAttempts >= BRUTE_MAX_ATTEMPTS) {
-        const lockedUntil = new Date(Date.now() + BRUTE_LOCK_MINUTES * 60 * 1000);
-        await pool.query(
-          "UPDATE users SET login_attempts = $1, locked_until = $2 WHERE id = $3",
-          [newAttempts, lockedUntil, user.id]
-        );
-        console.warn(`[Auth][BruteForce] Compte bloqué 15min : ${user.email} (IP: ${clientIp})`);
-        auditLog({ action: "ACCOUNT_LOCKED", userId: user.id, severity: "critical",
-          details: { email: user.email, attempts: newAttempts, locked_until: lockedUntil }, req });
-        emailService.sendSecurityAlert({
-          to: user.email, type: "account_locked",
-          name: user.name, ip: clientIp,
-          lockedUntil: lockedUntil.toLocaleString("fr-FR"),
-        }).catch(() => {});
-        return res.status(429).json({
-          error: `Compte bloqué pendant ${BRUTE_LOCK_MINUTES} minutes suite à ${BRUTE_MAX_ATTEMPTS} tentatives échouées.`,
-          code:  "ACCOUNT_LOCKED",
-        });
+    // ── Vérification du mot de passe : LDAP/AD en priorité, local en repli ──
+    let authenticated = false;
+
+    if (ldapService.isEnabled()) {
+      const ldapUser = await ldapService.authenticateLdap(email.trim(), password).catch(() => null);
+      if (ldapUser) {
+        authenticated = true;
+        auditLog({ action: "LOGIN_SUCCESS_LDAP", userId: user.id, severity: "info",
+          details: { email: user.email, role: user.role, ip: clientIp, method: "LDAP" }, req });
       }
-      await pool.query(
-        "UPDATE users SET login_attempts = $1 WHERE id = $2",
-        [newAttempts, user.id]
-      );
-      auditLog({ action: "LOGIN_FAILURE", userId: user.id, severity: "warning",
-        details: { email: user.email, attempt: newAttempts, reason: "wrong_password" }, req });
-      return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
+    }
+
+    if (!authenticated) {
+      const valid = await bcrypt.compare(password, user.password_hash);
+      if (!valid) {
+        const newAttempts = (user.login_attempts || 0) + 1;
+        if (newAttempts >= BRUTE_MAX_ATTEMPTS) {
+          const lockedUntil = new Date(Date.now() + BRUTE_LOCK_MINUTES * 60 * 1000);
+          await pool.query(
+            "UPDATE users SET login_attempts = $1, locked_until = $2 WHERE id = $3",
+            [newAttempts, lockedUntil, user.id]
+          );
+          console.warn(`[Auth][BruteForce] Compte bloqué 15min : ${user.email} (IP: ${clientIp})`);
+          auditLog({ action: "ACCOUNT_LOCKED", userId: user.id, severity: "critical",
+            details: { email: user.email, attempts: newAttempts, locked_until: lockedUntil }, req });
+          emailService.sendSecurityAlert({
+            to: user.email, type: "account_locked",
+            name: user.name, ip: clientIp,
+            lockedUntil: lockedUntil.toLocaleString("fr-FR"),
+          }).catch(() => {});
+          return res.status(429).json({
+            error: `Compte bloqué pendant ${BRUTE_LOCK_MINUTES} minutes suite à ${BRUTE_MAX_ATTEMPTS} tentatives échouées.`,
+            code:  "ACCOUNT_LOCKED",
+          });
+        }
+        await pool.query(
+          "UPDATE users SET login_attempts = $1 WHERE id = $2",
+          [newAttempts, user.id]
+        );
+        auditLog({ action: "LOGIN_FAILURE", userId: user.id, severity: "warning",
+          details: { email: user.email, attempt: newAttempts, reason: "wrong_password" }, req });
+        return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
+      }
+      authenticated = true;
     }
 
     // ── Connexion réussie ──────────────────────────────────────
@@ -394,7 +410,7 @@ async function logout(req, res) {
         const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
         const expiresAt = new Date(decoded.exp * 1000);
         await pool.query(
-          "INSERT INTO token_blacklist (token_hash, expires_at) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+          "INSERT INTO token_blacklist (jti, expires_at) VALUES ($1, $2) ON CONFLICT DO NOTHING",
           [tokenHash, expiresAt]
         );
       }

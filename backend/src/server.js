@@ -34,7 +34,7 @@ const globalLimiter = rateLimit({
   max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Trop de requêtes. Limite : 100 requêtes/heure. Réessayez plus tard.", code: "RATE_LIMIT_EXCEEDED" },
+  message: { error: "Trop de requêtes. Limite : 1000 requêtes/heure. Réessayez plus tard.", code: "RATE_LIMIT_EXCEEDED" },
   skip: (req) => req.path.startsWith("/files") || req.path.startsWith("/public"),
 });
 
@@ -204,16 +204,6 @@ app.get(/^\/convert\/(.+)$/, (req, res, next) => {
   }
 });
 
-// ── Debug route ──────────────────────────────────────────────
-app.get("/debug-path", (_req, res) => {
-  res.json({
-    uploadDir,
-    exists: fs.existsSync(uploadDir),
-    files:  fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir) : [],
-    env:    process.env.UPLOAD_DIR,
-  });
-});
-
 // ── Routes ───────────────────────────────────────────────────
 app.use("/api/auth",          require("./routes/authRoutes"));         // Sprint 3 — JWT Auth
 app.use("/api/users",         require("./routes/userRoutes"));
@@ -242,6 +232,20 @@ app.listen(process.env.PORT || 4000, async () => {
   // ── Journaux d'audit — colonnes sécurité (ip, user_agent, severity) ──
   const { ensureAuditColumns } = require("./controllers/logController");
   await ensureAuditColumns();
+
+  // ── Versions — colonne created_by ─────────────────────────
+  const pool = require("./db");
+  await pool.query(`ALTER TABLE versions ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL`);
+  console.log("[Versions] Colonne created_by vérifiée.");
+
+  // ── Documents — colonnes reviewer/validateur ───────────────
+  await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS reviewer_emails  TEXT[] DEFAULT '{}'`);
+  await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS validator_emails TEXT[] DEFAULT '{}'`);
+  console.log("[Documents] Colonnes reviewer/validator vérifiées.");
+
+  // ── Status — Approuvé (nouveau statut post-Validé) ─────────
+  await pool.query(`INSERT INTO status (name) VALUES ('Approuvé') ON CONFLICT (name) DO NOTHING`);
+  console.log("[Status] Statut 'Approuvé' vérifié.");
 
   // ── Rôles ISO EF06 — doit tourner EN PREMIER (seedDefaultUsers en dépend) ──
   const { ensureRoles } = require("./controllers/roleController");

@@ -10,6 +10,7 @@ import {
   LuCircleAlert, LuCircleCheckBig, LuLock, LuUpload,
   LuFileText, LuHash, LuTag, LuArrowRight, LuArrowLeft,
   LuPlus, LuChevronDown, LuCheck, LuFolder, LuFilePlus,
+  LuUsers, LuX, LuUserCheck, LuShieldCheck,
 } from "react-icons/lu";
 import { API } from "../config";
 
@@ -160,6 +161,117 @@ function F({ label, children }) {
   );
 }
 
+/* ── User Picker ──────────────────────────────────────────── */
+function UserPicker({ label, users, selected, onAdd, onRemove, roleFilter, accentColor = "#4ab83f", icon: Icon = LuUsers }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const available = users.filter(u => {
+    if (roleFilter && !roleFilter.includes(u.role)) return false;
+    return !selected.find(s => s.id === u.id);
+  });
+
+  const ROLE_COLOR = {
+    "Admin":        "#f87171",
+    "Ing. Qualité": "#2dd4bf",
+    "Reviewer":     "#4ade80",
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={13} style={{ color: accentColor }} />
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color:"rgba(168,191,212,0.6)" }}>{label}</span>
+      </div>
+
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-1">
+          {selected.map(u => (
+            <div key={u.id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
+              style={{ background:`${accentColor}12`, borderColor:`${accentColor}30` }}>
+              <div>
+                <span className="text-xs font-semibold text-white">{u.name}</span>
+                <span className="text-[10px] block" style={{ color:"rgba(168,191,212,0.5)" }}>{u.email}</span>
+              </div>
+              <button type="button" onClick={() => onRemove(u.id)}
+                className="ml-1 border-none p-0 flex items-center justify-center rounded-full"
+                style={{ background:"transparent", cursor:"pointer", color:"rgba(168,191,212,0.4)", width:16, height:16 }}
+                onMouseEnter={e => e.currentTarget.style.color="#f87171"}
+                onMouseLeave={e => e.currentTarget.style.color="rgba(168,191,212,0.4)"}>
+                <LuX size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Dropdown trigger */}
+      <div ref={ref} className="relative">
+        <button type="button" onClick={() => setOpen(o => !o)}
+          className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-lg border text-sm text-left transition-all"
+          style={{
+            background: open ? `${accentColor}08` : "rgba(255,255,255,0.04)",
+            borderColor: open ? `${accentColor}45` : "rgba(255,255,255,0.10)",
+            color: "rgba(168,191,212,0.6)",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            boxShadow: open ? `0 0 0 3px ${accentColor}12` : "none",
+          }}>
+          <LuPlus size={13} style={{ color: accentColor }} />
+          <span>Ajouter un {label.toLowerCase()}…</span>
+          <LuChevronDown size={13} className="ml-auto" style={{ transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s" }} />
+        </button>
+
+        {open && (
+          <div className="absolute left-0 right-0 top-full mt-1.5 rounded-xl overflow-hidden"
+            style={{
+              background: "rgba(13,31,48,0.98)",
+              backdropFilter: "blur(24px)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+              maxHeight: 220,
+              overflowY: "auto",
+              zIndex: 9999,
+            }}>
+            {available.length === 0 ? (
+              <div className="px-4 py-3 text-sm" style={{ color:"rgba(168,191,212,0.35)" }}>
+                Aucun utilisateur disponible
+              </div>
+            ) : available.map(u => (
+              <button key={u.id} type="button" onClick={() => { onAdd(u); setOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left border-none transition-all"
+                style={{ background:"transparent", cursor:"pointer", borderBottom:"1px solid rgba(255,255,255,0.04)", fontFamily:"inherit" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.05)"}
+                onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background:`${ROLE_COLOR[u.role] || "#8b949e"}18`, border:`1px solid ${ROLE_COLOR[u.role] || "#8b949e"}30` }}>
+                  <span className="text-[11px] font-bold" style={{ color: ROLE_COLOR[u.role] || "#8b949e" }}>
+                    {u.name?.charAt(0)?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="m-0 text-sm font-semibold text-white truncate">{u.name}</p>
+                  <p className="m-0 text-[11px] truncate" style={{ color:"rgba(168,191,212,0.45)" }}>{u.email}</p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                  style={{ background:`${ROLE_COLOR[u.role] || "#8b949e"}15`, color: ROLE_COLOR[u.role] || "#8b949e" }}>
+                  {u.role}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Section title ────────────────────────────────────────── */
 function STitle({ num, title }) {
   return (
@@ -201,9 +313,16 @@ export default function CreateDocument() {
   const [loading, setLoading] = useState(false);
   const [step,    setStep]    = useState(1);
 
+  const [allUsers,         setAllUsers]         = useState([]);
+  const [selectedReviewers,  setSelectedReviewers]  = useState([]);
+
   useEffect(() => {
-    Promise.all([axios.get(`${API}/types`), axios.get(`${API}/folders/level/1`)])
-      .then(([t, l1]) => { setTypes(t.data); setLevel1(l1.data); })
+    Promise.all([
+      axios.get(`${API}/types`),
+      axios.get(`${API}/folders/level/1`),
+      axios.get(`${API}/users`),
+    ])
+      .then(([t, l1, u]) => { setTypes(t.data); setLevel1(l1.data); setAllUsers(u.data); })
       .catch(() => setError("Erreur lors du chargement des données."));
   }, []);
 
@@ -270,12 +389,15 @@ export default function CreateDocument() {
       if (form.keywords)  fd.append("keywords",        form.keywords);
       if (sharepointLink) fd.append("sharepoint_link", sharepointLink.trim());
       fd.append("userId", currentUser?.id);
+      fd.append("reviewer_emails",  JSON.stringify(selectedReviewers.map(u => u.email)));
+      fd.append("validator_emails", JSON.stringify([]));
       fd.append("file",   file);
 
       const res = await axios.post(`${API}/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       setMessage(res.data.document.doc_code);
       setForm({ title:"", responsible:"", nextReviewDate:"", typeCode:"", origin:"INTERNE", context:"", keywords:"" });
-      setFile(null); setSharepointLink(""); setSelectedL1(""); setSelectedL2(""); setSelectedL3(""); setStep(1);
+      setFile(null); setSharepointLink(""); setSelectedL1(""); setSelectedL2(""); setSelectedL3("");
+      setSelectedReviewers([]); setStep(1);
       document.getElementById("fileInput").value = "";
     } catch (err) {
       setError(err.response?.data?.error || "Erreur lors de l'enregistrement.");
@@ -288,9 +410,10 @@ export default function CreateDocument() {
 
   /* ── Sidebar step nav ───────────────────────────────────── */
   const STEPS = [
-    { num: "01", icon: LuFileText, label: "Informations",   n: 1 },
-    { num: "02", icon: LuFolder,   label: "Classification", n: 2 },
-    { num: "03", icon: LuUpload,   label: "Fichier",        n: 3 },
+    { num: "01", icon: LuFileText,  label: "Informations",   n: 1 },
+    { num: "02", icon: LuUsers,     label: "Participants",   n: 2 },
+    { num: "03", icon: LuFolder,    label: "Classification", n: 3 },
+    { num: "04", icon: LuUpload,    label: "Fichier",        n: 4 },
   ];
 
   const sidebarMiddle = (
@@ -394,7 +517,7 @@ export default function CreateDocument() {
           </div>
           {/* Step progress dots */}
           <div className="flex gap-2 items-center">
-            {[1,2,3].map(n => (
+            {[1,2,3,4].map(n => (
               <button key={n} type="button" onClick={() => setStep(n)}
                 className={`h-1.5 rounded-full transition-all duration-200 border-none cursor-pointer
                   ${step===n ? "w-8 bg-[#4ab83f]" : "w-1.5 bg-[rgba(255,255,255,0.12)]"}`} />
@@ -509,16 +632,58 @@ export default function CreateDocument() {
                   <button type="button" onClick={() => setStep(2)}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white border-none cursor-pointer"
                     style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)", fontFamily:"inherit" }}>
+                    Suivant : Participants <LuArrowRight size={15} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 2 — Participants ───────────────────── */}
+            {step === 2 && (
+              <div>
+                <STitle num="02" title="Participants du document" />
+                <div className="rounded-2xl border p-6 mb-6"
+                  style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)" }}>
+                  <div className="flex flex-col gap-6">
+
+                    {/* Reviewer */}
+                    <UserPicker
+                      label="Reviewer(s)"
+                      users={allUsers}
+                      selected={selectedReviewers}
+                      onAdd={u => setSelectedReviewers(p => [...p, u])}
+                      onRemove={id => setSelectedReviewers(p => p.filter(u => u.id !== id))}
+                      roleFilter={["Reviewer"]}
+                      accentColor="#4ade80"
+                      icon={LuUserCheck}
+                    />
+
+                    <p className="text-[11px] m-0" style={{ color:"rgba(168,191,212,0.35)" }}>
+                      Les participants sélectionnés recevront un e-mail avec les informations du document à leur création.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setStep(1)}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer border-none"
+                    style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
+                    <LuArrowLeft size={15} /> Retour
+                  </button>
+                  <button type="button" onClick={() => setStep(3)}
+                    className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white border-none cursor-pointer"
+                    style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)", fontFamily:"inherit" }}>
                     Suivant : Classification <LuArrowRight size={15} />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── STEP 2 ──────────────────────────────────── */}
-            {step === 2 && (
+            {/* ── STEP 3 ──────────────────────────────────── */}
+            {step === 3 && (
               <div>
-                <STitle num="02" title="Classification ACTIA ES" />
+                <STitle num="03" title="Classification ACTIA ES" />
+
                 <div className="rounded-2xl border p-6 mb-6"
                   style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)" }}>
                   <div className="flex flex-col gap-5">
@@ -582,12 +747,12 @@ export default function CreateDocument() {
                 </div>
 
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setStep(1)}
+                  <button type="button" onClick={() => setStep(2)}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer border-none"
                     style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
                     <LuArrowLeft size={15} /> Retour
                   </button>
-                  <button type="button" onClick={() => setStep(3)}
+                  <button type="button" onClick={() => setStep(4)}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white border-none cursor-pointer"
                     style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)", fontFamily:"inherit" }}>
                     Suivant : Fichier <LuArrowRight size={15} />
@@ -596,10 +761,10 @@ export default function CreateDocument() {
               </div>
             )}
 
-            {/* ── STEP 3 ──────────────────────────────────── */}
-            {step === 3 && (
+            {/* ── STEP 4 ──────────────────────────────────── */}
+            {step === 4 && (
               <div>
-                <STitle num="03" title="Upload du fichier" />
+                <STitle num="04" title="Upload du fichier" />
 
                 <label htmlFor="fileInput"
                   className={`flex flex-col items-center justify-center h-44 rounded-2xl mb-6 cursor-pointer border-2 border-dashed transition-all
@@ -649,11 +814,12 @@ export default function CreateDocument() {
                     style={{ color:"rgba(168,191,212,0.55)" }}>Récapitulatif</p>
                   <div className="space-y-3">
                     {[
-                      ["Titre",    form.title    || "—"],
-                      ["Type",     form.typeCode || "—"],
-                      ["Origine",  form.origin],
-                      ["Référence",preview       || "—"],
-                      ["Fichier",  file?.name    || "—"],
+                      ["Titre",       form.title    || "—"],
+                      ["Type",        form.typeCode || "—"],
+                      ["Origine",     form.origin],
+                      ["Référence",   preview       || "—"],
+                      ["Reviewer(s)", selectedReviewers.length  ? selectedReviewers.map(u=>u.name).join(", ")  : "—"],
+                      ["Fichier",     file?.name    || "—"],
                     ].map(([label, value], i) => (
                       <div key={i} className="flex justify-between items-center py-2 border-b last:border-0"
                         style={{ borderColor:"rgba(255,255,255,0.06)" }}>
@@ -669,7 +835,7 @@ export default function CreateDocument() {
                 </div>
 
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setStep(2)}
+                  <button type="button" onClick={() => setStep(3)}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-none"
                     style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
                     <LuArrowLeft size={15} /> Retour

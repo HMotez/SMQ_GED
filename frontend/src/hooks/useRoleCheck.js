@@ -103,15 +103,13 @@ export function useRoleCheck() {
                  `Seuls les documents en Brouillon, En rédaction, En relecture ou En validation peuvent être modifiés.`;
         }
         if (!['Admin', 'Ing. Qualité'].includes(userRole)) {
-          return `⛔ Votre rôle (${userRole}) ne peut pas modifier les documents. ` +
-                 `Seuls: Admin, Ing. Qualité.`;
+          return `Votre rôle (${userRole || 'Visiteur'}) ne dispose pas des droits de modification. Rôles autorisés : Admin, Ing. Qualité.`;
         }
         return null;
 
       case 'validate':
         if (!['Admin', 'Reviewer'].includes(userRole)) {
-          return `⛔ Votre rôle (${userRole}) ne peut pas valider. ` +
-                 `Seuls: Admin, Reviewer.`;
+          return `Votre rôle (${userRole || 'Visiteur'}) ne dispose pas des droits de validation. Rôles autorisés : Admin, Reviewer.`;
         }
         if (currentUser?.name === docResponsible) {
           return `⛔ Vous ne pouvez pas valider votre propre document. ` +
@@ -125,14 +123,13 @@ export function useRoleCheck() {
                  `Seuls les brouillons peuvent être supprimés.`;
         }
         if (userRole !== 'Admin') {
-          return `⛔ Seul Admin peut supprimer des documents.`;
+          return `Votre rôle (${userRole || 'Visiteur'}) ne dispose pas des droits de suppression. Rôle autorisé : Admin uniquement.`;
         }
         return null;
 
       case 'distribute':
         if (!['Admin'].includes(userRole)) {
-          return `⛔ Seul Admin peut distribuer. ` +
-                 `Votre rôle: ${userRole}.`;
+          return `Votre rôle (${userRole || 'Visiteur'}) ne dispose pas des droits de distribution. Rôle autorisé : Admin uniquement.`;
         }
         if (docStatus !== 'Validé') {
           return `⛔ Le document doit être au statut "Validé" pour être distribué. ` +
@@ -159,7 +156,8 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Diffusé"],
+      "Validé":              ["Approuvé"],
+      "Approuvé":            ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],
@@ -177,10 +175,11 @@ export function useRoleCheck() {
       "En relecture→En correction":                ["Admin", "Ing. Qualité", "Reviewer"],
       "En relecture→En validation":                ["Admin", "Ing. Qualité", "Reviewer"],
       "En correction→Appel en relecture":          ["Admin", "Ing. Qualité"],
-      "En validation→Validé":                      ["Admin", "Reviewer"],
-      "Validé→Diffusé":                            ["Admin"],
-      "Diffusé→Obsolète":                          ["Admin"],
-      "Obsolète→Archivé":                          ["Admin"],
+      "En validation→Validé":                      ["Admin", "Reviewer", "Ing. Qualité"],
+      "Validé→Approuvé":                           ["Admin", "Ing. Qualité"],
+      "Approuvé→Diffusé":                          ["Admin", "Ing. Qualité"],
+      "Diffusé→Obsolète":                          ["Admin", "Ing. Qualité"],
+      "Obsolète→Archivé":                          ["Admin", "Ing. Qualité"],
     };
 
     const allowedRoles = TRANSITION_ROLE_MAP[key] || [];
@@ -200,7 +199,8 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Diffusé"],
+      "Validé":              ["Approuvé"],
+      "Approuvé":            ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],

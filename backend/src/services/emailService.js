@@ -56,6 +56,7 @@ const STATUS_CFG = {
   "En correction":      { color: "#b91c1c", bg: "#fef2f2", border: "#fecaca", svgKey: "wrench",  grad: "135deg,#7f1d1d,#b91c1c" },
   "En validation":      { color: "#d97706", bg: "#fffbeb", border: "#fde68a", svgKey: "clock",   grad: "135deg,#78350f,#d97706" },
   "Validé":             { color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0", svgKey: "check",   grad: "135deg,#14532d,#15803d" },
+  "Approuvé":           { color: "#4338ca", bg: "#eef2ff", border: "#c7d2fe", svgKey: "check",   grad: "135deg,#312e81,#4338ca" },
   "Diffusé":            { color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", svgKey: "send",    grad: "135deg,#1e3a8a,#1d4ed8" },
   "Obsolète":           { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", svgKey: "ban",     grad: "135deg,#7f1d1d,#dc2626" },
   "Archivé":            { color: "#475569", bg: "#f8fafc", border: "#e2e8f0", svgKey: "archive", grad: "135deg,#1e293b,#475569" },
@@ -79,8 +80,12 @@ const STATUS_CONTEXT = {
     detail:   "Rendez-vous sur la page Validations pour approuver ou rejeter ce document.",
   },
   "Validé": {
-    headline: "Le document a été approuvé et validé avec succès.",
-    detail:   "Il est désormais prêt pour diffusion. L'administrateur peut procéder à la mise en circulation.",
+    headline: "Le document a été validé avec succès.",
+    detail:   "Il est désormais en attente d'approbation par l'équipe qualité avant diffusion.",
+  },
+  "Approuvé": {
+    headline: "Le document a été approuvé par l'équipe qualité.",
+    detail:   "Il est désormais prêt pour diffusion officielle. L'administrateur peut procéder à la mise en circulation.",
   },
   "Diffusé": {
     headline: "Un nouveau document est disponible.",
@@ -332,7 +337,8 @@ async function sendStatusChangedEmail({ to, docId, docCode, title, docType, from
 
 async function sendNewVersionEmail({ to, docId, docCode, title, docType, version, uploadedBy }) {
   const accent  = "#1d4ed8";
-  const subject = `[SMQ GED] Nouvelle version — ${docCode} v${version}`;
+  const fmtVer  = (v) => (v || "-").replace(/^v/, "");
+  const subject = `[SMQ GED] Nouvelle version — ${docCode} ${fmtVer(version)}`;
   const docPath = docId ? `/list?docId=${docId}` : "/dashboard";
   const content = `
     ${sectionLabel("Mise à jour de version", accent)}
@@ -341,13 +347,13 @@ async function sendNewVersionEmail({ to, docId, docCode, title, docType, version
     </p>
     ${docCard(docCode, title, docType, accent)}
     ${infoTable(
-      infoRow("Nouvelle version", `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;font-size:13px;font-weight:800;border-radius:8px;padding:2px 14px;">v${version}</span>`),
+      infoRow("Nouvelle version", `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;font-size:13px;font-weight:800;border-radius:8px;padding:2px 14px;">${fmtVer(version)}</span>`),
       infoRow("Publiée par",      `<strong style="color:#1e3450;">${uploadedBy || "—"}</strong>`),
       infoRow("Date",             new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" }))
     )}
     ${alertBox("Si vous êtes relecteur ou validateur, vérifiez que les modifications sont conformes aux exigences en vigueur.", accent)}
     ${ctaButton("Consulter la version", accent, docPath)}`;
-  await sendMail(to, subject, baseHtml(`Nouvelle version v${version}`, accent, "135deg,#1e3a8a 0%,#1d4ed8 60%,#3b82f6 100%", "version", content));
+  await sendMail(to, subject, baseHtml(`Nouvelle version ${fmtVer(version)}`, accent, "135deg,#1e3a8a 0%,#1d4ed8 60%,#3b82f6 100%", "version", content));
 }
 
 async function sendExpiringDocumentEmail({ to, docId, docCode, title, docType, reviewDate }) {
@@ -571,6 +577,33 @@ async function sendMail(to, subject, html) {
   }
 }
 
+async function sendAssignmentEmail({ to, role, docId, docCode, title, docType, assignedBy }) {
+  if (!to || (Array.isArray(to) && to.length === 0)) return;
+  if (role !== "reviewer") return; // Only handle reviewer assignments at document creation
+  
+  const roleLabel = "Reviewer";
+  const accent  = "#6d28d9";
+  const grad    = "135deg,#4c1d95 0%,#6d28d9 60%,#7c3aed 100%";
+  const task    = "Vous êtes responsable d'examiner ce document et de faire part de vos observations dans les meilleurs délais.";
+  const actionMsg = "En tant que reviewer, votre action est requise sur ce document.";
+  const subject = `[SMQ GED] Désignation ${roleLabel} — ${docCode}`;
+  const docPath = docId ? `/list?docId=${docId}` : "/list";
+  
+  const content = `
+    ${sectionLabel(`Désignation : ${roleLabel}`, accent)}
+    <p style="margin:8px 0 0;font-size:15px;color:#374151;line-height:1.6;">${task}</p>
+    ${docCard(docCode, title, docType, accent)}
+    ${infoTable(
+      infoRow("Rôle assigné",  `<span style="display:inline-block;background:#f5f3ff;color:${accent};border:1.5px solid #ddd6fe;font-size:13px;font-weight:800;border-radius:8px;padding:2px 14px;">${roleLabel}</span>`),
+      infoRow("Assigné par",   `<strong style="color:#1e3450;">${assignedBy || "—"}</strong>`),
+      infoRow("Date",          new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" }))
+    )}
+    ${alertBox(actionMsg, accent)}
+    ${ctaButton("Consulter le document", accent, docPath)}`;
+  
+  await sendMail(to, subject, baseHtml(`Désignation ${roleLabel}`, accent, grad, "eye", content));
+}
+
 module.exports = {
   verifyEmailTransporter,
   sendDocumentCreatedEmail,
@@ -581,4 +614,5 @@ module.exports = {
   sendInactiveDocumentEmail,
   sendPasswordResetEmail,
   sendSecurityAlert,
+  sendAssignmentEmail,
 };

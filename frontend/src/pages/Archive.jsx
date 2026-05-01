@@ -124,7 +124,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                       {doc.current_version && (
                         <span className="rounded-md px-2 py-0.5 text-xs font-bold border"
                           style={{ background:"rgba(165,180,252,0.1)", borderColor:"rgba(165,180,252,0.25)", color:"#a5b4fc" }}>
-                          {doc.current_version === "v-" ? "Initiale" : doc.current_version}
+                          {doc.current_version === "-" || !doc.current_version ? "Initiale" : doc.current_version.replace(/^v/, "")}
                         </span>
                       )}
                     </div>
@@ -259,9 +259,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune version enregistrée.</p>
                   </div>
                 ) : versions.map((v, idx) => {
-                  const isFirst = idx === 0;
                   const isLast  = idx === versions.length - 1;
-                  const canInteract = isFirst || isLast;
                   return (
                   <div key={v.id} className="rounded-xl border overflow-hidden"
                     style={{ background:"rgba(255,255,255,0.02)", borderColor: isLast ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.07)" }}>
@@ -269,7 +267,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                       <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                         <span className="rounded-xl px-3 py-1 text-sm font-black border"
                           style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
-                          {v.version_letter === "-" ? "v-" : v.version_letter}
+                          {v.version_letter || "-"}
                         </span>
                         {isLast && (
                           <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color:"#4ab83f" }}>Actuelle</span>
@@ -283,7 +281,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                           {v.file_size > 0 && <span>· {(v.file_size/1024).toFixed(0)} Ko</span>}
                         </p>
                       </div>
-                      {canInteract && v.file_path ? (
+                      {v.file_path && (
                         <div className="flex flex-wrap gap-2 flex-shrink-0 justify-end">
                           <button onClick={() => { setPreviewFile(v.file_path); setPreviewOpen(true); }}
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold transition-all"
@@ -294,19 +292,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                           </button>
                           <DownloadMenu filename={v.file_path} />
                         </div>
-                      ) : !canInteract ? (
-                        v.sharepoint_link ? (
-                          <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold no-underline transition-all flex-shrink-0"
-                            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)" }}
-                            onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; }}>
-                            <LuShare2 size={14} /> SharePoint
-                          </a>
-                        ) : (
-                          <span className="text-xs flex-shrink-0" style={{ color:"rgba(168,191,212,0.3)" }}>Via SharePoint</span>
-                        )
-                      ) : null}
+                      )}
                     </div>
                   </div>
                   );

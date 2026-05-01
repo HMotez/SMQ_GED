@@ -209,9 +209,10 @@ async function triggerNewVersionNotification(docId, docCode, docTitle, version, 
   const actor = actorName
     ? `${actorName}${actorRole ? ` (${actorRole})` : ""}`
     : "le système";
+  const fmtVer  = (v) => (v || "-").replace(/^v/, "");
   const fromTo = prevVersion && prevVersion !== "-"
-    ? ` (v${prevVersion} → v${version})`
-    : ` (v${version})`;
+    ? ` (${fmtVer(prevVersion)} → ${fmtVer(version)})`
+    : ` (${fmtVer(version)})`;
   const summary = changeSummary ? ` Résumé : "${changeSummary}".` : "";
 
   try {
@@ -221,7 +222,7 @@ async function triggerNewVersionNotification(docId, docCode, docTitle, version, 
       `[${docCode}] "${docTitle}" — nouvelle version${fromTo} créée par ${actor}.${summary}`,
       "version"
     );
-    console.log(`[Notif] Trigger nouvelle version v${version} → ${docCode}`);
+    console.log(`[Notif] Trigger nouvelle version ${fmtVer(version)} → ${docCode}`);
 
     // ── Direct email ─────────────────────────────────────────
     try {

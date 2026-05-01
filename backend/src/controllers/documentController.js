@@ -31,14 +31,15 @@ const ALLOWED_TRANSITIONS = {
   "En relecture":        ["En correction", "En validation"],
   "En correction":       ["Appel en relecture"],
   "En validation":       ["Validé", "En correction"],
-  "Validé":              ["Diffusé", "En rédaction"],
+  "Validé":              ["Approuvé", "En rédaction"],
+  "Approuvé":            ["Diffusé"],
   "Diffusé":             ["Obsolète"],
   "Obsolète":            ["Archivé"],
-  "Archivé":             [],           // état terminal
+  "Archivé":             [],
 };
 
 // Statuts qui bloquent toute modification de fichier/version
-const LOCKED_STATUSES = ["Validé", "Diffusé", "Obsolète", "Archivé"];
+const LOCKED_STATUSES = ["Validé", "Approuvé", "Diffusé", "Obsolète", "Archivé"];
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/documents — Créer un document
@@ -62,6 +63,9 @@ const createDocument = async (req, res) => {
       keywords,
       sharepoint_link,
     } = req.body;
+
+    const reviewerEmails  = JSON.parse(req.body.reviewer_emails  || "[]");
+    const validatorEmails = JSON.parse(req.body.validator_emails || "[]");
 
     // 1. Validation champs obligatoires
     const missing = [];
@@ -147,9 +151,9 @@ const createDocument = async (req, res) => {
       ? keywords.split(",").map((k) => k.trim()).filter(Boolean)
       : null;
 
-    // 7. Status = Brouillon (id=1), version initiale = "v-"
+    // 7. Status = Brouillon (id=1), version initiale = "-"
     const statusId       = 1;
-    const initialVersion = "v-";
+    const initialVersion = "-";
 
     // 8. Insérer le document
     const docInsert = await client.query(
@@ -158,13 +162,15 @@ const createDocument = async (req, res) => {
           status_id, current_version, folder_id, type_id,
           process_id, created_by,
           origin, context, project_ref, keywords,
-          file_path, file_name, file_size, mime_type)
+          file_path, file_name, file_size, mime_type,
+          reviewer_emails, validator_emails)
        VALUES
          ($1,$2,$3,$4,
           $5,$6,$7,$8,
           $9,$10,
           $11,$12,$13,$14,
-          $15,$16,$17,$18)
+          $15,$16,$17,$18,
+          $19,$20)
        RETURNING *`,
       [
         docCode, title, responsible, nextReviewDate,
@@ -172,6 +178,8 @@ const createDocument = async (req, res) => {
         processId || null, userId || null,
         origin.toUpperCase(), context || null, projectRef || null, keywordsArray,
         req.file.relativePath, req.file.originalname, req.file.size, req.file.mimetype,
+        reviewerEmails.length ? reviewerEmails : null,
+        validatorEmails.length ? validatorEmails : null,
       ]
     );
     const document = docInsert.rows[0];
@@ -199,6 +207,14 @@ const createDocument = async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    // Send assignment emails (fire-and-forget) — only for reviewers
+    const { sendAssignmentEmail } = require("../services/emailService");
+    const assignedBy = req.currentUser?.name || "le système";
+    const assignParams = { docId: document.id, docCode: document.doc_code, title: document.title, docType: typeCode, assignedBy };
+    if (reviewerEmails.length) {
+      sendAssignmentEmail({ ...assignParams, to: reviewerEmails, role: "reviewer" }).catch(() => {});
+    }
 
     // Fire-and-forget Kafka event (after COMMIT — never blocks the response)
     publishEvent("smq.document.created", {
@@ -281,7 +297,7 @@ const getDocuments = async (req, res) => {
       params.push(`%${docCode}%`);
     }
     if (overdue === "true") {
-      conditions.push(`d.next_review_date < CURRENT_DATE`);
+      conditions.push(`d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Archivé', 'Obsolète')`);
     }
     if (keyword) {
       conditions.push(
@@ -389,7 +405,11 @@ const getDocumentById = async (req, res) => {
 const getDocumentVersions = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM versions WHERE document_id = $1 ORDER BY created_at ASC`,
+      `SELECT v.*, u.name AS created_by_name
+       FROM versions v
+       LEFT JOIN users u ON u.id = v.created_by
+       WHERE v.document_id = $1
+       ORDER BY v.created_at ASC`,
       [req.params.id]
     );
     return res.json(result.rows);
@@ -408,7 +428,8 @@ const updateDocument = async (req, res) => {
     await client.query("BEGIN");
 
     const docId = parseInt(req.params.id, 10);
-    const { change_summary, userId, sharepoint_link } = req.body;
+    const { change_summary, sharepoint_link } = req.body;
+    const userId = req.currentUser?.id || null;
 
     // 1. Récupérer le document avec son statut
     const docResult = await client.query(
@@ -444,57 +465,60 @@ const updateDocument = async (req, res) => {
       return res.status(400).json({ error: "Un nouveau fichier est requis pour créer une version." });
     }
 
-    // 5. Incrémenter la version (convention: v- → vA → vA1 → vA2 → vB …)
-    //    v-  → vA         (première version)
-    //    vA  → vA1        (première correction)
-    //    vA1 → vA2 → vA9 (corrections du même cycle)
-    //    vA9 (validé) → vB (nouveau cycle)
-    //    vB  → vB1 → vB2…
+    // 5. Incrémenter la version (convention: - → A → A1 → A2 → B …)
+    //    -   → A         (première version)
+    //    A   → A1        (première correction)
+    //    A1  → A2 → A9  (corrections du même cycle)
+    //    A9 (validé) → B (nouveau cycle)
+    //    B   → B1 → B2…
     const cur          = doc.current_version;
     const validatedVer = doc.validated_version; // null if never validated
     let next;
     if (!cur || cur === "-" || cur === "v-") {
-      next = "vA";
-    } else if (/^v([A-Z])$/i.test(cur)) {
-      // Lettre seule ex: "vA" → "vA1"
-      const letter = cur.slice(1).toUpperCase();
-      next = `v${letter}1`;
+      next = "A";
+    } else if (/^v?([A-Z])$/i.test(cur)) {
+      // Lettre seule ex: "A" → "A1"
+      const letter = cur.replace(/^v/, "").toUpperCase();
+      next = `${letter}1`;
     } else {
-      const match = cur.match(/^v([A-Z])(\d+)$/i);
+      const match = cur.match(/^v?([A-Z])(\d+)$/i);
       if (!match) {
-        next = "vA";
+        next = "A";
       } else {
         const [, letter, num] = match;
         const L = letter.toUpperCase();
-        if (validatedVer && cur === validatedVer) {
+        // Strip 'v' from validatedVer too for comparison
+        const validatedNorm = validatedVer ? validatedVer.replace(/^v/, "") : null;
+        const curNorm = cur.replace(/^v/, "");
+        if (validatedNorm && curNorm === validatedNorm) {
           // Version actuelle = validée → nouveau cycle (lettre suivante)
           const nextCode = L.charCodeAt(0) + 1;
           if (nextCode > 90) {
             await client.query("ROLLBACK");
             return res.status(400).json({ error: "Nombre maximum de versions atteint." });
           }
-          next = `v${String.fromCharCode(nextCode)}`;
+          next = String.fromCharCode(nextCode);
         } else {
           const n = parseInt(num, 10);
           if (n < 9) {
-            next = `v${L}${n + 1}`;
+            next = `${L}${n + 1}`;
           } else {
             const nextCode = L.charCodeAt(0) + 1;
             if (nextCode > 90) {
               await client.query("ROLLBACK");
               return res.status(400).json({ error: "Nombre maximum de versions atteint." });
             }
-            next = `v${String.fromCharCode(nextCode)}`;
+            next = String.fromCharCode(nextCode);
           }
         }
       }
     }
 
     // 6. Calculer le nouveau doc_code (remplace le suffixe version)
-    //    GU0002_Guide_v-  →  GU0002_Guide_vA
-    //    GU0002_Guide_vA  →  GU0002_Guide_vA1
-    //    GU0002_Guide_vA1 →  GU0002_Guide_vA2
-    const baseCode   = doc.doc_code.replace(/_(?:v-|v[A-Z]\d*|-)$/, "");
+    //    GU0002_Guide_-   →  GU0002_Guide_A
+    //    GU0002_Guide_A   →  GU0002_Guide_A1
+    //    GU0002_Guide_A1  →  GU0002_Guide_A2
+    const baseCode   = doc.doc_code.replace(/_(?:v?-|v?[A-Z]\d*)$/i, "");
     const newDocCode = `${baseCode}_${next}`;
 
     // 6b. Déplacer vers le bon dossier selon folder_id du document
@@ -525,9 +549,9 @@ const updateDocument = async (req, res) => {
     // 8. Insérer la nouvelle version dans la table versions
     await client.query(
       `INSERT INTO versions
-         (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary, sharepoint_link)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [docId, next, newRelFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim(), sharepoint_link || null]
+         (document_id, version_letter, file_path, file_name, file_size, mime_type, change_summary, sharepoint_link, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [docId, next, newRelFilePath, newFileName, req.file.size, req.file.mimetype, change_summary.trim(), sharepoint_link || null, userId]
     );
 
     // Back-propagate sharepoint_link to v- entry if it has none
@@ -780,9 +804,11 @@ const getDocumentStats = async (_req, res) => {
       ),
       pool.query(
         `SELECT COUNT(*) AS count
-         FROM documents
-         WHERE next_review_date IS NOT NULL
-           AND next_review_date < CURRENT_DATE`
+         FROM documents d
+         JOIN status s ON s.id = d.status_id
+         WHERE d.next_review_date IS NOT NULL
+           AND d.next_review_date < CURRENT_DATE
+           AND s.name NOT IN ('Archivé', 'Obsolète')`
       ),
       pool.query(`SELECT COUNT(*) AS count FROM documents`),
     ]);

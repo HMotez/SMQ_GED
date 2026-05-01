@@ -7,6 +7,7 @@ const SECURITY_ACTIONS = [
   "LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGIN_NEW_IP",
   "LOGOUT", "ACCOUNT_LOCKED",
   "ACCESS_DENIED_401", "ACCESS_DENIED_403",
+  "AUTO_ARCHIVE",
 ];
 
 const pool = require("../db");

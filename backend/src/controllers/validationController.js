@@ -12,6 +12,7 @@
 
 const pool = require("../db");
 const crypto = require("crypto");
+const { triggerStatusNotification } = require("./notificationController");
 
 // ─────────────────────────────────────────────────────────────
 // Helper: Generate signature hash (SHA-256) for audit trail (EF14)
@@ -228,7 +229,31 @@ const createValidation = async (req, res) => {
       ]
     );
 
+    // 10. Avancement du statut — uniquement sur rejet (approbation ne change pas le statut,
+    //     la transition vers "Validé" est une action manuelle distincte)
+    let newStatusName = doc.status_name;
+    if (decision === 'REJETÉ' && doc.status_name === 'En validation') {
+      const statusRes = await client.query(`SELECT id FROM status WHERE name = 'En correction'`);
+      if (statusRes.rows.length) {
+        await client.query(`UPDATE documents SET status_id = $1 WHERE id = $2`, [statusRes.rows[0].id, docId]);
+        await client.query(
+          `INSERT INTO logs (document_id, action, user_id, details) VALUES ($1,$2,$3,$4)`,
+          [docId, 'STATUS_CHANGE', req.currentUser?.id || null,
+           JSON.stringify({ from: 'En validation', to: 'En correction', trigger: 'auto_rejection' })]
+        );
+        newStatusName = 'En correction';
+      }
+    }
+
     await client.query("COMMIT");
+
+    // Fire-and-forget status notification
+    if (newStatusName !== doc.status_name) {
+      triggerStatusNotification(
+        doc.id, doc.doc_code, doc.title, doc.status_name, newStatusName,
+        req.currentUser?.name, req.currentUser?.role
+      ).catch(() => {});
+    }
 
     return res.status(201).json({
       message: "✓ Validation enregistrée (ISO immuable).",
@@ -241,7 +266,7 @@ const createValidation = async (req, res) => {
         id: doc.id,
         doc_code: doc.doc_code,
         title: doc.title,
-        status_name: doc.status_name,
+        status_name: newStatusName,
         responsible: doc.responsible,
       },
     });

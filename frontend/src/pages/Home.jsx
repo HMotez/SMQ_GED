@@ -24,14 +24,17 @@ import DocDetailModal from "../components/DocDetailModal";
 
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
-  "Brouillon":     { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon: LuPencil         },
-  "En rédaction":  { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon: LuPenLine        },
-  "En relecture":  { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon: LuEye            },
-  "En validation": { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon: LuClipboardCheck },
-  "Validé":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon: LuCircleCheckBig },
-  "Diffusé":       { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon: LuShare2         },
-  "Obsolète":      { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon: LuTriangleAlert  },
-  "Archivé":       { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon: LuArchive        },
+  "Brouillon":         { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon: LuPencil         },
+  "En rédaction":      { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon: LuPenLine        },
+  "Appel en relecture":{ bg:"rgba(255,247,205,0.08)", text:"#fbbf24", border:"rgba(252,211,77,0.2)",   Icon: LuEye            },
+  "En relecture":      { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon: LuEye            },
+  "En correction":     { bg:"rgba(255,237,213,0.08)", text:"#f97316", border:"rgba(253,186,116,0.2)",  Icon: LuRefreshCw      },
+  "En validation":     { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon: LuClipboardCheck },
+  "Validé":            { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon: LuCircleCheckBig },
+  "Approuvé":          { bg:"rgba(238,242,255,0.08)", text:"#818cf8", border:"rgba(165,180,252,0.3)",  Icon: LuShieldCheck    },
+  "Diffusé":           { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon: LuShare2         },
+  "Obsolète":          { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon: LuTriangleAlert  },
+  "Archivé":           { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon: LuArchive        },
 };
 
 const ROLE_COLOR = {
@@ -70,8 +73,18 @@ const NAV_ITEMS_BY_ROLE = {
     { to: "/ai",          label: "Assistant IA",               Icon: LuCpu             },
   ],
 };
-// Fallback for unknown/old roles — show full Admin nav
-const NAV_ITEMS_DEFAULT = NAV_ITEMS_BY_ROLE["Admin"];
+NAV_ITEMS_BY_ROLE["Visiteur"] = [
+  { to: "/",        label: "Accueil",    end: true, Icon: LuHouse    },
+  { to: "/list",    label: "Documents",             Icon: LuFileText },
+  { to: "/archive", label: "Archivage",             Icon: LuArchive  },
+];
+
+// Fallback for unauthenticated — public nav only
+const NAV_ITEMS_DEFAULT = [
+  { to: "/",        label: "Accueil",    end: true, Icon: LuHouse    },
+  { to: "/list",    label: "Documents",             Icon: LuFileText },
+  { to: "/archive", label: "Archivage",             Icon: LuArchive  },
+];
 
 /* ── Quick-access roles (for switcher) ───────────────────── */
 const QUICK_ROLES = [
@@ -105,6 +118,20 @@ const ANIMATION_STYLES = `
   }
   .feat-shimmer-line { animation: featShimmer 0.65s ease-out forwards; }
   .feat-slide-up     { animation: featSlideUp 0.55s cubic-bezier(.22,.68,0,1.15) both; }
+
+  @keyframes heroFadeUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes heroGlow {
+    0%,100% { text-shadow: 0 0 40px rgba(74,184,63,0.4); }
+    50%     { text-shadow: 0 0 70px rgba(74,184,63,0.75), 0 0 120px rgba(74,184,63,0.3); }
+  }
+  .hero-fade-0 { animation: heroFadeUp 0.7s cubic-bezier(.22,.68,0,1.1) 0.05s both; }
+  .hero-fade-1 { animation: heroFadeUp 0.7s cubic-bezier(.22,.68,0,1.1) 0.2s  both; }
+  .hero-fade-2 { animation: heroFadeUp 0.7s cubic-bezier(.22,.68,0,1.1) 0.38s both; }
+  .hero-fade-3 { animation: heroFadeUp 0.7s cubic-bezier(.22,.68,0,1.1) 0.55s both; }
+  .hero-glow   { animation: heroGlow 3s ease-in-out infinite; }
 
   @keyframes sectionFadeIn {
     from { opacity: 0; transform: translateY(28px); }
@@ -455,15 +482,15 @@ function Navbar({ onOpenLogin = () => {} }) {
                 )}
               </>
             ) : (
-              /* Visitor — Lecteur-level nav (read-only access) */
+              /* Visitor — full nav, ProtectedRoute handles dashboard access */
               <>
                 <NavItem to="/"            label="Accueil"         end={true} icon={LuHouse}          />
-                <NavItem to="/dashboard"   label="Tableau de bord"           icon={LuLayoutDashboard} />
-                <NavItem to="/list"        label="Documents"                 icon={LuFileText}        />
-                <NavItem to="/validations" label="Validations"               icon={LuClipboardCheck}  />
-                <NavItem to="/archive"     label="Archivage"                 icon={LuArchive}         />
-                <NavItem to="/workflow"    label="Workflow"                  icon={LuGitBranch}       />
-                <NavItem to="/ai"          label="Assistant IA"              icon={LuCpu}             />
+                <NavItem to="/dashboard"   label="Tableau de bord"            icon={LuLayoutDashboard} />
+                <NavItem to="/list"        label="Documents"                  icon={LuFileText}        />
+                <NavItem to="/validations" label="Validations"                icon={LuClipboardCheck}  />
+                <NavItem to="/archive"     label="Archivage"                  icon={LuArchive}         />
+                <NavItem to="/workflow"    label="Workflow"                   icon={LuGitBranch}       />
+                <NavItem to="/ai"          label="Assistant IA"               icon={LuCpu}             />
               </>
             )}
           </div>
@@ -809,10 +836,22 @@ const ROLE_CFG = {
     glow:   "rgba(74,222,128,0.15)",
     Icon:   LuClipboardCheck,
     perms:  [
-      { label: "Consulter documents", Icon: LuFileText        },
-      { label: "Valider / Rejeter",   Icon: LuClipboardCheck  },
-      { label: "Ajouter commentaires", Icon: LuEye            },
-      { label: "Recevoir notifications", Icon: LuBell         },
+      { label: "Consulter documents",    Icon: LuFileText        },
+      { label: "Valider / Rejeter",      Icon: LuClipboardCheck  },
+      { label: "Ajouter commentaires",   Icon: LuEye             },
+      { label: "Recevoir notifications", Icon: LuBell            },
+    ],
+  },
+  "Visiteur": {
+    color:  "#a78bfa",
+    bg:     "rgba(167,139,250,0.08)",
+    border: "rgba(167,139,250,0.25)",
+    glow:   "rgba(167,139,250,0.15)",
+    Icon:   LuEye,
+    perms:  [
+      { label: "Consulter documents", Icon: LuFileText  },
+      { label: "Consulter archivage", Icon: LuArchive   },
+      { label: "Accès en lecture",    Icon: LuLock       },
     ],
   },
 };
@@ -1072,7 +1111,7 @@ export default function Home() {
   const archived  = byStatus["Archivé"]  || 0;
   const validated = byStatus["Validé"]   || 0;
 
-  const ISO_STEPS = ["Brouillon","En rédaction","En relecture","En validation","Validé","Diffusé","Obsolète","Archivé"];
+  const ISO_STEPS = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Approuvé","Diffusé","Obsolète","Archivé"];
 
   return (
     <div
@@ -1112,7 +1151,7 @@ export default function Home() {
 
             {/* Badge */}
             <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-7 border"
+              className="hero-fade-0 inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-7 border"
               style={{
                 background: "rgba(74,184,63,0.1)",
                 borderColor: "rgba(74,184,63,0.25)",
@@ -1131,7 +1170,7 @@ export default function Home() {
             </div>
 
             <h1
-              className="m-0 mb-5 font-black text-white"
+              className="hero-fade-1 m-0 mb-5 font-black text-white"
               style={{
                 fontSize: "clamp(28px, 4.5vw, 52px)",
                 lineHeight: 1.1,
@@ -1141,24 +1180,22 @@ export default function Home() {
             >
               Gestion Électronique{" "}
               <span
-                style={{
-                  color: "#4ab83f",
-                  textShadow: "0 0 40px rgba(74,184,63,0.4)",
-                }}
+                className="hero-glow inline-block"
+                style={{ color: "#4ab83f" }}
               >
                 des Documents
               </span>
             </h1>
 
             <p
-              className="text-lg max-w-[520px] mx-auto leading-relaxed m-0 mb-10"
+              className="hero-fade-2 text-lg max-w-[520px] mx-auto leading-relaxed m-0 mb-10"
               style={{ color: "rgba(168,191,212,0.8)" }}
             >
               Plateforme centralisée de gestion documentaire pour ACTIA Engineering Services.
               Conformité ISO, traçabilité complète et workflow de validation.
             </p>
 
-            <div className="flex justify-center gap-3 flex-wrap">
+            <div className="hero-fade-3 flex justify-center gap-3 flex-wrap">
               {canCreate && (
                 <button
                   onClick={() => navigate("/create")}
@@ -1185,19 +1222,19 @@ export default function Home() {
                   <LuFilePlus size={16} /> Nouveau document
                 </button>
               )}
-              <button
-                onClick={() => currentUser ? navigate("/list") : setShowLoginModal(true)}
-                className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 hover:-translate-y-0.5"
+              <NavLink
+                to="/list"
+                className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 hover:-translate-y-0.5 no-underline"
                 style={{
                   background: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   color: "rgba(255,255,255,0.85)",
                   backdropFilter: "blur(10px)",
-                  fontSize: 15, cursor: "pointer", fontFamily: "inherit",
+                  fontSize: 15, fontFamily: "inherit",
                 }}
               >
                 Voir les documents <LuArrowRight size={14} />
-              </button>
+              </NavLink>
             </div>
           </div>
         </section>
@@ -1612,7 +1649,7 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Role cards — informational only */}
+              {/* Role cards — animated grid */}
               <div className="grid gap-4" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))" }}>
                 {QUICK_ROLES.map(role => {
                   const RI   = role.Icon;
@@ -1624,21 +1661,120 @@ export default function Home() {
                   return (
                     <div
                       key={role.name}
-                      className="rounded-2xl p-5"
+                      className="group rounded-2xl p-5 relative overflow-hidden cursor-default
+                        transition-all duration-300
+                        hover:-translate-y-1 hover:scale-[1.02]"
                       style={{
                         background: `${role.color}0a`,
                         border: `1.5px solid ${role.color}25`,
                         boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                       }}
+                      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 16px 40px rgba(0,0,0,0.3), 0 0 30px ${role.color}22`; e.currentTarget.style.borderColor = `${role.color}55`; }}
+                      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)"; e.currentTarget.style.borderColor = `${role.color}25`; }}
                     >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background:`${role.color}15`, border:`1.5px solid ${role.color}30` }}>
+                      {/* top accent bar */}
+                      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl opacity-50 transition-opacity duration-300 group-hover:opacity-100"
+                        style={{ background:`linear-gradient(90deg,${role.color},${role.color}55,transparent)` }} />
+                      {/* bg glow blob */}
+                      <div className="absolute top-0 right-0 pointer-events-none rounded-full transition-all duration-700
+                        translate-x-[30%] -translate-y-[30%] group-hover:translate-x-[15%] group-hover:-translate-y-[15%] group-hover:scale-125"
+                        style={{ width:180, height:180, background:`radial-gradient(circle,${role.color}18 0%,transparent 65%)`, filter:"blur(30px)" }} />
+
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 relative z-10
+                        transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6"
+                        style={{ background:`${role.color}15`, border:`1.5px solid ${role.color}30` }}>
                         <RI size={22} style={{ color:role.color }} />
                       </div>
-                      <p className="m-0 mb-1 font-black text-[18px]" style={{ color:role.color, letterSpacing:-0.4 }}>{role.name}</p>
-                      <p className="m-0 text-[12px] leading-relaxed" style={{ color:"rgba(168,191,212,0.55)" }}>{desc}</p>
+                      <p className="m-0 mb-1 font-black text-[18px] relative z-10" style={{ color:role.color, letterSpacing:-0.4 }}>{role.name}</p>
+                      <p className="m-0 text-[12px] leading-relaxed relative z-10 transition-colors duration-300"
+                        style={{ color:"rgba(168,191,212,0.55)" }}>{desc}</p>
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Visiteur card — full animated UserProfileCard style */}
+              <div
+                className="group mt-4 rounded-2xl border relative overflow-hidden cursor-default
+                  transition-all duration-500
+                  hover:border-[rgba(167,139,250,0.5)]"
+                style={{ background:"rgba(167,139,250,0.04)", borderColor:"rgba(167,139,250,0.25)", boxShadow:"0 8px 32px rgba(0,0,0,0.2)" }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 24px 60px rgba(0,0,0,0.4), 0 0 60px rgba(167,139,250,0.15)"; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.2)"; }}
+              >
+                {/* Accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl opacity-50 transition-opacity duration-500 group-hover:opacity-100"
+                  style={{ background:"linear-gradient(90deg,#a78bfa,#a78bfa55,transparent)" }} />
+
+                {/* Animated bg glow blob */}
+                <div className="absolute top-0 right-0 pointer-events-none rounded-full
+                  transition-all duration-700
+                  translate-x-[30%] -translate-y-[30%]
+                  group-hover:translate-x-[20%] group-hover:-translate-y-[20%] group-hover:scale-[1.3]"
+                  style={{ width:300, height:300, background:"radial-gradient(circle,rgba(167,139,250,0.15) 0%,transparent 65%)", filter:"blur(40px)" }} />
+
+                <div className="relative z-10 p-6">
+                  <div className="flex items-start gap-5 flex-wrap">
+                    {/* Avatar */}
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0
+                        transition-all duration-400
+                        group-hover:scale-[1.08] group-hover:-rotate-[4deg]
+                        group-hover:shadow-[0_0_28px_rgba(167,139,250,0.5)]"
+                      style={{ background:"rgba(167,139,250,0.12)", border:"2px solid rgba(167,139,250,0.3)" }}
+                    >
+                      <LuEye size={28} style={{ color:"#a78bfa" }} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-0.5 h-4 rounded-full flex-shrink-0" style={{ background:"#a78bfa" }} />
+                        <p className="text-[10px] font-bold uppercase tracking-[1.8px] m-0" style={{ color:"rgba(168,191,212,0.5)" }}>Profil visiteur</p>
+                      </div>
+                      <p className="m-0 text-white font-black text-2xl leading-tight" style={{ letterSpacing:-0.5 }}>Visiteur</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border"
+                          style={{ background:"rgba(167,139,250,0.1)", color:"#a78bfa", borderColor:"rgba(167,139,250,0.28)" }}>
+                          <LuEye size={10} /> Visiteur
+                        </span>
+                        <span className="text-[12px]" style={{ color:"rgba(168,191,212,0.4)" }}>·</span>
+                        <span className="text-[12px]" style={{ color:"rgba(168,191,212,0.55)" }}>Aucun compte requis</span>
+                      </div>
+                    </div>
+
+                    {/* Status badge */}
+                    <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border self-start"
+                      style={{ background:"rgba(167,139,250,0.08)", borderColor:"rgba(167,139,250,0.2)" }}>
+                      <span className="w-1.5 h-1.5 rounded-full dot-pulse" style={{ background:"#a78bfa", boxShadow:"0 0 6px #a78bfa" }} />
+                      <span className="text-[11px] font-semibold" style={{ color:"#a78bfa" }}>Accès public</span>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-px my-5 rounded-full transition-all duration-500 opacity-40 group-hover:opacity-100"
+                    style={{ background:"linear-gradient(90deg,rgba(167,139,250,0.4),rgba(255,255,255,0.06),transparent)" }} />
+
+                  {/* Permissions */}
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[1.5px] mb-3 m-0" style={{ color:"rgba(168,191,212,0.4)" }}>
+                      Permissions accordées
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {ROLE_CFG["Visiteur"].perms.map(({ label, Icon: PI }) => (
+                        <div key={label}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border
+                            transition-all duration-200 cursor-default
+                            hover:-translate-y-0.5 hover:scale-[1.03]
+                            hover:border-[rgba(167,139,250,0.3)] hover:bg-[rgba(167,139,250,0.08)]"
+                          style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)" }}>
+                          <PI size={12} style={{ color:"#a78bfa" }} />
+                          <span className="text-[11.5px] font-semibold" style={{ color:"rgba(168,191,212,0.65)" }}>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Footer links */}

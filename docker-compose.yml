@@ -11,28 +11,33 @@ services:
     container_name: smq_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER:     ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER:     ${DB_ADMIN_USER}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
       POSTGRES_DB:       ${DB_NAME}
-    # Logging : detect unauthorized connections (Gestion BD)
+    # Logging only here — SSL is configured via postgresql.conf by copy-ssl.sh on first init
     command: >
       postgres
         -c log_connections=on
         -c log_disconnections=on
         -c log_statement=ddl
         -c log_min_duration_statement=2000
+    entrypoint: ["/bin/bash", "/entrypoint-ssl.sh"]
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/copy-ssl.sh:/docker-entrypoint-initdb.d/copy-ssl.sh:ro
+      - ./db/entrypoint-ssl.sh:/entrypoint-ssl.sh:ro
+      - ./db/certs/server.crt:/tmp/pg-ssl/server.crt:ro
+      - ./db/certs/server.key:/tmp/pg-ssl/server.key:ro
     networks:
       - smq_network
     # DB is NOT exposed to the host — accessible only inside smq_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_ADMIN_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout:  5s
       retries:  5
-      start_period: 20s
+      start_period: 30s
 
   # ── Apache Kafka (KRaft mode — no ZooKeeper) ─────────────────
   kafka:
@@ -90,14 +95,14 @@ services:
     build:
       context:    ./backend
       dockerfile: Dockerfile
-    image: smq_ged-backend:sprint43
+    image: smq_ged-backend
     container_name: smq_backend
     restart: unless-stopped
     env_file:
       - .env
     environment:
       DB_HOST:     postgres
-      DB_SSL:      "false"
+      DB_SSL:      "true"
       GROQ_API_KEY: ${GROQ_API_KEY}
       UPLOAD_DIR:  /app/storage
       # ClamAV antivirus service (virusScanMiddleware)
@@ -152,7 +157,7 @@ services:
       args:
         VITE_API_URL:     /api
         VITE_BACKEND_URL: ""
-    image: smq_ged-frontend:sprint43
+    image: smq_ged-frontend
     container_name: smq_frontend
     restart: unless-stopped
     ports:
@@ -177,7 +182,7 @@ services:
       - ./reports/security:/reports
     command: >
       image --severity HIGH,CRITICAL --no-progress
-      smq_ged-backend:sprint43
+      smq_ged-backend
     networks:
       - smq_network
 

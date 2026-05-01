@@ -213,6 +213,45 @@ function KpiStatCard({ label, value, color, maxValue, onClick }) {
   );
 }
 
+// ── External tooltip helpers ─────────────────────────────────
+function getOrCreateTooltipEl(chart) {
+  let el = chart.canvas.parentNode.querySelector("div[data-chartjs-tooltip]");
+  if (!el) {
+    el = document.createElement("div");
+    el.setAttribute("data-chartjs-tooltip", "1");
+    el.style.cssText = "position:absolute;pointer-events:none;transition:all .18s ease;z-index:9999;";
+    chart.canvas.parentNode.appendChild(el);
+  }
+  return el;
+}
+
+function makeExternalTooltip(colorFn, valueFn, labelFn) {
+  return function({ chart, tooltip }) {
+    const el = getOrCreateTooltipEl(chart);
+    if (tooltip.opacity === 0) { el.style.opacity = "0"; return; }
+    const dp = tooltip.dataPoints?.[0];
+    if (!dp) return;
+    const color = colorFn(dp);
+    const val   = valueFn(dp);
+    const title = labelFn(dp);
+    el.innerHTML = `
+      <div style="background:linear-gradient(160deg,rgba(10,20,32,0.97),rgba(13,31,45,0.97));border:1px solid ${color}45;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.04),0 0 30px ${color}18;overflow:hidden;min-width:130px;">
+        <div style="height:3px;background:linear-gradient(90deg,${color},${color}55,transparent);"></div>
+        <div style="padding:14px 18px 16px;">
+          <p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(168,191,212,0.45);margin:0 0 8px;">${title}</p>
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <span style="font-size:42px;font-weight:900;color:${color};text-shadow:0 0 24px ${color}90;font-family:monospace;line-height:1;">${val}</span>
+            <span style="font-size:12px;color:rgba(168,191,212,0.5);font-weight:500;">document${val !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+      </div>`;
+    const { offsetLeft: x, offsetTop: y } = chart.canvas;
+    el.style.opacity = "1";
+    el.style.left = x + tooltip.caretX + "px";
+    el.style.top  = y + tooltip.caretY + "px";
+  };
+}
+
 // ── Distribution doughnut chart ──────────────────────────────
 function DistributionChart({ kpis }) {
   const active = kpis.filter(k => k.value > 0);
@@ -243,8 +282,8 @@ function DistributionChart({ kpis }) {
       backgroundColor: active.map(k => k.color + "cc"),
       borderColor: active.map(k => k.color),
       borderWidth: 2,
-      cutout: "62%",
-      hoverOffset: 8,
+      cutout: "68%",
+      hoverOffset: 12,
     }],
   };
   const options = {
@@ -252,13 +291,12 @@ function DistributionChart({ kpis }) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        callbacks: { label: ctx => ` ${ctx.label} : ${ctx.parsed} doc(s)` },
-        backgroundColor: "rgba(10,20,32,0.95)",
-        titleColor: "rgba(220,235,248,0.9)",
-        bodyColor: "rgba(168,191,212,0.8)",
-        borderColor: "rgba(255,255,255,0.1)",
-        borderWidth: 1,
-        padding: 10,
+        enabled: false,
+        external: makeExternalTooltip(
+          dp => active[dp.dataIndex]?.color,
+          dp => dp.parsed,
+          dp => dp.label
+        ),
       },
     },
     responsive: true,
@@ -1122,35 +1160,57 @@ function ImprovementsSection({ token }) {
             <DistributionChart kpis={KPIS.slice(1)} />
           </div>
           {/* Legend + detail */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}>
             {KPIS.slice(1).map(kpi => {
               const total = KPIS.slice(1).reduce((s, k) => s + k.value, 0);
               const pct = total > 0 ? ((kpi.value / total) * 100).toFixed(1) : "0.0";
+              const rowBg    = `${kpi.color}0d`;
+              const rowBgHov = `${kpi.color}1c`;
               return (
                 <div
                   key={kpi.label}
                   onClick={kpi.onClick || undefined}
                   style={{
+                    position: "relative",
                     display: "flex", alignItems: "center", gap: 12,
                     cursor: kpi.onClick ? "pointer" : "default",
-                    borderRadius: 8, padding: "4px 6px", margin: "-4px -6px",
-                    transition: "background 0.15s",
+                    borderRadius: 10,
+                    padding: "9px 12px 9px 16px",
+                    background: rowBg,
+                    border: `1px solid ${kpi.color}22`,
+                    overflow: "hidden",
+                    transition: "background 0.2s, border-color 0.2s, transform 0.2s",
                   }}
-                  onMouseEnter={e => { if (kpi.onClick) e.currentTarget.style.background = `${kpi.color}12`; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = rowBgHov;
+                    e.currentTarget.style.borderColor = `${kpi.color}44`;
+                    if (kpi.onClick) e.currentTarget.style.transform = "translateX(2px)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = rowBg;
+                    e.currentTarget.style.borderColor = `${kpi.color}22`;
+                    e.currentTarget.style.transform = "none";
+                  }}
                 >
-                  <div style={{ width: 10, height: 10, borderRadius: 3, background: kpi.color, flexShrink: 0, boxShadow: `0 0 6px ${kpi.color}80` }} />
-                  <span style={{ fontSize: 12, color: "rgba(168,191,212,0.65)", minWidth: 100 }}>{kpi.label}</span>
-                  <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+                    background: `linear-gradient(to bottom, ${kpi.color}, ${kpi.color}55)`,
+                  }} />
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(220,235,248,0.85)", minWidth: 100, flexShrink: 0 }}>{kpi.label}</span>
+                  <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{
                       width: `${pct}%`, height: "100%",
                       background: `linear-gradient(90deg, ${kpi.color}55, ${kpi.color})`,
-                      borderRadius: 3, boxShadow: `0 0 6px ${kpi.color}60`,
-                      transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)",
+                      borderRadius: 3, boxShadow: `0 0 8px ${kpi.color}70`,
+                      transition: "width 1.3s cubic-bezier(0.4,0,0.2,1)",
                     }} />
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: kpi.color, fontFamily: "monospace", minWidth: 30, textAlign: "right" }}>{kpi.value}</span>
-                  <span style={{ fontSize: 11, color: "rgba(168,191,212,0.35)", minWidth: 40, textAlign: "right" }}>{pct}%</span>
+                  <span style={{
+                    fontSize: 14, fontWeight: 800, color: kpi.color, fontFamily: "monospace",
+                    minWidth: 28, textAlign: "right",
+                    textShadow: kpi.value > 0 ? `0 0 14px ${kpi.color}60` : "none",
+                  }}>{kpi.value}</span>
+                  <span style={{ fontSize: 11, color: "rgba(168,191,212,0.38)", minWidth: 44, textAlign: "right" }}>{pct}%</span>
                 </div>
               );
             })}

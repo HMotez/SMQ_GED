@@ -277,25 +277,50 @@ INSERT INTO processes (code, strategic_process, main_process, sub_process) VALUE
   ('CDP-IVS', '01_PROCESSUS_STRATEGIQUE', 'Concevoir_Developper_Produits',              'PM_Industrialisation_Vie_Serie');
 
 -- =============================================================
--- PRINCIPE DU MOINDRE PRIVILÈGE — Gestion de la BD
--- L'utilisateur applicatif n'a que les droits DML nécessaires.
--- Aucun privilège DDL (CREATE, DROP, ALTER) ni superuser.
+-- PRINCIPE DU MOINDRE PRIVILÈGE — Gestion de la BD (Sprint 44)
+-- Création de l'utilisateur applicatif dédié "smq_app".
+-- NOSUPERUSER NOCREATEDB NOCREATEROLE — accès limité à smq_db.
+-- Le superuser "postgres" n'est jamais utilisé par l'application.
 -- =============================================================
 
--- Révoquer tous les privilèges publics par défaut
+-- Révoquer les privilèges publics par défaut
 REVOKE ALL ON ALL TABLES    IN SCHEMA public FROM PUBLIC;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 
--- Accorder uniquement SELECT, INSERT, UPDATE, DELETE à l'utilisateur applicatif
+-- Créer l'utilisateur applicatif (idempotent)
 DO $$
-DECLARE
-  app_user TEXT := current_user;
 BEGIN
-  EXECUTE format('GRANT USAGE ON SCHEMA public TO %I', app_user);
-  EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I', app_user);
-  EXECUTE format('GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO %I', app_user);
-  -- Appliquer sur les futures tables également
-  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', app_user);
-  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO %I', app_user);
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'smq_app') THEN
+    CREATE USER smq_app WITH
+      PASSWORD 'SmqApp@ACTIA_GED#2025!'
+      LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+  END IF;
 END $$;
+
+-- Droits de connexion et de schéma
+GRANT CONNECT           ON DATABASE smq_db TO smq_app;
+GRANT USAGE, CREATE     ON SCHEMA public   TO smq_app;
+
+-- DML sur toutes les tables et séquences existantes
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES    IN SCHEMA public TO smq_app;
+GRANT USAGE, SELECT, UPDATE          ON ALL SEQUENCES IN SCHEMA public TO smq_app;
+
+-- Droits automatiques sur les futures tables/séquences
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES    TO smq_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT USAGE, SELECT, UPDATE          ON SEQUENCES TO smq_app;
+
+-- Transférer la propriété des tables/séquences créées par postgres à smq_app
+-- (nécessaire pour que smq_app puisse faire ALTER TABLE et CREATE INDEX au démarrage)
+DO $body$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+    EXECUTE format('ALTER TABLE public.%I OWNER TO smq_app', r.tablename);
+  END LOOP;
+  FOR r IN SELECT sequencename FROM pg_sequences WHERE schemaname = 'public' LOOP
+    EXECUTE format('ALTER SEQUENCE public.%I OWNER TO smq_app', r.sequencename);
+  END LOOP;
+END $body$;

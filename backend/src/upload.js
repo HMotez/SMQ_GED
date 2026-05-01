@@ -14,11 +14,21 @@ const baseDir = process.env.UPLOAD_DIR
 if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 
 // ── Construit le chemin complet sur disque à partir du folder_id ──
-// Remonte la chaîne parent_id → construit ex:
-//   01_PROCESSUS_STRATEGIQUE/Concevoir_Developper_Produits/PR_Procedures
-async function resolveFolderPath(folderId) {
+// Si typeCode est fourni, cherche un sous-dossier {TYPE}_ sous le dossier sélectionné
+// ex: folderId=Manager_SST + typeCode=TR → .../Manager_SST/TR_Trames/
+async function resolveFolderPath(folderId, typeCode) {
+  let resolvedId = parseInt(folderId);
+
+  if (typeCode) {
+    const sub = await pool.query(
+      `SELECT id FROM folders WHERE parent_id = $1 AND name ILIKE $2 LIMIT 1`,
+      [resolvedId, `${typeCode.toUpperCase()}\\_%`]
+    );
+    if (sub.rows.length) resolvedId = sub.rows[0].id;
+  }
+
   const parts = [];
-  let currentId = parseInt(folderId);
+  let currentId = resolvedId;
   while (currentId) {
     const res = await pool.query(
       "SELECT name, parent_id FROM folders WHERE id = $1",
@@ -28,15 +38,16 @@ async function resolveFolderPath(folderId) {
     parts.unshift(res.rows[0].name);
     currentId = res.rows[0].parent_id;
   }
-  return parts.join("/"); // chemin relatif uniquement ex: "01_PS/CDP/PR_Procedures"
+  return parts.join("/");
 }
 
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
-    const folderId = req.body.folderId || req.body.folder_id;
+    const folderId  = req.body.folderId  || req.body.folder_id;
+    const typeCode  = req.body.typeCode  || req.body.type_code;
     if (!folderId) return cb(null, baseDir);
 
-    resolveFolderPath(folderId)
+    resolveFolderPath(folderId, typeCode)
       .then(relPath => {
         const destPath = relPath ? path.join(baseDir, relPath) : baseDir;
         fs.mkdirSync(destPath, { recursive: true });

@@ -36,13 +36,14 @@ const TRANSITION_ROLE_MAP = {
   "En rédaction→Appel en relecture":        ["Admin", "Ing. Qualité"],
   "Appel en relecture→En relecture":        ["Admin", "Ing. Qualité", "Reviewer"],
   "En relecture→En correction":             ["Admin", "Reviewer"],
-  "En relecture→En validation":             ["Admin", "Reviewer"],
+  "En relecture→En validation":             ["Admin", "Reviewer", "Ing. Qualité"],
   "En correction→Appel en relecture":       ["Admin", "Ing. Qualité"],
-  "En validation→Validé":                   ["Admin", "Reviewer", "Ing. Qualité"],
+  "En validation→Validé":                   ["Admin", "Ing. Qualité"],
   "En validation→En correction":            ["Admin", "Reviewer", "Ing. Qualité"],
-  "Validé→Diffusé":                         ["Admin"],
-  "Diffusé→Obsolète":                       ["Admin"],
-  "Obsolète→Archivé":                       ["Admin"],
+  "Validé→Approuvé":                        ["Admin", "Ing. Qualité"],
+  "Approuvé→Diffusé":                       ["Admin", "Ing. Qualité"],
+  "Diffusé→Obsolète":                       ["Admin", "Ing. Qualité"],
+  "Obsolète→Archivé":                       ["Admin", "Ing. Qualité"],
 };
 
 // ─────────────────────────────────────────────────────────────

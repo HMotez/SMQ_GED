@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { LuCheck, LuX, LuShieldCheck, LuInfo } from 'react-icons/lu';
+import { LuCheck, LuX, LuShieldCheck, LuInfo, LuUser, LuUserX } from 'react-icons/lu';
 import { useUser, ROLE_PERMISSIONS } from '../context/UserContext';
 import useRoleCheck from '../hooks/useRoleCheck';
 
@@ -21,23 +21,53 @@ export function AccessDeniedMessage({ reason }) {
 
   return (
     <div style={{
-      background: '#3d1a1a',
-      border: '1px solid #6e2020',
+      background: '#2a1215',
+      border: '1px solid #5c2020',
       borderRadius: 8,
-      padding: 16,
+      padding: '12px 14px',
       marginBottom: 16,
+      display: 'flex',
+      gap: 12,
+      alignItems: 'flex-start',
     }}>
-      <p style={{ color: '#ff7b72', fontWeight: 600, margin: '0 0 8px' }}>
-        Accès refusé
-      </p>
-      <p style={{ color: '#8b949e', fontSize: 13, margin: 0 }}>
-        {reason}
-      </p>
-      {userRole && (
-        <p style={{ color: '#6e7681', fontSize: 12, margin: '8px 0 0', fontStyle: 'italic' }}>
-          Rôle actuel: <strong>{userRole}</strong>
+      <div style={{
+        width: 32,
+        height: 32,
+        borderRadius: 6,
+        background: '#3d1a1a',
+        border: '1px solid #6e2020',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        marginTop: 1,
+      }}>
+        <LuX size={16} color="#ff7b72" />
+      </div>
+      <div>
+        <p style={{ color: '#ff7b72', fontWeight: 700, margin: '0 0 4px', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Accès refusé
         </p>
-      )}
+        <p style={{ color: '#cda0a0', fontSize: 12, margin: 0, lineHeight: 1.5 }}>
+          {reason}
+        </p>
+        <p style={{ color: '#6e7681', fontSize: 11, margin: '6px 0 0' }}>
+          Rôle actuel :{' '}
+          <span style={{
+            display: 'inline-block',
+            padding: '1px 7px',
+            borderRadius: 4,
+            background: '#3d1a1a',
+            border: '1px solid #6e2020',
+            color: '#ff7b72',
+            fontWeight: 600,
+            fontSize: 10,
+            textTransform: 'uppercase',
+          }}>
+            {userRole || 'Visiteur'}
+          </span>
+        </p>
+      </div>
     </div>
   );
 }
@@ -55,34 +85,62 @@ export function RoleInfoBadge() {
     "Reviewer":     { bg: "#04260f", color: "#4ade80", border: "#196c2e" },
   };
 
+  const isGuest = !currentUser;
   const style = ROLE_STYLES[userRole] || {
-    bg: "#161b22",
-    color: "#484f58",
-    border: "#30363d",
+    bg: "#1a1a2e",
+    color: "#6b7280",
+    border: "#2d2d44",
   };
 
   return (
     <div style={{
       background: style.bg,
       border: `1px solid ${style.border}`,
-      borderRadius: 6,
-      padding: '8px 12px',
+      borderRadius: 8,
+      padding: '10px 14px',
       marginBottom: 12,
       display: 'flex',
       alignItems: 'center',
-      gap: 8,
+      gap: 12,
     }}>
-      <span style={{ width: 12, height: 12, display: 'inline-block', background: style.color, borderRadius: 6 }} />
-      <div>
-        <p style={{ color: '#6e7681', fontSize: 11, margin: 0, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          User
+      <div style={{
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        background: isGuest ? '#21262d' : style.color + '22',
+        border: `1px solid ${style.border}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {isGuest
+          ? <LuUserX size={18} color="#6b7280" />
+          : <LuUser size={18} color={style.color} />
+        }
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <p style={{ color: '#6e7681', fontSize: 10, margin: 0, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+          Utilisateur connecté
         </p>
-        <p style={{ color: style.color, fontSize: 12, margin: 0, fontWeight: 600 }}>
-          {currentUser?.name || 'Non sélectionné'}
+        <p style={{ color: isGuest ? '#6b7280' : style.color, fontSize: 13, margin: '2px 0 0', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {currentUser?.name || 'Visiteur'}
         </p>
-        <p style={{ color: style.color, fontSize: 11, margin: '2px 0 0', opacity: 0.8 }}>
-          {userRole || 'N/A'}
-        </p>
+        <span style={{
+          display: 'inline-block',
+          marginTop: 4,
+          padding: '1px 7px',
+          borderRadius: 4,
+          fontSize: 10,
+          fontWeight: 600,
+          background: isGuest ? '#21262d' : style.color + '22',
+          color: isGuest ? '#6b7280' : style.color,
+          border: `1px solid ${style.border}`,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+        }}>
+          {userRole || 'Accès non défini'}
+        </span>
       </div>
     </div>
   );
