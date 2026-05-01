@@ -79,7 +79,6 @@ const ROLE_COLOR = {
 
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
-    { to: "/",            label: "Accueil",                    Icon: LuHouse,          end: true },
     { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
