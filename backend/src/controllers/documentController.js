@@ -281,7 +281,7 @@ const getDocuments = async (req, res) => {
       params.push(`%${docCode}%`);
     }
     if (overdue === "true") {
-      conditions.push(`d.next_review_date < CURRENT_DATE`);
+      conditions.push(`d.next_review_date < CURRENT_DATE AND s.name NOT IN ('Archivé', 'Obsolète')`);
     }
     if (keyword) {
       conditions.push(
@@ -780,9 +780,11 @@ const getDocumentStats = async (_req, res) => {
       ),
       pool.query(
         `SELECT COUNT(*) AS count
-         FROM documents
-         WHERE next_review_date IS NOT NULL
-           AND next_review_date < CURRENT_DATE`
+         FROM documents d
+         JOIN status s ON s.id = d.status_id
+         WHERE d.next_review_date IS NOT NULL
+           AND d.next_review_date < CURRENT_DATE
+           AND s.name NOT IN ('Archivé', 'Obsolète')`
       ),
       pool.query(`SELECT COUNT(*) AS count FROM documents`),
     ]);

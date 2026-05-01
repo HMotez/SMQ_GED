@@ -19,7 +19,7 @@ const getOverview = async (_req, res) => {
   try {
     const [expiredRes, inValRes, overdueRes, recentRes] = await Promise.all([
 
-      // 1. Documents expirés — next_review_date dépassée, tous statuts
+      // 1. Documents expirés — next_review_date dépassée, hors Archivé/Obsolète
       pool.query(`
         SELECT
           COUNT(*) AS count,
@@ -38,6 +38,7 @@ const getOverview = async (_req, res) => {
         JOIN status s ON s.id = d.status_id
         WHERE d.next_review_date IS NOT NULL
           AND d.next_review_date < CURRENT_DATE
+          AND s.name NOT IN ('Archivé', 'Obsolète')
       `),
 
       // 2. Documents en validation
@@ -79,6 +80,7 @@ const getOverview = async (_req, res) => {
         JOIN status s ON s.id = d.status_id
         WHERE d.next_review_date IS NOT NULL
           AND d.next_review_date < CURRENT_DATE
+          AND s.name NOT IN ('Archivé', 'Obsolète')
       `),
 
       // 4. Documents récemment modifiés — 10 derniers par activité

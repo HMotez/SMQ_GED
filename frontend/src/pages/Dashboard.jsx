@@ -77,6 +77,7 @@ const ROLE_COLOR = {
 
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
+    { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
@@ -461,6 +462,52 @@ function AlertRow({ doc, accent, onClick, index = 0 }) {
 
 const CHART_COLORS = ["#3b82f6","#10b981","#f59e0b","#6d28d9","#ef4444","#0f766e","#4ab83f","#c2410c","#475569","#1d4ed8"];
 
+/* ── Custom HTML external tooltip ─────────────────────────────────────── */
+function getOrCreateTooltipEl(chart) {
+  let el = chart.canvas.parentNode.querySelector(".ged-tooltip");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "ged-tooltip";
+    el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;transition:opacity 0.12s ease,transform 0.12s ease;opacity:0;transform:translateY(6px);";
+    chart.canvas.parentNode.style.position = "relative";
+    chart.canvas.parentNode.appendChild(el);
+  }
+  return el;
+}
+
+function makeExternalTooltip(getColor, getVal, getLabel) {
+  return function({ chart, tooltip }) {
+    const el = getOrCreateTooltipEl(chart);
+    if (tooltip.opacity === 0) { el.style.opacity = "0"; el.style.transform = "translateY(6px)"; return; }
+    const dp = tooltip.dataPoints?.[0];
+    if (!dp) return;
+    const color  = getColor  ? getColor(dp)  : (dp.dataset?.borderColor || "#4ab83f");
+    const val    = getVal    ? getVal(dp)    : (dp.parsed?.y ?? dp.parsed?.x ?? dp.parsed ?? 0);
+    const title  = getLabel  ? getLabel(dp)  : (tooltip.title?.[0] || "");
+    el.innerHTML = `
+      <div style="background:linear-gradient(160deg,rgba(4,10,22,0.99),rgba(8,18,34,0.99));border:1px solid ${color}45;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.75),0 0 0 1px rgba(255,255,255,0.04),0 0 28px ${color}18;overflow:hidden;font-family:inherit;min-width:160px;">
+        <div style="height:3px;background:linear-gradient(90deg,${color},${color}55,transparent);"></div>
+        <div style="padding:14px 18px 16px;">
+          <p style="margin:0 0 12px;font-size:10px;font-weight:800;color:rgba(168,191,212,0.55);text-transform:uppercase;letter-spacing:1.2px;">${title}</p>
+          <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
+            <span style="font-size:42px;font-weight:900;color:${color};line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 24px ${color}90;">${val}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:${color};box-shadow:0 0 8px ${color};"></div>
+            <span style="font-size:12px;font-weight:600;color:rgba(168,191,212,0.55);">document${val !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+      </div>`;
+    const { offsetLeft: posX, offsetTop: posY } = chart.canvas;
+    const cx = tooltip.caretX;
+    const cy = tooltip.caretY;
+    el.style.opacity   = "1";
+    el.style.transform = "translateY(0)";
+    el.style.left      = (posX + cx - el.offsetWidth / 2) + "px";
+    el.style.top       = (posY + cy - el.offsetHeight - 14) + "px";
+  };
+}
+
 /* ── useCountUp ────────────────────────────────────────────────────────── */
 function useCountUp(target, delay) {
   const d = delay || 0;
@@ -498,31 +545,17 @@ function StatusDoughnutChart({ data }) {
       cutout: "68%",
     }],
   };
-  const TOOLTIP_BASE = {
-    backgroundColor: "rgba(4,10,20,0.97)",
-    titleColor: "#ffffff",
-    bodyColor: "rgba(168,191,212,0.95)",
-    borderColor: "rgba(74,184,63,0.3)",
-    borderWidth: 1,
-    padding: 14,
-    cornerRadius: 12,
-    displayColors: true,
-    boxWidth: 8,
-    boxHeight: 8,
-    boxPadding: 5,
-  };
+  const externalTooltip = makeExternalTooltip(
+    dp => STATUS_COLORS[dp.label] || "#60a5fa",
+    dp => dp.parsed ?? 0,
+    dp => dp.label
+  );
+
   const opts = {
     animation: { duration: 1200, easing: "easeOutQuart" },
     plugins: {
       legend: { display: false },
-      tooltip: {
-        ...TOOLTIP_BASE,
-        callbacks: {
-          title: ([ctx]) => ctx.label,
-          label: ctx => `  ${ctx.parsed} document${ctx.parsed !== 1 ? "s" : ""}  ·  ${total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0}%`,
-          labelColor: ctx => ({ borderColor:"transparent", backgroundColor: STATUS_COLORS[ctx.label] || "#60a5fa", borderRadius:3 }),
-        },
-      },
+      tooltip: { enabled: false, external: externalTooltip },
     },
     responsive: true,
     maintainAspectRatio: true,
@@ -573,7 +606,7 @@ function StatusDoughnutChart({ data }) {
   );
 }
 
-/* ── TypeAreaChart — Gradient area chart like reference image ────── */
+/* ── TypeAreaChart — Gradient area chart ────── */
 const TYPE_COLORS = ["#4ab83f","#f472b6","#60a5fa","#fbbf24","#a78bfa","#2dd4bf","#fb923c","#e879f9"];
 
 const crosshairPlugin = {
@@ -581,18 +614,39 @@ const crosshairPlugin = {
   afterDraw(chart) {
     const active = chart.tooltip?._active ?? [];
     if (!active.length) return;
-    const ctx  = chart.ctx;
-    const x    = active[0].element.x;
-    const { top, bottom } = chart.chartArea;
+    const { ctx, chartArea } = chart;
+    const x = active[0].element.x;
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(x, top);
-    ctx.lineTo(x, bottom);
-    ctx.lineWidth   = 1.5;
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
-    ctx.setLineDash([5, 5]);
+    ctx.moveTo(x, chartArea.top);
+    ctx.lineTo(x, chartArea.bottom);
+    ctx.lineWidth   = 1;
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.setLineDash([4, 4]);
     ctx.stroke();
     ctx.restore();
+  },
+};
+
+const lineGlowPlugin = {
+  id: "lineGlow",
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.data.datasets.forEach((ds, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (meta.hidden || !meta.data.length) return;
+      ctx.save();
+      ctx.shadowColor = ds.borderColor || "#4ab83f";
+      ctx.shadowBlur  = 14;
+      ctx.strokeStyle = ds.borderColor || "#4ab83f";
+      ctx.lineWidth   = ds.borderWidth || 3;
+      ctx.lineJoin    = "round";
+      ctx.lineCap     = "round";
+      const path = new Path2D();
+      meta.data.forEach((pt, j) => { j === 0 ? path.moveTo(pt.x, pt.y) : path.lineTo(pt.x, pt.y); });
+      ctx.stroke(path);
+      ctx.restore();
+    });
   },
 };
 
@@ -603,9 +657,10 @@ function makeTypeGradPlugin(pairs) {
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
       chart.data.datasets.forEach((ds, i) => {
-        const [c1, c2] = pairs[i] || ["rgba(96,165,250,0.5)", "rgba(96,165,250,0)"];
+        const [c1, c2] = pairs[i] || ["rgba(74,184,63,0.55)", "rgba(74,184,63,0)"];
         const grad = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
         grad.addColorStop(0, c1);
+        grad.addColorStop(0.6, c2.replace("0)", "0.08)"));
         grad.addColorStop(1, c2);
         ds.backgroundColor = grad;
       });
@@ -613,18 +668,16 @@ function makeTypeGradPlugin(pairs) {
   };
 }
 
-function TypeAreaChart({ data, total }) {
-  const navigate   = useNavigate();
-  const gradRef    = useRef(null);
+function TypeAreaChart({ data }) {
+  const navigate = useNavigate();
+  const gradRef  = useRef(null);
 
   if (!data || data.length === 0) return (
     <p style={{ color:"rgba(168,191,212,0.4)", textAlign:"center", padding:"32px 0", fontSize:12 }}>Aucune donnée</p>
   );
 
   if (!gradRef.current) {
-    gradRef.current = makeTypeGradPlugin([
-      ["rgba(74,184,63,0.65)", "rgba(74,184,63,0.02)"],
-    ]);
+    gradRef.current = makeTypeGradPlugin([["rgba(74,184,63,0.6)", "rgba(74,184,63,0)"]]);
   }
 
   const labels = data.map(d => d.code || d.label || "—");
@@ -632,62 +685,55 @@ function TypeAreaChart({ data, total }) {
 
   const chartData = {
     labels,
-    datasets: [
-      {
-        label: "Documents",
-        data: counts,
-        borderColor:              "#4ab83f",
-        backgroundColor:          "transparent",
-        fill:                     true,
-        tension:                  0.46,
-        borderWidth:              3,
-        pointBackgroundColor:     "#fff",
-        pointBorderColor:         "#4ab83f",
-        pointBorderWidth:         2.5,
-        pointRadius:              5,
-        pointHoverRadius:         9,
-        pointHoverBackgroundColor:"#4ab83f",
-      },
-    ],
+    datasets: [{
+      label:                    "Documents",
+      data:                     counts,
+      borderColor:              "#4ab83f",
+      backgroundColor:          "transparent",
+      fill:                     true,
+      tension:                  0.42,
+      borderWidth:              2.5,
+      pointBackgroundColor:     "#0f1e30",
+      pointBorderColor:         "#4ab83f",
+      pointBorderWidth:         2.5,
+      pointRadius:              5,
+      pointHoverRadius:         8,
+      pointHoverBackgroundColor:"#4ab83f",
+      pointHoverBorderColor:    "#fff",
+      pointHoverBorderWidth:    2,
+    }],
   };
 
+  const externalTooltip = makeExternalTooltip(
+    () => "#4ab83f",
+    dp => dp.parsed?.y ?? 0,
+    dp => { const d = data[dp.dataIndex]; return d ? (d.label || d.code) : dp.label; }
+  );
+
   const opts = {
-    animation: { duration: 1500, easing: "easeInOutQuart" },
+    animation: { duration: 1400, easing: "easeOutQuart" },
     plugins: {
       legend: { display: false },
       tooltip: {
-        mode:            "index",
-        intersect:       false,
-        backgroundColor: "rgba(6,14,26,0.97)",
-        titleColor:      "#fff",
-        bodyColor:       "rgba(168,191,212,0.9)",
-        borderColor:     "rgba(255,255,255,0.1)",
-        borderWidth:     1,
-        padding:         14,
-        cornerRadius:    12,
-        callbacks: {
-          title: ([ctx]) => {
-            const d = data[ctx.dataIndex];
-            return (d ? (d.label || d.code) : ctx.label) || ctx.label;
-          },
-          label: ctx => "  " + ctx.dataset.label + ": " + ctx.parsed.y + " document" + (ctx.parsed.y !== 1 ? "s" : ""),
-        },
+        enabled: false,
+        external: externalTooltip,
+        mode: "index", intersect: false,
       },
     },
     scales: {
       x: {
-        grid:   { color:"rgba(255,255,255,0.06)", borderDash:[4,4], drawTicks:false },
-        ticks:  { color:"rgba(168,191,212,0.65)", font:{ size:11 }, maxRotation:0, padding:6 },
+        grid:   { color:"rgba(255,255,255,0.04)", borderDash:[4,6], drawTicks:false },
+        ticks:  { color:"rgba(168,191,212,0.6)", font:{ size:11, weight:"600" }, maxRotation:0, padding:8 },
         border: { display:false },
       },
       y: {
-        grid:       { color:"rgba(255,255,255,0.05)", drawTicks:false },
-        ticks:      { color:"rgba(168,191,212,0.45)", font:{ size:10 }, stepSize:1, padding:8 },
-        border:     { display:false },
-        beginAtZero:true,
+        grid:        { color:"rgba(255,255,255,0.04)", drawTicks:false },
+        ticks:       { color:"rgba(168,191,212,0.4)", font:{ size:10 }, stepSize:1, padding:10 },
+        border:      { display:false },
+        beginAtZero: true,
       },
     },
-    responsive:       true,
+    responsive: true,
     maintainAspectRatio: false,
     interaction: { mode:"index", intersect:false },
     onClick: (_e, els) => {
@@ -697,65 +743,105 @@ function TypeAreaChart({ data, total }) {
 
   return (
     <div style={{ height:240, marginTop:8, cursor:"pointer" }}>
-      <Line data={chartData} options={opts} plugins={[gradRef.current, crosshairPlugin]} />
+      <Line data={chartData} options={opts} plugins={[gradRef.current, crosshairPlugin, lineGlowPlugin]} />
     </div>
   );
 }
 
-/* ── ProcessHBarChart — Chart.js horizontal bar ──────────────── */
+/* ── ProcessHBarChart — Gradient horizontal bar ──────────────── */
 const PROC_COLORS = ["#38bdf8","#34d399","#fbbf24","#a78bfa","#f472b6","#fb923c","#2dd4bf"];
+
+const barGradPlugin = {
+  id: "barGrad",
+  beforeDatasetsDraw(chart) {
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    const ds = chart.data.datasets[0];
+    ds.backgroundColor = ds.data.map((_, i) => {
+      const color = PROC_COLORS[i % PROC_COLORS.length];
+      const grad = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+      grad.addColorStop(0, color + "55");
+      grad.addColorStop(1, color + "ee");
+      return grad;
+    });
+  },
+};
+
+const barValuePlugin = {
+  id: "barValue",
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.data.datasets.forEach((ds, di) => {
+      chart.getDatasetMeta(di).data.forEach((bar, i) => {
+        const val = ds.data[i];
+        if (!val) return;
+        ctx.save();
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.font      = "bold 11px monospace";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(val, bar.x + 6, bar.y);
+        ctx.restore();
+      });
+    });
+  },
+};
+
 function ProcessHBarChart({ data }) {
   const navigate = useNavigate();
-  const sliced = data.slice(0, 7);
+  const sliced = data.slice(0, 8);
+  const maxVal = Math.max(...sliced.map(d => d.count), 1);
+
   const chartData = {
     labels: sliced.map(d => String(d.name || "—").replace(/_/g, " ")),
     datasets: [{
-      data: sliced.map(d => d.count),
+      data:          sliced.map(d => d.count),
       backgroundColor: sliced.map((_, i) => PROC_COLORS[i % PROC_COLORS.length] + "99"),
-      borderColor:     sliced.map((_, i) => PROC_COLORS[i % PROC_COLORS.length]),
-      borderWidth: 1.5,
-      borderRadius: 6,
+      borderColor:   sliced.map((_, i) => PROC_COLORS[i % PROC_COLORS.length]),
+      borderWidth:   0,
+      borderRadius:  8,
       borderSkipped: false,
     }],
   };
+
+  const externalTooltip = makeExternalTooltip(
+    dp => PROC_COLORS[dp.dataIndex % PROC_COLORS.length],
+    dp => dp.parsed?.x ?? 0,
+    dp => sliced[dp.dataIndex]?.name?.replace(/_/g, " ") || dp.label
+  );
+
   const opts = {
     indexAxis: "y",
-    animation: { duration: 1100, easing: "easeOutQuart" },
+    animation: { duration: 1300, easing: "easeOutQuart" },
     plugins: {
       legend: { display: false },
-      tooltip: {
-        callbacks: { label: ctx => ` ${ctx.parsed.x} document${ctx.parsed.x !== 1 ? "s" : ""}` },
-        backgroundColor: "rgba(6,14,26,0.97)",
-        titleColor: "#fff",
-        bodyColor: "rgba(168,191,212,0.9)",
-        borderColor: "rgba(255,255,255,0.1)",
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 10,
-      },
+      tooltip: { enabled: false, external: externalTooltip },
     },
     scales: {
       x: {
-        grid: { color: "rgba(255,255,255,0.05)" },
-        ticks: { color: "rgba(168,191,212,0.5)", font: { size: 10 }, stepSize: 1 },
-        border: { display: false },
+        grid:        { color:"rgba(255,255,255,0.04)", borderDash:[4,6], drawTicks:false },
+        ticks:       { color:"rgba(168,191,212,0.4)", font:{ size:10 }, stepSize:1, padding:6 },
+        border:      { display:false },
         beginAtZero: true,
+        max:         maxVal + 1,
       },
       y: {
-        grid: { display: false },
-        ticks: { color: "rgba(168,191,212,0.9)", font: { size: 11, weight: "700" } },
-        border: { display: false },
+        grid:   { display:false },
+        ticks:  { color:"rgba(168,191,212,0.88)", font:{ size:12, weight:"700" }, padding:10 },
+        border: { display:false },
       },
     },
-    responsive: true,
+    responsive:          true,
     maintainAspectRatio: false,
+    interaction: { mode:"index", intersect:false },
     onClick: (_e, els) => {
       if (els.length > 0) navigate("/list?folderId=" + encodeURIComponent(sliced[els[0].index]?.id || ""));
     },
   };
+
   return (
-    <div style={{ height: Math.max(sliced.length * 38, 160), marginTop: 8 }}>
-      <Bar data={chartData} options={opts} />
+    <div style={{ height: Math.max(sliced.length * 46, 180), marginTop: 12, cursor:"pointer" }}>
+      <Bar data={chartData} options={opts} plugins={[barGradPlugin, barValuePlugin]} />
     </div>
   );
 }
@@ -980,48 +1066,81 @@ export default function Dashboard() {
                     {/* Charts */}
           <div>
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-0.5 h-5 rounded-full" style={{ background:"#4ab83f" }} />
-              <h2 className="m-0 text-lg font-black text-white" style={{ letterSpacing:-0.3 }}>Statistiques & Répartitions</h2>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(74,184,63,0.15)", border:"1px solid rgba(74,184,63,0.3)" }}>
+                <LuShieldCheck size={14} style={{ color:"#4ab83f" }} />
+              </div>
+              <h2 className="m-0 text-base font-black text-white tracking-wide uppercase" style={{ letterSpacing:1 }}>Statistiques & Répartitions</h2>
+              <div className="flex-1 h-px ml-2" style={{ background:"linear-gradient(90deg,rgba(74,184,63,0.3),transparent)" }} />
             </div>
 
             {/* Row 1 : Doughnut statut (1/3) + Area chart types (2/3) */}
             <div className="grid gap-5 mb-5" style={{ gridTemplateColumns:"1fr 2fr" }}>
 
-              <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"100ms" }}>
-                <SectionLabel icon={LuList} title="Par statut" accent="#60a5fa" />
+              <div className="rounded-2xl p-6 section-fade-in" style={{
+                background:"linear-gradient(135deg,rgba(15,30,48,0.95) 0%,rgba(20,38,58,0.98) 100%)",
+                border:"1px solid rgba(96,165,250,0.18)",
+                boxShadow:"0 4px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)",
+                animationDelay:"0.1s",
+              }}>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(96,165,250,0.15)", border:"1px solid rgba(96,165,250,0.3)" }}>
+                    <LuList size={13} style={{ color:"#60a5fa" }} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Par statut</p>
+                </div>
                 {loadingSt
-                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                  ? <div className="space-y-2 mt-4">{[1,2,3,4].map(n=><div key={n} className="h-8 rounded-lg animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
                   : byStatus.length === 0
                     ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
                     : <StatusDoughnutChart data={byStatus} />}
-              </GlassCard>
+              </div>
 
-              <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"200ms" }}>
-                <SectionLabel icon={LuSearch} title="Par type documentaire" accent="#a78bfa" />
+              <div className="rounded-2xl p-6 section-fade-in" style={{
+                background:"linear-gradient(135deg,rgba(15,30,48,0.95) 0%,rgba(20,38,58,0.98) 100%)",
+                border:"1px solid rgba(167,139,250,0.18)",
+                boxShadow:"0 4px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)",
+                animationDelay:"0.18s",
+              }}>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(167,139,250,0.15)", border:"1px solid rgba(167,139,250,0.3)" }}>
+                    <LuSearch size={13} style={{ color:"#a78bfa" }} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Par type documentaire</p>
+                </div>
                 {loadingSt
-                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                  ? <div className="mt-4 h-48 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}} />
                   : byType.length === 0
                     ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
                     : <TypeAreaChart data={byType} total={totalDocs} />}
-              </GlassCard>
+              </div>
             </div>
 
             {/* Row 2 : Processus full-width horizontal bar */}
-            <GlassCard className="p-6 anim-scale-in" style={{ animationDelay:"300ms" }}>
-              <div className="flex justify-between items-center mb-1">
-                <SectionLabel icon={LuUsers} title="Par processus" accent="#2dd4bf" />
+            <div className="rounded-2xl p-6 section-fade-in" style={{
+              background:"linear-gradient(135deg,rgba(15,30,48,0.95) 0%,rgba(20,38,58,0.98) 100%)",
+              border:"1px solid rgba(45,212,191,0.18)",
+              boxShadow:"0 4px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)",
+              animationDelay:"0.26s",
+            }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(45,212,191,0.15)", border:"1px solid rgba(45,212,191,0.3)" }}>
+                    <LuUsers size={13} style={{ color:"#2dd4bf" }} />
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Par processus</p>
+                </div>
                 {byProcess.length > 0 && (
-                  <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background:"rgba(45,212,191,0.1)", color:"#2dd4bf", border:"1px solid rgba(45,212,191,0.25)" }}>
+                  <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(45,212,191,0.1)", color:"#2dd4bf", border:"1px solid rgba(45,212,191,0.25)" }}>
                     {byProcess.length} processus
                   </span>
                 )}
               </div>
               {loadingSt
-                ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</p>
+                ? <div className="mt-3 h-40 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}} />
                 : byProcess.length === 0
                   ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
                   : <ProcessHBarChart data={byProcess} />}
-            </GlassCard>
+            </div>
           </div>
 
           {/* Overdue section */}
