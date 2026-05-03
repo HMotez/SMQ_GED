@@ -30,10 +30,10 @@ export function useRoleCheck() {
         case 'create':       return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
         case 'read':         return true;
         case 'update':       return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
-        case 'validate':     return ['Admin', 'Reviewer'].includes(effectiveRole);
-        case 'change_status':return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
+        case 'validate':     return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
+        case 'change_status':return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
         case 'comment':      return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
-        case 'archive':      return effectiveRole === 'Admin';
+        case 'archive':      return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
         default:             return false;
       }
     }
@@ -55,10 +55,10 @@ export function useRoleCheck() {
         return effectiveRole === 'Admin' && docStatus === 'Brouillon';
 
       case 'change_status':
-        return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
+        return ['Admin', 'Ing. Qualité'].includes(effectiveRole);
 
       case 'validate':
-        if (!['Admin', 'Reviewer'].includes(effectiveRole)) {
+        if (!['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole)) {
           return false;
         }
         if (currentUser?.name === docResponsible) {
@@ -70,7 +70,7 @@ export function useRoleCheck() {
         return ['Admin', 'Ing. Qualité', 'Reviewer'].includes(effectiveRole);
 
       case 'archive':
-        return effectiveRole === 'Admin' && ['Obsolète', 'Archivé'].includes(docStatus);
+        return ['Admin', 'Ing. Qualité'].includes(effectiveRole) && ['Obsolète', 'Archivé'].includes(docStatus);
 
       case 'distribute':
         if (!['Admin'].includes(effectiveRole)) {
@@ -108,8 +108,8 @@ export function useRoleCheck() {
         return null;
 
       case 'validate':
-        if (!['Admin', 'Reviewer'].includes(userRole)) {
-          return `Votre rôle (${userRole || 'Visiteur'}) ne dispose pas des droits de validation. Rôles autorisés : Admin, Reviewer.`;
+        if (!['Admin', 'Ing. Qualité', 'Reviewer'].includes(userRole)) {
+          return `Votre rôle (${userRole || 'Visiteur'}) ne dispose pas des droits de validation. Rôles autorisés : Admin, Ing. Qualité, Reviewer.`;
         }
         if (currentUser?.name === docResponsible) {
           return `⛔ Vous ne pouvez pas valider votre propre document. ` +
@@ -156,8 +156,7 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Approuvé"],
-      "Approuvé":            ["Diffusé"],
+      "Validé":              ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],
@@ -171,13 +170,12 @@ export function useRoleCheck() {
     const TRANSITION_ROLE_MAP = {
       "Brouillon→En rédaction":                   ["Admin", "Ing. Qualité"],
       "En rédaction→Appel en relecture":           ["Admin", "Ing. Qualité"],
-      "Appel en relecture→En relecture":           ["Admin", "Ing. Qualité", "Reviewer"],
-      "En relecture→En correction":                ["Admin", "Ing. Qualité", "Reviewer"],
-      "En relecture→En validation":                ["Admin", "Ing. Qualité", "Reviewer"],
+      "Appel en relecture→En relecture":           ["Admin", "Ing. Qualité"],
+      "En relecture→En correction":                ["Admin", "Ing. Qualité"],
+      "En relecture→En validation":                ["Admin", "Ing. Qualité"],
       "En correction→Appel en relecture":          ["Admin", "Ing. Qualité"],
-      "En validation→Validé":                      ["Admin", "Reviewer", "Ing. Qualité"],
-      "Validé→Approuvé":                           ["Admin", "Ing. Qualité"],
-      "Approuvé→Diffusé":                          ["Admin", "Ing. Qualité"],
+      "En validation→Validé":                      ["Admin", "Ing. Qualité"],
+      "Validé→Diffusé":                            ["Admin", "Ing. Qualité"],
       "Diffusé→Obsolète":                          ["Admin", "Ing. Qualité"],
       "Obsolète→Archivé":                          ["Admin", "Ing. Qualité"],
     };
@@ -199,8 +197,7 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Approuvé"],
-      "Approuvé":            ["Diffusé"],
+      "Validé":              ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],
@@ -225,10 +222,9 @@ export function useRoleCheck() {
    * @returns {boolean}
    */
   const canArchive = useCallback((document) => {
-    if (!['Admin'].includes(userRole)) {
+    if (!['Admin', 'Ing. Qualité'].includes(userRole)) {
       return false;
     }
-    // Can only archive if in Obsolète or Archivé status
     return ['Obsolète', 'Archivé'].includes(document.status_name);
   }, [userRole]);
 

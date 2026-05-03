@@ -646,8 +646,14 @@ const changeStatus = async (req, res) => {
     }
 
     // 3. Vérifier la transition dans la machine à états
+    const ISO_LIFECYCLE_ORDER = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Approuvé","Diffusé","Obsolète","Archivé"];
+    const userRole = req.currentUser?.role;
+    const curIdx   = ISO_LIFECYCLE_ORDER.indexOf(currentStatus);
+    const prevStatusInCycle = curIdx > 0 ? ISO_LIFECYCLE_ORDER[curIdx - 1] : null;
+    const isAdminRollback = ["Admin", "Ing. Qualité"].includes(userRole) && newStatus === prevStatusInCycle;
+
     const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
-    if (!allowed.includes(newStatus)) {
+    if (!allowed.includes(newStatus) && !isAdminRollback) {
       await client.query("ROLLBACK");
       const allowedStr = allowed.length ? allowed.join(", ") : "aucune (état terminal)";
       return res.status(400).json({
@@ -655,9 +661,8 @@ const changeStatus = async (req, res) => {
       });
     }
 
-    // 3b. Vérifier que le rôle autorise cette transition (EF06)
-    const userRole = req.currentUser?.role;
-    if (userRole && !canTransition(currentStatus, newStatus, userRole)) {
+    // 3b. Vérifier que le rôle autorise cette transition (EF06) — sauf rollback admin
+    if (!isAdminRollback && userRole && !canTransition(currentStatus, newStatus, userRole)) {
       await client.query("ROLLBACK");
       return res.status(403).json({
         error: `Votre rôle (${userRole}) ne peut pas effectuer la transition "${currentStatus}" → "${newStatus}".`,

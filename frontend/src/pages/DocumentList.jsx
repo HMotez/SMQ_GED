@@ -11,7 +11,7 @@ import AppSidebar from "../components/AppSidebar";
 import DownloadMenu from "../components/DownloadMenu";
 import DocDetailModal from "../components/DocDetailModal";
 import {
-  LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuShare2,
+  LuPencil, LuPenLine, LuEye, LuCircleCheckBig, LuCircleCheck, LuShare2,
   LuTriangleAlert, LuCircleHelp, LuCheck, LuClock, LuRefreshCw,
   LuInbox, LuX, LuLock, LuPlus, LuFile, LuDownload,
   LuFolder, LuArrowRight, LuArchive, LuFileText, LuClipboardCheck, LuChevronDown,
@@ -259,6 +259,7 @@ export default function DocumentList() {
   const [newFile,        setNewFile]         = useState(null);
   const [submitting,     setSubmitting]      = useState(false);
   const [statusChanging, setStatusChanging]  = useState(false);
+  const [confirmTransition, setConfirmTransition] = useState(null); // { next, cfg, NI }
   const [timeline,       setTimeline]        = useState([]);
   const [activeTab,      setActiveTab]       = useState("detail");
   const debounceTimer = useRef(null);
@@ -731,7 +732,7 @@ export default function DocumentList() {
                       const allowed = canTransitionStatus(selected.status_name, next);
                       const reason = !allowed ? getBlockReason("change_status", selected) : null;
                       return (
-                        <button key={next} onClick={() => allowed && handleStatusChange(next)} disabled={statusChanging||!allowed} title={reason||undefined}
+                        <button key={next} onClick={() => allowed && setConfirmTransition({ next, cfg, NI })} disabled={statusChanging||!allowed} title={reason||undefined}
                           className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold border transition-all"
                           style={{ background:allowed?cfg.bg:"var(--ged-card)", borderColor:allowed?cfg.border:"var(--ged-border)", color:allowed?cfg.text:"var(--ged-tx3)", cursor:(statusChanging||!allowed)?"not-allowed":"pointer" }}>
                           <span className="flex items-center gap-1.5"><NI size={13} /> Passer à : <strong>{next}</strong></span>
@@ -1041,6 +1042,149 @@ export default function DocumentList() {
           </form>
         </div>
       )}
+
+      {/* ── Confirmation modal for status transition ──────── */}
+      {confirmTransition && selected && (() => {
+        const { next, cfg, NI } = confirmTransition;
+        const fromCfg  = sCfg(selected.status_name);
+        const FromIcon = fromCfg.Icon;
+        const isIrreversible = ["Validé","Diffusé","Obsolète","Archivé"].includes(next);
+
+        // Previous status in the ISO lifecycle
+        const curIdx  = ISO_LIFECYCLE.indexOf(selected.status_name);
+        const prevStatus = curIdx > 0 ? ISO_LIFECYCLE[curIdx - 1] : null;
+        const prevCfg    = prevStatus ? sCfg(prevStatus) : null;
+        const PrevIcon   = prevCfg?.Icon;
+        const canGoBack  = prevStatus && ["Admin", "Ing. Qualité"].includes(userRole) && selected.status_name !== "Archivé";
+
+        return (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+            onClick={() => setConfirmTransition(null)}
+          >
+            <div
+              className="rounded-2xl border overflow-hidden w-full max-w-md mx-4"
+              style={{ background: "var(--ged-bg)", borderColor: cfg.border, boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px ${cfg.border}` }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-5 py-4 border-b flex items-center gap-3"
+                style={{ background: `${cfg.bg}`, borderColor: "rgba(255,255,255,0.07)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${cfg.bg}`, border: `1.5px solid ${cfg.border}` }}>
+                  <NI size={18} style={{ color: cfg.text }} />
+                </div>
+                <div>
+                  <p className="m-0 text-[11px] uppercase tracking-widest font-bold" style={{ color: "rgba(168,191,212,0.5)" }}>Confirmation requise</p>
+                  <p className="m-0 text-[15px] font-bold text-white">Changement de statut</p>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-5 py-5 flex flex-col gap-4">
+
+                {/* From → To */}
+                <div className="flex items-center justify-center gap-3 p-3 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+                    style={{ background: fromCfg.bg, border: `1px solid ${fromCfg.border}` }}>
+                    <FromIcon size={12} style={{ color: fromCfg.text }} />
+                    <span className="text-[12px] font-semibold" style={{ color: fromCfg.text }}>{selected.status_name}</span>
+                  </div>
+                  <span className="text-base font-bold" style={{ color: "rgba(168,191,212,0.4)" }}>→</span>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+                    style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                    <NI size={12} style={{ color: cfg.text }} />
+                    <span className="text-[12px] font-bold" style={{ color: cfg.text }}>{next}</span>
+                  </div>
+                </div>
+
+                {/* Document name */}
+                <p className="text-sm text-center m-0" style={{ color: "rgba(168,191,212,0.7)" }}>
+                  Document : <strong className="text-white">{selected.title}</strong>
+                </p>
+
+                {/* Warning if irreversible */}
+                {isIrreversible && (
+                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl"
+                    style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                    <LuTriangleAlert size={14} style={{ color: "#fbbf24", flexShrink: 0, marginTop: 1 }} />
+                    <p className="m-0 text-[12px]" style={{ color: "rgba(251,191,36,0.85)" }}>
+                      Cette transition est <strong>difficile à annuler</strong>. Assurez-vous que le document est prêt avant de confirmer.
+                    </p>
+                  </div>
+                )}
+
+                {/* Confirm + Cancel */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setConfirmTransition(null); handleStatusChange(next); }}
+                    disabled={statusChanging}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold border-none flex items-center justify-center gap-1.5 transition-all"
+                    style={{ background: `linear-gradient(135deg, ${cfg.text}cc, ${cfg.text}99)`, color: "#fff", cursor: "pointer", boxShadow: `0 4px 14px ${cfg.text}40` }}
+                  >
+                    <LuCircleCheck size={14} /> Confirmer
+                  </button>
+                  <button
+                    onClick={() => setConfirmTransition(null)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.1)", color: "rgba(168,191,212,0.7)", cursor: "pointer" }}
+                  >
+                    Annuler
+                  </button>
+                </div>
+
+                {/* Rollback to previous status */}
+                {prevStatus && (
+                  <div className="rounded-xl border overflow-hidden"
+                    style={{ borderColor: canGoBack ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.06)" }}>
+                    <div className="px-3 py-2 flex items-center gap-1.5 border-b"
+                      style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+                      <LuRefreshCw size={10} style={{ color: "rgba(168,191,212,0.4)" }} />
+                      <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "rgba(168,191,212,0.4)" }}>
+                        Retour au statut précédent
+                      </span>
+                    </div>
+                    <div className="px-3 py-2.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        {prevCfg && PrevIcon && (
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ background: prevCfg.bg, border: `1px solid ${prevCfg.border}` }}>
+                            <PrevIcon size={12} style={{ color: prevCfg.text }} />
+                          </div>
+                        )}
+                        <div>
+                          <p className="m-0 text-[12px] font-semibold" style={{ color: canGoBack ? prevCfg?.text : "rgba(168,191,212,0.35)" }}>
+                            {prevStatus}
+                          </p>
+                          <p className="m-0 text-[10px]" style={{ color: "rgba(168,191,212,0.35)" }}>
+                            {canGoBack ? "Transition disponible" : "Non autorisé pour votre rôle"}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { if (canGoBack) { setConfirmTransition(null); handleStatusChange(prevStatus); } }}
+                        disabled={!canGoBack || statusChanging}
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all"
+                        style={{
+                          background: canGoBack ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${canGoBack ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.07)"}`,
+                          color: canGoBack ? "#fbbf24" : "rgba(168,191,212,0.3)",
+                          cursor: canGoBack ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        {canGoBack ? <><LuRefreshCw size={10} /> Retourner</> : <><LuLock size={10} /> Verrouillé</>}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

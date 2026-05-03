@@ -24,7 +24,7 @@ const STATUSES = [
     border: "rgba(209,213,219,0.2)",
     description: "Document créé, en cours de rédaction initiale.",
     roles: ["Admin", "Ing. Qualité"],
-    iso: "EF01",
+    iso: "",
   },
   {
     name: "En rédaction",
@@ -34,7 +34,7 @@ const STATUSES = [
     border: "rgba(187,247,208,0.2)",
     description: "L'ingénieur qualité rédige et enrichit le document.",
     roles: ["Admin", "Ing. Qualité"],
-    iso: "EF02",
+    iso: "",
   },
   {
     name: "Appel en relecture",
@@ -44,7 +44,7 @@ const STATUSES = [
     border: "rgba(252,211,77,0.25)",
     description: "Une version est soumise au reviewer pour lecture.",
     roles: ["Admin", "Ing. Qualité"],
-    iso: "EF03",
+    iso: "",
   },
   {
     name: "En relecture",
@@ -54,7 +54,7 @@ const STATUSES = [
     border: "rgba(191,219,254,0.2)",
     description: "Le reviewer lit le document sur SharePoint.",
     roles: ["Admin", "Ing. Qualité", "Reviewer"],
-    iso: "EF04",
+    iso: "",
   },
   {
     name: "En correction",
@@ -64,7 +64,7 @@ const STATUSES = [
     border: "rgba(253,186,116,0.25)",
     description: "Des corrections sont demandées par le reviewer.",
     roles: ["Admin", "Ing. Qualité"],
-    iso: "EF04b",
+    iso: "",
   },
   {
     name: "En validation",
@@ -74,7 +74,7 @@ const STATUSES = [
     border: "rgba(199,210,254,0.2)",
     description: "Le reviewer approuve ou rejette la version finale.",
     roles: ["Admin", "Reviewer"],
-    iso: "EF05",
+    iso: "",
   },
   {
     name: "Validé",
@@ -84,7 +84,7 @@ const STATUSES = [
     border: "rgba(134,239,172,0.25)",
     description: "Document validé par le reviewer, en attente d'approbation qualité.",
     roles: ["Admin", "Reviewer"],
-    iso: "EF06",
+    iso: "",
   },
   {
     name: "Approuvé",
@@ -92,9 +92,9 @@ const STATUSES = [
     color: "#818cf8",
     bg: "rgba(238,242,255,0.10)",
     border: "rgba(165,180,252,0.3)",
-    description: "Document approuvé par l'équipe qualité — prêt pour diffusion.",
-    roles: ["Ing. Qualité"],
-    iso: "EF07",
+    description: "Document approuvé par la direction qualité, prêt pour diffusion.",
+    roles: ["Admin", "Ing. Qualité"],
+    iso: "",
   },
   {
     name: "Diffusé",
@@ -104,7 +104,7 @@ const STATUSES = [
     border: "rgba(153,246,228,0.2)",
     description: "Document distribué à tous les utilisateurs.",
     roles: ["Admin"],
-    iso: "EF14",
+    iso: "",
   },
   {
     name: "Obsolète",
@@ -114,7 +114,7 @@ const STATUSES = [
     border: "rgba(254,215,170,0.2)",
     description: "Document remplacé, ne doit plus être utilisé.",
     roles: ["Admin"],
-    iso: "EF11",
+    iso: "",
   },
   {
     name: "Archivé",
@@ -124,7 +124,7 @@ const STATUSES = [
     border: "rgba(203,213,225,0.15)",
     description: "Document archivé définitivement — conservé sans suppression.",
     roles: ["Admin"],
-    iso: "EF11",
+    iso: "",
   },
 ];
 
@@ -138,7 +138,7 @@ const TRANSITIONS = [
   { from: "En correction",      to: "Appel en relecture", roles: ["Admin", "Ing. Qualité"] },
   { from: "En validation",      to: "Validé",             roles: ["Admin", "Reviewer"] },
   { from: "Validé",             to: "Approuvé",           roles: ["Admin", "Ing. Qualité"] },
-  { from: "Approuvé",           to: "Diffusé",            roles: ["Admin"] },
+  { from: "Approuvé",           to: "Diffusé",            roles: ["Admin", "Ing. Qualité"] },
   { from: "Diffusé",            to: "Obsolète",           roles: ["Admin"] },
   { from: "Obsolète",           to: "Archivé",            roles: ["Admin"] },
 ];
@@ -208,6 +208,7 @@ export default function Workflow() {
     // branch here: En correction (loop back) | En validation (continue)
     "En validation",
     "Validé",
+    "Approuvé",
     "Diffusé",
     "Obsolète",
     "Archivé",
@@ -503,7 +504,7 @@ export default function Workflow() {
                       </div>
                       <div className="flex-1">
                         <p className="m-0 font-bold text-white text-sm">{s.name}</p>
-                        <p className="m-0 text-[10px]" style={{ color: s.color }}>{s.iso}</p>
+                        {s.iso && <p className="m-0 text-[10px]" style={{ color: s.color }}>{s.iso}</p>}
                       </div>
                       <StatBadge count={count} color={s.color} />
                     </div>

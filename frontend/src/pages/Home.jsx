@@ -1120,7 +1120,7 @@ export default function Home() {
   const archived  = byStatus["Archivé"]  || 0;
   const validated = byStatus["Validé"]   || 0;
 
-  const ISO_STEPS = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Approuvé","Diffusé","Obsolète","Archivé"];
+  const ISO_STEPS = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Diffusé","Obsolète","Archivé"];
 
   return (
     <div

@@ -217,10 +217,10 @@ export function DocumentRolePermissionsMatrix({ document }) {
   const ACTIONS = [
     { label: 'Lire',               allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': true  } },
     { label: 'Modifier',           allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': false, 'Visiteur': false } },
-    { label: 'Valider',            allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': true,  'Visiteur': false } },
-    { label: 'Changer statut',     allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': false } },
+    { label: 'Valider',            allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': false } },
+    { label: 'Changer statut',     allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': false, 'Visiteur': false } },
     { label: 'Commenter',          allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': true,  'Visiteur': false } },
-    { label: 'Archiver',           allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': false, 'Visiteur': false } },
+    { label: 'Archiver',           allowed: { 'Admin': true,  'Ing. Qualité': true,  'Reviewer': false, 'Visiteur': false } },
     { label: 'Gérer utilisateurs', allowed: { 'Admin': true,  'Ing. Qualité': false, 'Reviewer': false, 'Visiteur': false } },
   ];
 
@@ -351,7 +351,7 @@ export function DocumentRolePermissionsMatrix({ document }) {
         color: '#8b949e',
       }}>
         <p style={{ margin: 0 }}>
-          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Admin a accès complet. Ing. Qualité peut créer, modifier et changer de statut. Reviewer peut valider et commenter. Visiteur peut uniquement lire.
+          <LuInfo size={13} style={{marginRight:6,verticalAlign:"middle",flexShrink:0}} /> <strong>Légende :</strong> Admin a accès complet. Ing. Qualité peut créer, modifier, valider, changer de statut et archiver. Reviewer peut valider et commenter. Visiteur peut uniquement lire.
         </p>
       </div>
     </div>
