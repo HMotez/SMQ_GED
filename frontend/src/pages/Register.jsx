@@ -81,8 +81,8 @@ const STYLES = `
 function PasswordStrength({ password }) {
   if (!password) return null;
   let score = 0;
-  if (password.length >= 6)          score++;
-  if (password.length >= 10)         score++;
+  if (password.length >= 12)         score++;
+  if (password.length >= 16)         score++;
   if (/[A-Z]/.test(password))        score++;
   if (/[0-9]/.test(password))        score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
@@ -122,7 +122,7 @@ export default function Register() {
     if (!form.email.trim())                      return setError("L'email est requis.");
     if (!form.password)                          return setError("Le mot de passe est requis.");
     if (!form.requestedRole)                     return setError("Sélectionnez le rôle souhaité.");
-    if (form.password.length < 6)               return setError("Le mot de passe doit contenir au moins 6 caractères.");
+    if (form.password.length < 12)              return setError("Le mot de passe doit contenir au moins 12 caractères.");
     if (form.password !== form.confirmPassword) return setError("Les mots de passe ne correspondent pas.");
 
     setLoading(true);
@@ -236,7 +236,7 @@ export default function Register() {
                 </label>
                 <div className="relative">
                   <input type={showPass ? "text" : "password"} value={form.password} onChange={e => set("password", e.target.value)}
-                    placeholder="Min. 6 caractères" autoComplete="new-password" disabled={loading}
+                    placeholder="Min. 12 caractères" autoComplete="new-password" disabled={loading}
                     className={`${inputCls(!!form.password)} dark-input-pr`} />
                   <button type="button" onClick={() => setShowPass(s => !s)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center p-0.5 bg-transparent border-none cursor-pointer"

@@ -123,12 +123,12 @@ function NavItem({ to, label, end, icon }) {
       <div
         className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
         style={{ background: isActive ? "rgba(74,184,63,0.1)" : "transparent" }}
-        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--ged-card-md)"; }}
         onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
       >
-        <ItemIcon size={13} style={{ color: isActive ? "#4ab83f" : "rgba(168,191,212,0.5)", flexShrink: 0 }} />
+        <ItemIcon size={13} style={{ color: isActive ? "#4ab83f" : "var(--ged-tx2)", flexShrink: 0 }} />
         <span className="text-[13px] font-medium whitespace-nowrap"
-          style={{ color: isActive ? "#ffffff" : "rgba(168,191,212,0.75)" }}>
+          style={{ color: isActive ? "#ffffff" : "var(--ged-tx2)" }}>
           {label}
         </span>
         {isActive && (
@@ -153,9 +153,9 @@ function AdminNavItem({ to, label, icon }) {
         onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(239,68,68,0.07)"; }}
         onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
       >
-        <ItemIcon size={13} style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.5)", flexShrink: 0 }} />
+        <ItemIcon size={13} style={{ color: isActive ? "#f87171" : "var(--ged-tx2)", flexShrink: 0 }} />
         <span className="text-[13px] font-medium whitespace-nowrap"
-          style={{ color: isActive ? "#f87171" : "rgba(168,191,212,0.75)" }}>
+          style={{ color: isActive ? "#f87171" : "var(--ged-tx2)" }}>
           {label}
         </span>
         {isActive && (
@@ -284,7 +284,7 @@ function Navbar() {
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     borderColor: "rgba(255,255,255,0.1)",
-                    color: "rgba(168,191,212,0.5)",
+                    color: "var(--ged-tx2)",
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = "rgba(239,68,68,0.12)";
@@ -294,7 +294,7 @@ function Navbar() {
                   onMouseLeave={e => {
                     e.currentTarget.style.background = "rgba(255,255,255,0.05)";
                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                    e.currentTarget.style.color = "rgba(168,191,212,0.5)";
+                    e.currentTarget.style.color = "var(--ged-tx2)";
                   }}
                 >
                   <LuLogOut size={14} />
@@ -312,10 +312,10 @@ function Navbar() {
 function GlassCard({ children, className = "", style = {} }) {
   return (
     <div className={`rounded-2xl border ${className}`} style={{
-      background:"rgba(255,255,255,0.04)",
+      background:"var(--ged-card)",
       backdropFilter:"blur(20px)",
       WebkitBackdropFilter:"blur(20px)",
-      borderColor:"rgba(255,255,255,0.1)",
+      borderColor:"var(--ged-border-md)",
       boxShadow:"0 20px 60px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
       ...style,
     }}>{children}</div>
@@ -354,9 +354,9 @@ function KpiCard({ icon: Icon, label, value, sub, accent, pulse, onClick, ringMa
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        background:"rgba(255,255,255,0.04)",
+        background:"var(--ged-card)",
         backdropFilter:"blur(20px)",
-        borderColor: hov ? `${accent}45` : "rgba(255,255,255,0.08)",
+        borderColor: hov ? `${accent}45` : "var(--ged-border)",
         boxShadow: hov ? `0 20px 56px rgba(0,0,0,0.4), 0 0 0 1px ${accent}30, 0 0 40px ${accent}10` : "0 8px 32px rgba(0,0,0,0.2)",
         transform: hov ? "translateY(-4px)" : "none",
       }}
@@ -378,8 +378,8 @@ function KpiCard({ icon: Icon, label, value, sub, accent, pulse, onClick, ringMa
         style={{ letterSpacing:-2, textShadow: num>0 ? `0 0 24px ${accent}60` : "none" }}>
         {value}
       </p>
-      <p className="text-white font-semibold text-base m-0 mt-2" style={{ letterSpacing:-0.2 }}>{label}</p>
-      {sub && <p className="text-sm m-0 mt-1" style={{ color:"rgba(168,191,212,0.5)" }}>{sub}</p>}
+      <p className="font-semibold text-base m-0 mt-2" style={{ letterSpacing:-0.2, color:"var(--ged-tx1)" }}>{label}</p>
+      {sub && <p className="text-sm m-0 mt-1" style={{ color:"var(--ged-tx2)" }}>{sub}</p>}
 
       {/* Spacer — pushes badge to bottom so all cards have equal height */}
       <div style={{ flex: 1 }} />
@@ -421,7 +421,7 @@ function SectionLabel({ icon: Icon, title, accent = GREEN }) {
       <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background:`${accent}18` }}>
         <Icon size={11} style={{ color:accent }} />
       </div>
-      <p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.7)" }}>{title}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"var(--ged-tx2)" }}>{title}</p>
     </div>
   );
 }
@@ -454,7 +454,7 @@ function AlertRow({ doc, accent, onClick, index = 0 }) {
         style={{ background: `linear-gradient(to bottom, ${rowAccent}, ${rowAccent}55)` }} />
       <div className="flex-1 overflow-hidden min-w-0">
         <p className="m-0 font-bold text-[12px] font-mono leading-tight" style={{ color: rowAccent }}>{doc.doc_code}</p>
-        <p className="m-0 mt-0.5 text-sm truncate" style={{ color:"rgba(168,191,212,0.7)" }}>{doc.title}</p>
+        <p className="m-0 mt-0.5 text-sm truncate" style={{ color:"var(--ged-tx2)" }}>{doc.title}</p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
         {doc.days_overdue != null && (
@@ -578,7 +578,7 @@ function StatusDoughnutChart({ data }) {
         <Doughnut data={chartData} options={opts} />
         <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", textAlign:"center", pointerEvents:"none" }}>
           <div style={{ fontSize:32, fontWeight:900, color:"#4ab83f", lineHeight:1, textShadow:"0 0 20px rgba(74,184,63,0.5)" }}>{total}</div>
-          <div style={{ fontSize:10, color:"rgba(168,191,212,0.5)", fontWeight:700, marginTop:4, letterSpacing:1.5, textTransform:"uppercase" }}>docs</div>
+          <div style={{ fontSize:10, color:"var(--ged-tx2)", fontWeight:700, marginTop:4, letterSpacing:1.5, textTransform:"uppercase" }}>docs</div>
         </div>
       </div>
       {/* Legend rows with progress bars */}
@@ -598,7 +598,7 @@ function StatusDoughnutChart({ data }) {
               <div style={{ width:3, height:28, borderRadius:2, background:color, flexShrink:0, boxShadow:`0 0 8px ${color}70` }} />
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:"rgba(168,191,212,0.85)" }}>{d.name}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:"var(--ged-tx1)" }}>{d.name}</span>
                   <span style={{ fontSize:12, fontWeight:900, color, fontFamily:"monospace" }}>{d.count}</span>
                 </div>
                 <div style={{ height:3, background:"rgba(255,255,255,0.07)", borderRadius:2, overflow:"hidden" }}>
@@ -681,7 +681,7 @@ function TypeAreaChart({ data }) {
   const gradRef  = useRef(null);
 
   if (!data || data.length === 0) return (
-    <p style={{ color:"rgba(168,191,212,0.4)", textAlign:"center", padding:"32px 0", fontSize:12 }}>Aucune donnée</p>
+    <p style={{ color:"var(--ged-tx3)", textAlign:"center", padding:"32px 0", fontSize:12 }}>Aucune donnée</p>
   );
 
   if (!gradRef.current) {
@@ -731,12 +731,12 @@ function TypeAreaChart({ data }) {
     scales: {
       x: {
         grid:   { color:"rgba(255,255,255,0.04)", borderDash:[4,6], drawTicks:false },
-        ticks:  { color:"rgba(168,191,212,0.6)", font:{ size:11, weight:"600" }, maxRotation:0, padding:8 },
+        ticks:  { color:"var(--ged-tx2)", font:{ size:11, weight:"600" }, maxRotation:0, padding:8 },
         border: { display:false },
       },
       y: {
         grid:        { color:"rgba(255,255,255,0.04)", drawTicks:false },
-        ticks:       { color:"rgba(168,191,212,0.4)", font:{ size:10 }, stepSize:1, padding:10 },
+        ticks:       { color:"var(--ged-tx3)", font:{ size:10 }, stepSize:1, padding:10 },
         border:      { display:false },
         beginAtZero: true,
       },
@@ -828,14 +828,14 @@ function ProcessHBarChart({ data }) {
     scales: {
       x: {
         grid:        { color:"rgba(255,255,255,0.04)", borderDash:[4,6], drawTicks:false },
-        ticks:       { color:"rgba(168,191,212,0.4)", font:{ size:10 }, stepSize:1, padding:6 },
+        ticks:       { color:"var(--ged-tx3)", font:{ size:10 }, stepSize:1, padding:6 },
         border:      { display:false },
         beginAtZero: true,
         max:         maxVal + 1,
       },
       y: {
         grid:   { display:false },
-        ticks:  { color:"rgba(168,191,212,0.88)", font:{ size:12, weight:"700" }, padding:10 },
+        ticks:  { color:"var(--ged-tx1)", font:{ size:12, weight:"700" }, padding:10 },
         border: { display:false },
       },
     },
@@ -896,7 +896,7 @@ export default function Dashboard() {
   const formatTime   = (d) => d.toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
 
   return (
-    <div className="min-h-screen text-white" style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+    <div className="min-h-screen text-white" style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       {/* BG orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex:0 }}>
         <div className="absolute rounded-full" style={{ width:600,height:600,top:-200,right:-150,background:"radial-gradient(circle,rgba(74,184,63,0.06) 0%,transparent 70%)",filter:"blur(40px)" }} />
@@ -915,12 +915,12 @@ export default function Dashboard() {
                 <LuShieldCheck size={11} style={{ color:"#4ab83f" }} />
                 <span className="text-sm font-semibold" style={{ color:"#4ab83f" }}>Tableau de bord — Supervision</span>
               </div>
-              <h1 className="m-0 text-3xl font-black text-white" style={{ letterSpacing:-1 }}>Supervision Documentaire</h1>
-              <p className="m-0 mt-2 text-base" style={{ color:"rgba(168,191,212,0.7)" }}>Vue temps réel · Conformité ISO 9001</p>
+              <h1 className="m-0 text-3xl font-black" style={{ letterSpacing:-1, color:"var(--ged-tx1)" }}>Supervision Documentaire</h1>
+              <p className="m-0 mt-2 text-base" style={{ color:"var(--ged-tx2)" }}>Vue temps réel · Conformité ISO 9001</p>
             </div>
             <button onClick={() => { setLoadingOv(true); setLoadingSt(true); fetchData(); }} disabled={loadingOv||loadingSt}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:bg-white/20"
-              style={{ background:"rgba(255,255,255,0.08)", borderColor:"rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.85)" }}>
+              style={{ background:"var(--ged-card-md)", borderColor:"var(--ged-border-md)", color:"var(--ged-tx1)" }}>
               <LuRefreshCw size={13} style={{ animation:(loadingOv||loadingSt)?"spin 1s linear infinite":"none" }} />
               Actualiser · {formatTime(lastRefreshed)}
             </button>
@@ -957,16 +957,16 @@ export default function Dashboard() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(248,113,113,0.15)", border:"1px solid rgba(248,113,113,0.3)" }}>
                     <LuTriangleAlert size={13} style={{ color:"#f87171" }} />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Documents expirés</p>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>Documents expirés</p>
                 </div>
                 <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(248,113,113,0.12)", color:"#f87171", border:"1px solid rgba(248,113,113,0.28)" }}>
                   {expired.count} doc{expired.count!==1?"s":""}
                 </span>
               </div>
               {loadingOv
-                ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+                ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"var(--ged-card)"}}/>)}</div>
                 : expired.list.length === 0
-                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document expiré ✓</p>
+                  ? <p className="text-sm text-center py-8" style={{ color:"var(--ged-tx2)" }}>Aucun document expiré ✓</p>
                   : <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">{expired.list.map((doc,i) => <AlertRow key={doc.id} doc={doc} accent="#f87171" onClick={() => setSelectedDoc(doc.id)} index={i} />)}</div>
               }
               <NavLink to="/list?overdue=true" className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
@@ -987,16 +987,16 @@ export default function Dashboard() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(165,180,252,0.15)", border:"1px solid rgba(165,180,252,0.3)" }}>
                     <LuClipboardCheck size={13} style={{ color:"#a5b4fc" }} />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>En attente de validation</p>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>En attente de validation</p>
                 </div>
                 <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(165,180,252,0.12)", color:"#a5b4fc", border:"1px solid rgba(165,180,252,0.28)" }}>
                   {inValidation.count} doc{inValidation.count!==1?"s":""}
                 </span>
               </div>
               {loadingOv
-                ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+                ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"var(--ged-card)"}}/>)}</div>
                 : inValidation.list.length === 0
-                  ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun en attente ✓</p>
+                  ? <p className="text-sm text-center py-8" style={{ color:"var(--ged-tx2)" }}>Aucun en attente ✓</p>
                   : <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">{inValidation.list.map((doc,i) => <AlertRow key={doc.id} doc={doc} accent="#a5b4fc" onClick={() => setSelectedDoc(doc.id)} index={i} />)}</div>
               }
               <NavLink to="/validations" className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
@@ -1018,7 +1018,7 @@ export default function Dashboard() {
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(96,165,250,0.15)", border:"1px solid rgba(96,165,250,0.3)" }}>
                   <LuClock size={13} style={{ color:"#60a5fa" }} />
                 </div>
-                <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Documents récemment modifiés</p>
+                <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>Documents récemment modifiés</p>
               </div>
               <NavLink to="/list" className="inline-flex items-center gap-1.5 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
                 style={{ color:"#4ab83f", background:"rgba(74,184,63,0.1)", border:"1px solid rgba(74,184,63,0.2)" }}>
@@ -1026,9 +1026,9 @@ export default function Dashboard() {
               </NavLink>
             </div>
             {loadingOv
-              ? <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))" }}>{[1,2,3,4,5,6].map(n=><div key={n} className="h-14 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+              ? <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))" }}>{[1,2,3,4,5,6].map(n=><div key={n} className="h-14 rounded-xl animate-pulse" style={{background:"var(--ged-card)"}}/>)}</div>
               : recentDocs.length === 0
-                ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document</p>
+                ? <p className="text-sm text-center py-5" style={{ color:"var(--ged-tx2)" }}>Aucun document</p>
                 : (
                   <div className="grid gap-2" style={{ gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))" }}>
                     {recentDocs.map((doc, i) => {
@@ -1058,9 +1058,9 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="font-mono text-[12px] font-bold leading-tight" style={{ color:sc.text||"#4ab83f" }}>{doc.doc_code}</span>
                             <span style={{ color:"rgba(255,255,255,0.15)" }}>·</span>
-                            <span className="text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>{doc.current_version}</span>
+                            <span className="text-xs" style={{ color:"var(--ged-tx3)" }}>{doc.current_version}</span>
                           </div>
-                          <p className="m-0 text-sm truncate max-w-[220px]" style={{ color:"rgba(168,191,212,0.7)" }}>{doc.title}</p>
+                          <p className="m-0 text-sm truncate max-w-[220px]" style={{ color:"var(--ged-tx2)" }}>{doc.title}</p>
                         </div>
                         <StatusPill name={doc.status_name} />
                       </div>
@@ -1077,7 +1077,7 @@ export default function Dashboard() {
               <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(74,184,63,0.15)", border:"1px solid rgba(74,184,63,0.3)" }}>
                 <LuShieldCheck size={14} style={{ color:"#4ab83f" }} />
               </div>
-              <h2 className="m-0 text-base font-black text-white tracking-wide uppercase" style={{ letterSpacing:1 }}>Statistiques & Répartitions</h2>
+              <h2 className="m-0 text-base font-black tracking-wide uppercase" style={{ letterSpacing:1, color:"var(--ged-tx1)" }}>Statistiques & Répartitions</h2>
               <div className="flex-1 h-px ml-2" style={{ background:"linear-gradient(90deg,rgba(74,184,63,0.3),transparent)" }} />
             </div>
 
@@ -1094,12 +1094,12 @@ export default function Dashboard() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(96,165,250,0.15)", border:"1px solid rgba(96,165,250,0.3)" }}>
                     <LuList size={13} style={{ color:"#60a5fa" }} />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Par statut</p>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>Par statut</p>
                 </div>
                 {loadingSt
-                  ? <div className="space-y-2 mt-4">{[1,2,3,4].map(n=><div key={n} className="h-8 rounded-lg animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}</div>
+                  ? <div className="space-y-2 mt-4">{[1,2,3,4].map(n=><div key={n} className="h-8 rounded-lg animate-pulse" style={{background:"var(--ged-card)"}}/>)}</div>
                   : byStatus.length === 0
-                    ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+                    ? <p className="text-sm text-center py-8" style={{ color:"var(--ged-tx2)" }}>Aucune donnée</p>
                     : <StatusDoughnutChart data={byStatus} />}
               </div>
 
@@ -1113,12 +1113,12 @@ export default function Dashboard() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(167,139,250,0.15)", border:"1px solid rgba(167,139,250,0.3)" }}>
                     <LuSearch size={13} style={{ color:"#a78bfa" }} />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Par type documentaire</p>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>Par type documentaire</p>
                 </div>
                 {loadingSt
-                  ? <div className="mt-4 h-48 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}} />
+                  ? <div className="mt-4 h-48 rounded-xl animate-pulse" style={{background:"var(--ged-card)"}} />
                   : byType.length === 0
-                    ? <p className="text-sm text-center py-8" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune donnée</p>
+                    ? <p className="text-sm text-center py-8" style={{ color:"var(--ged-tx2)" }}>Aucune donnée</p>
                     : <TypeAreaChart data={byType} total={totalDocs} />}
               </div>
             </div>
@@ -1135,7 +1135,7 @@ export default function Dashboard() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(45,212,191,0.15)", border:"1px solid rgba(45,212,191,0.3)" }}>
                     <LuUsers size={13} style={{ color:"#2dd4bf" }} />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Par processus</p>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>Par processus</p>
                 </div>
                 {byProcess.length > 0 && (
                   <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(45,212,191,0.1)", color:"#2dd4bf", border:"1px solid rgba(45,212,191,0.25)" }}>
@@ -1144,9 +1144,9 @@ export default function Dashboard() {
                 )}
               </div>
               {loadingSt
-                ? <div className="mt-3 h-40 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}} />
+                ? <div className="mt-3 h-40 rounded-xl animate-pulse" style={{background:"var(--ged-card)"}} />
                 : byProcess.length === 0
-                  ? <p className="text-sm text-center py-5" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun processus lié</p>
+                  ? <p className="text-sm text-center py-5" style={{ color:"var(--ged-tx2)" }}>Aucun processus lié</p>
                   : <ProcessHBarChart data={byProcess} />}
             </div>
           </div>
@@ -1163,7 +1163,7 @@ export default function Dashboard() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(251,146,60,0.15)", border:"1px solid rgba(251,146,60,0.3)" }}>
                     <LuCircleAlert size={13} className="animate-pulse" style={{ color:"#fb923c" }} />
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"rgba(168,191,212,0.8)" }}>Retard de révision — Diffusés expirés</p>
+                  <p className="text-xs font-bold uppercase tracking-widest m-0" style={{ color:"var(--ged-tx1)" }}>Retard de révision — Diffusés expirés</p>
                 </div>
                 <span className="text-xs font-black rounded-full px-3 py-1" style={{ background:"rgba(251,146,60,0.12)", color:"#fb923c", border:"1px solid rgba(251,146,60,0.28)" }}>
                   {overdue.count} doc{overdue.count!==1?"s":""}
@@ -1181,14 +1181,14 @@ export default function Dashboard() {
         {/* Footer */}
         <footer className="border-t px-8 py-5" style={{ background:"rgba(10,20,32,0.6)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.07)" }}>
           <div className="max-w-[1280px] mx-auto flex justify-between items-center flex-wrap gap-2.5">
-            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>
+            <p className="m-0 text-xs" style={{ color:"var(--ged-tx3)" }}>
               © 2025 <span className="font-semibold" style={{ color:"#4ab83f" }}>ACTIA Engineering Services</span> — GED · ISO 9001
             </p>
             <div className="flex gap-5">
               {[{to:"/list",label:"Documents"},{to:"/validations",label:"Validations"},{to:"/archive",label:"Archivage"}].map(({to,label}) => (
-                <NavLink key={to} to={to} className="text-xs no-underline transition-colors" style={{ color:"rgba(168,191,212,0.45)" }}
+                <NavLink key={to} to={to} className="text-xs no-underline transition-colors" style={{ color:"var(--ged-tx3)" }}
                   onMouseEnter={e => e.currentTarget.style.color="#4ab83f"}
-                  onMouseLeave={e => e.currentTarget.style.color="rgba(168,191,212,0.45)"}
+                  onMouseLeave={e => e.currentTarget.style.color="var(--ged-tx3)"}
                 >{label}</NavLink>
               ))}
             </div>

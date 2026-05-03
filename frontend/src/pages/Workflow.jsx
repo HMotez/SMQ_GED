@@ -133,7 +133,7 @@ const TRANSITIONS = [
   { from: "Brouillon",          to: "En rédaction",       roles: ["Admin", "Ing. Qualité"] },
   { from: "En rédaction",       to: "Appel en relecture", roles: ["Admin", "Ing. Qualité"] },
   { from: "Appel en relecture", to: "En relecture",       roles: ["Admin", "Ing. Qualité", "Reviewer"] },
-  { from: "En relecture",       to: "En correction",      roles: ["Admin", "Reviewer"] },
+  { from: "En relecture",       to: "En correction",      roles: ["Admin", "Reviewer", "Ing. Qualité"] },
   { from: "En relecture",       to: "En validation",      roles: ["Admin", "Reviewer", "Ing. Qualité"] },
   { from: "En correction",      to: "Appel en relecture", roles: ["Admin", "Ing. Qualité"] },
   { from: "En validation",      to: "Validé",             roles: ["Admin", "Reviewer"] },
@@ -165,7 +165,7 @@ function StatBadge({ count, color }) {
   if (!count && count !== 0) return null;
   return (
     <span className="rounded-full px-2 py-px text-xs font-black tabular-nums"
-      style={{ background: count > 0 ? `${color}22` : "rgba(255,255,255,0.06)", color: count > 0 ? color : "rgba(168,191,212,0.3)" }}>
+      style={{ background: count > 0 ? `${color}22` : "rgba(255,255,255,0.06)", color: count > 0 ? color : "var(--ged-tx3)" }}>
       {count}
     </span>
   );
@@ -220,9 +220,9 @@ export default function Workflow() {
     <>
       <div className="rounded-xl px-3 py-2.5 border"
         style={{ background: "rgba(74,184,63,0.08)", borderColor: "rgba(74,184,63,0.2)" }}>
-        <p className="m-0 text-[10px] uppercase tracking-[1px] font-bold" style={{ color: "rgba(168,191,212,0.5)" }}>Statuts actifs</p>
+        <p className="m-0 text-[10px] uppercase tracking-[1px] font-bold" style={{ color: "var(--ged-tx2)" }}>Statuts actifs</p>
         <p className="m-0 font-black text-xl text-white">{STATUSES.length}</p>
-        <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.4)" }}>étapes du cycle</p>
+        <p className="m-0 text-xs" style={{ color: "var(--ged-tx3)" }}>étapes du cycle</p>
       </div>
     </>
   );
@@ -237,17 +237,17 @@ export default function Workflow() {
 
         {/* ── Header ─────────────────────────────────────────── */}
         <header className="px-8 py-4 border-b flex items-center justify-between"
-          style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", borderColor: "rgba(255,255,255,0.08)", boxShadow: "0 1px 0 rgba(255,255,255,0.04)" }}>
+          style={{ background: "var(--ged-header)", backdropFilter: "blur(20px)", borderColor: "var(--ged-border)", boxShadow: "0 1px 0 rgba(255,255,255,0.04)" }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: "linear-gradient(135deg,rgba(74,184,63,0.18),rgba(74,184,63,0.08))", border: "1.5px solid rgba(74,184,63,0.3)", boxShadow: "0 4px 14px rgba(74,184,63,0.15)" }}>
               <LuGitBranch size={19} style={{ color: "#4ab83f" }} />
             </div>
             <div>
-              <h1 className="m-0 font-extrabold text-white" style={{ fontSize: 21, letterSpacing: "-0.022em", lineHeight: 1.2 }}>
+              <h1 className="m-0 font-extrabold" style={{ fontSize: 21, letterSpacing: "-0.022em", lineHeight: 1.2, color:"var(--ged-tx1)" }}>
                 Workflow ISO 9001
               </h1>
-              <p className="m-0 text-xs mt-0.5" style={{ color: "rgba(168,191,212,0.48)" }}>
+              <p className="m-0 text-xs mt-0.5" style={{ color: "var(--ged-tx4)" }}>
                 Cycle de vie documentaire · Rôles & transitions autorisées
               </p>
             </div>
@@ -301,11 +301,11 @@ export default function Workflow() {
                         <div className="flex flex-col items-center my-1">
                           <div className="w-px h-5" style={{ background: "rgba(255,255,255,0.12)" }} />
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
-                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                            style={{ background: "var(--ged-card)", border: "1px solid rgba(255,255,255,0.07)" }}>
                             {transition.roles.map(r => <RoleBadge key={r} role={r} />)}
                           </div>
                           <div className="w-px h-3" style={{ background: "rgba(255,255,255,0.12)" }} />
-                          <LuArrowDown size={12} style={{ color: "rgba(255,255,255,0.25)" }} />
+                          <LuArrowDown size={12} style={{ color: "var(--ged-tx3)" }} />
                         </div>
                       )}
 
@@ -332,7 +332,7 @@ export default function Workflow() {
                               <span className="font-bold text-white text-sm">{s.name}</span>
                               {!loading && <StatBadge count={count} color={s.color} />}
                             </div>
-                            <p className="m-0 text-xs mt-0.5" style={{ color: "rgba(168,191,212,0.5)" }}>{s.description}</p>
+                            <p className="m-0 text-xs mt-0.5" style={{ color: "var(--ged-tx2)" }}>{s.description}</p>
                           </div>
                           <div className="flex gap-1 flex-wrap justify-end">
                             {s.roles.map(r => <RoleBadge key={r} role={r} />)}
@@ -344,44 +344,55 @@ export default function Workflow() {
                       {isRelectureNode && correctionStatus && (
                         <div className="w-full max-w-lg mt-3 mb-1">
                           {/* Branch container */}
-                          <div className="rounded-2xl border p-4"
-                            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
-                            <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-3"
-                              style={{ color: "rgba(168,191,212,0.35)" }}>Décision de relecture</p>
-                            <div className="flex gap-3">
+                          <div className="rounded-2xl border overflow-hidden"
+                            style={{ background: "rgba(255,255,255,0.015)", borderColor: "rgba(255,255,255,0.08)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)" }}>
 
-                              {/* Branch A: Corrections required */}
-                              <div className="flex-1 flex flex-col items-center">
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full mb-2"
-                                  style={{ background: "rgba(249,115,22,0.06)", border: "1px solid rgba(249,115,22,0.15)" }}>
+                            {/* Header */}
+                            <div className="flex items-center gap-2 px-4 py-2.5 border-b"
+                              style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
+                              <div className="w-1.5 h-4 rounded-full" style={{ background: "linear-gradient(to bottom, #f97316, #a5b4fc)" }} />
+                              <span className="text-[10.5px] uppercase tracking-widest font-bold" style={{ color: "rgba(168,191,212,0.55)" }}>
+                                Décision de relecture
+                              </span>
+                            </div>
+
+                            <div className="flex p-4 gap-0">
+
+                              {/* Branch A — En correction */}
+                              <div className="flex-1 flex flex-col items-center gap-2">
+                                <div className="flex items-center gap-1 flex-wrap justify-center">
                                   {loopTransition?.roles.map(r => <RoleBadge key={r} role={r} />)}
                                 </div>
-                                <LuArrowDown size={12} style={{ color: "#f97316" }} />
+                                <LuArrowDown size={13} style={{ color: "#f97316", opacity: 0.7 }} />
                                 <button
                                   onClick={() => setSelected(selected === "En correction" ? null : "En correction")}
-                                  className="w-full rounded-xl px-4 py-3 border mt-2 text-left transition-all"
+                                  className="w-full rounded-xl px-3 py-3 border text-left transition-all"
                                   style={{
-                                    background:  selected === "En correction" ? correctionStatus.bg : "rgba(249,115,22,0.04)",
-                                    borderColor: selected === "En correction" ? correctionStatus.border : "rgba(249,115,22,0.15)",
+                                    background:  selected === "En correction" ? "rgba(249,115,22,0.12)" : "rgba(249,115,22,0.05)",
+                                    borderColor: selected === "En correction" ? "rgba(249,115,22,0.45)" : "rgba(249,115,22,0.18)",
                                     cursor: "pointer",
+                                    boxShadow: selected === "En correction" ? "0 0 16px rgba(249,115,22,0.15)" : "none",
                                   }}
-                                  onMouseEnter={e => { if (selected !== "En correction") { e.currentTarget.style.background = correctionStatus.bg; e.currentTarget.style.borderColor = correctionStatus.border; }}}
-                                  onMouseLeave={e => { if (selected !== "En correction") { e.currentTarget.style.background = "rgba(249,115,22,0.04)"; e.currentTarget.style.borderColor = "rgba(249,115,22,0.15)"; }}}
+                                  onMouseEnter={e => { if (selected !== "En correction") { e.currentTarget.style.background = "rgba(249,115,22,0.09)"; e.currentTarget.style.borderColor = "rgba(249,115,22,0.3)"; }}}
+                                  onMouseLeave={e => { if (selected !== "En correction") { e.currentTarget.style.background = "rgba(249,115,22,0.05)"; e.currentTarget.style.borderColor = "rgba(249,115,22,0.18)"; }}}
                                 >
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <LuPenLine size={13} style={{ color: "#f97316" }} />
-                                    <span className="font-bold text-sm" style={{ color: "#f97316" }}>En correction</span>
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                                      style={{ background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.25)" }}>
+                                      <LuPenLine size={12} style={{ color: "#f97316" }} />
+                                    </div>
+                                    <span className="font-bold text-[13px]" style={{ color: "#f97316" }}>En correction</span>
                                     {!loading && <StatBadge count={correctionCount} color="#f97316" />}
                                   </div>
-                                  <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.5)" }}>
+                                  <p className="m-0 text-[11px] leading-relaxed" style={{ color: "rgba(168,191,212,0.55)" }}>
                                     Corrections demandées — l'auteur soumet une nouvelle version
                                   </p>
                                 </button>
-                                {/* Loop arrow back */}
+                                {/* Loop back */}
                                 {backTransition && (
-                                  <div className="flex items-center gap-1 mt-2 px-2 py-1 rounded-lg border"
-                                    style={{ background: "rgba(251,191,36,0.06)", borderColor: "rgba(251,191,36,0.15)" }}>
-                                    <LuRefreshCw size={10} style={{ color: "#fbbf24" }} />
+                                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border w-full justify-center"
+                                    style={{ background: "rgba(251,191,36,0.05)", borderColor: "rgba(251,191,36,0.18)" }}>
+                                    <LuRefreshCw size={9} style={{ color: "#fbbf24" }} />
                                     <span className="text-[10px] font-semibold" style={{ color: "#fbbf24" }}>→ Appel en relecture</span>
                                     {backTransition.roles.map(r => <RoleBadge key={r} role={r} />)}
                                   </div>
@@ -389,30 +400,45 @@ export default function Workflow() {
                               </div>
 
                               {/* Divider */}
-                              <div className="flex flex-col items-center justify-center gap-1">
-                                <div className="w-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                  style={{ background: "rgba(255,255,255,0.04)", color: "rgba(168,191,212,0.35)" }}>OU</span>
-                                <div className="w-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+                              <div className="flex flex-col items-center justify-center mx-3 gap-1.5 self-stretch">
+                                <div className="flex-1 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.1), transparent)" }} />
+                                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                                  <span className="text-[9px] font-black" style={{ color: "rgba(168,191,212,0.4)" }}>OU</span>
+                                </div>
+                                <div className="flex-1 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.1), transparent)" }} />
                               </div>
 
-                              {/* Branch B: Submit to validation */}
-                              <div className="flex-1 flex flex-col items-center">
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full mb-2"
-                                  style={{ background: "rgba(165,180,252,0.06)", border: "1px solid rgba(165,180,252,0.15)" }}>
+                              {/* Branch B — En validation */}
+                              <div className="flex-1 flex flex-col items-center gap-2">
+                                <div className="flex items-center gap-1 flex-wrap justify-center">
                                   {getTransition("En relecture", "En validation")?.roles.map(r => <RoleBadge key={r} role={r} />)}
                                 </div>
-                                <LuArrowDown size={12} style={{ color: "#a5b4fc" }} />
-                                <div className="w-full rounded-xl px-4 py-3 border mt-2"
-                                  style={{ background: "rgba(165,180,252,0.04)", borderColor: "rgba(165,180,252,0.15)" }}>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <LuArrowDown size={13} style={{ color: "#a5b4fc" }} />
-                                    <span className="font-bold text-sm" style={{ color: "#a5b4fc" }}>En validation</span>
+                                <LuArrowDown size={13} style={{ color: "#a5b4fc", opacity: 0.7 }} />
+                                <button
+                                  onClick={() => setSelected(selected === "En validation" ? null : "En validation")}
+                                  className="w-full rounded-xl px-3 py-3 border text-left transition-all"
+                                  style={{
+                                    background:  selected === "En validation" ? "rgba(165,180,252,0.1)" : "rgba(165,180,252,0.04)",
+                                    borderColor: selected === "En validation" ? "rgba(165,180,252,0.4)" : "rgba(165,180,252,0.18)",
+                                    cursor: "pointer",
+                                    boxShadow: selected === "En validation" ? "0 0 16px rgba(165,180,252,0.12)" : "none",
+                                  }}
+                                  onMouseEnter={e => { if (selected !== "En validation") { e.currentTarget.style.background = "rgba(165,180,252,0.08)"; e.currentTarget.style.borderColor = "rgba(165,180,252,0.3)"; }}}
+                                  onMouseLeave={e => { if (selected !== "En validation") { e.currentTarget.style.background = "rgba(165,180,252,0.04)"; e.currentTarget.style.borderColor = "rgba(165,180,252,0.18)"; }}}
+                                >
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                                      style={{ background: "rgba(165,180,252,0.12)", border: "1px solid rgba(165,180,252,0.22)" }}>
+                                      <LuClipboardCheck size={12} style={{ color: "#a5b4fc" }} />
+                                    </div>
+                                    <span className="font-bold text-[13px]" style={{ color: "#a5b4fc" }}>En validation</span>
+                                    {!loading && <StatBadge count={docStats["En validation"] ?? 0} color="#a5b4fc" />}
                                   </div>
-                                  <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.5)" }}>
-                                    Continue vers la validation finale ↓
+                                  <p className="m-0 text-[11px] leading-relaxed" style={{ color: "rgba(168,191,212,0.55)" }}>
+                                    Continue vers la validation finale
                                   </p>
-                                </div>
+                                </button>
                               </div>
 
                             </div>
@@ -431,9 +457,9 @@ export default function Workflow() {
 
               {/* Role legend */}
               <div className="rounded-2xl border mb-4 overflow-hidden"
-                style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
-                <div className="px-4 py-3 border-b" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.07)" }}>
-                  <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(168,191,212,0.5)" }}>Légende des rôles</p>
+                style={{ background: "var(--ged-header)", borderColor: "var(--ged-border)" }}>
+                <div className="px-4 py-3 border-b" style={{ background: "var(--ged-card)", borderColor: "rgba(255,255,255,0.07)" }}>
+                  <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--ged-tx2)" }}>Légende des rôles</p>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
                   {Object.entries(ROLE_CFG).map(([role, cfg]) => {
@@ -446,7 +472,7 @@ export default function Workflow() {
                         </div>
                         <div>
                           <p className="m-0 font-bold text-sm" style={{ color: cfg.color }}>{role}</p>
-                          <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.5)" }}>
+                          <p className="m-0 text-xs" style={{ color: "var(--ged-tx2)" }}>
                             {role === "Admin"        && "Accès total · toutes les transitions"}
                             {role === "Ing. Qualité" && "Crée, rédige et soumet en relecture"}
                             {role === "Reviewer"     && "Relit, corrige et valide les documents"}
@@ -468,7 +494,7 @@ export default function Workflow() {
                 const incoming = TRANSITIONS.filter(t => t.to === selected);
                 return (
                   <div className="rounded-2xl border overflow-hidden"
-                    style={{ background: "rgba(255,255,255,0.03)", borderColor: s.border, boxShadow: `0 0 20px ${s.color}10` }}>
+                    style={{ background: "var(--ged-header)", borderColor: s.border, boxShadow: `0 0 20px ${s.color}10` }}>
                     <div className="px-4 py-3 border-b flex items-center gap-3"
                       style={{ background: s.bg, borderColor: s.border }}>
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -482,10 +508,10 @@ export default function Workflow() {
                       <StatBadge count={count} color={s.color} />
                     </div>
                     <div className="p-4 flex flex-col gap-4">
-                      <p className="m-0 text-sm" style={{ color: "rgba(168,191,212,0.7)" }}>{s.description}</p>
+                      <p className="m-0 text-sm" style={{ color: "var(--ged-tx2)" }}>{s.description}</p>
 
                       <div>
-                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: "rgba(168,191,212,0.4)" }}>Rôles actifs</p>
+                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: "var(--ged-tx3)" }}>Rôles actifs</p>
                         <div className="flex gap-1.5 flex-wrap">
                           {s.roles.map(r => <RoleBadge key={r} role={r} />)}
                         </div>
@@ -493,7 +519,7 @@ export default function Workflow() {
 
                       {incoming.length > 0 && (
                         <div>
-                          <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: "rgba(168,191,212,0.4)" }}>Transitions entrantes</p>
+                          <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: "var(--ged-tx3)" }}>Transitions entrantes</p>
                           <div className="flex flex-col gap-1.5">
                             {incoming.map(t => {
                               const fs = getStatus(t.from);
@@ -502,7 +528,7 @@ export default function Workflow() {
                                 <div key={t.from} className="flex items-center gap-2 rounded-lg px-3 py-2 border"
                                   style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}>
                                   <span className="text-xs font-semibold" style={{ color: fs.color }}>{t.from}</span>
-                                  <LuArrowRight size={11} style={{ color: "rgba(168,191,212,0.3)" }} />
+                                  <LuArrowRight size={11} style={{ color: "var(--ged-tx3)" }} />
                                   <div className="flex gap-1 flex-wrap ml-auto">
                                     {t.roles.map(r => <RoleBadge key={r} role={r} />)}
                                   </div>
@@ -515,7 +541,7 @@ export default function Workflow() {
 
                       {outgoing.length > 0 && (
                         <div>
-                          <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: "rgba(168,191,212,0.4)" }}>Transitions sortantes</p>
+                          <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: "var(--ged-tx3)" }}>Transitions sortantes</p>
                           <div className="flex flex-col gap-1.5">
                             {outgoing.map(t => {
                               const ts = getStatus(t.to);
@@ -523,7 +549,7 @@ export default function Workflow() {
                               return (
                                 <div key={t.to} className="flex items-center gap-2 rounded-lg px-3 py-2 border"
                                   style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}>
-                                  <LuArrowRight size={11} style={{ color: "rgba(168,191,212,0.3)" }} />
+                                  <LuArrowRight size={11} style={{ color: "var(--ged-tx3)" }} />
                                   <span className="text-xs font-semibold" style={{ color: ts.color }}>{t.to}</span>
                                   <div className="flex gap-1 flex-wrap ml-auto">
                                     {t.roles.map(r => <RoleBadge key={r} role={r} />)}
@@ -538,7 +564,7 @@ export default function Workflow() {
                       {outgoing.length === 0 && (
                         <div className="rounded-lg px-3 py-2 border"
                           style={{ background: "rgba(148,163,184,0.06)", borderColor: "rgba(148,163,184,0.15)" }}>
-                          <p className="m-0 text-xs" style={{ color: "rgba(168,191,212,0.5)" }}>
+                          <p className="m-0 text-xs" style={{ color: "var(--ged-tx2)" }}>
                             État terminal — aucune transition sortante.
                           </p>
                         </div>
@@ -549,8 +575,8 @@ export default function Workflow() {
               })() : (
                 <div className="rounded-2xl border px-4 py-8 flex flex-col items-center gap-3"
                   style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
-                  <LuGitBranch size={28} style={{ color: "rgba(168,191,212,0.15)" }} />
-                  <p className="m-0 text-sm text-center" style={{ color: "rgba(168,191,212,0.4)" }}>
+                  <LuGitBranch size={28} style={{ color: "var(--ged-tx3)" }} />
+                  <p className="m-0 text-sm text-center" style={{ color: "var(--ged-tx3)" }}>
                     Cliquez sur un statut pour voir ses détails et transitions.
                   </p>
                 </div>
@@ -559,9 +585,9 @@ export default function Workflow() {
               {/* Stats summary */}
               {!loading && Object.keys(docStats).length > 0 && (
                 <div className="rounded-2xl border mt-4 overflow-hidden"
-                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)" }}>
-                  <div className="px-4 py-3 border-b" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.07)" }}>
-                    <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(168,191,212,0.5)" }}>Documents par statut</p>
+                  style={{ background: "var(--ged-header)", borderColor: "var(--ged-border)" }}>
+                  <div className="px-4 py-3 border-b" style={{ background: "var(--ged-card)", borderColor: "rgba(255,255,255,0.07)" }}>
+                    <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--ged-tx2)" }}>Documents par statut</p>
                   </div>
                   <div className="p-3 flex flex-col gap-1">
                     {STATUSES.map(s => {
@@ -572,7 +598,7 @@ export default function Workflow() {
                         <div key={s.name} className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
                           style={{ background: count > 0 ? s.bg : "transparent" }}>
                           <SI size={11} style={{ color: s.color, flexShrink: 0 }} />
-                          <span className="flex-1 text-xs" style={{ color: "rgba(168,191,212,0.7)" }}>{s.name}</span>
+                          <span className="flex-1 text-xs" style={{ color: "var(--ged-tx2)" }}>{s.name}</span>
                           <span className="font-bold text-sm" style={{ color: s.color }}>{count}</span>
                         </div>
                       );

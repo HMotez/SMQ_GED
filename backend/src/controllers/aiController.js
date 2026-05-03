@@ -72,7 +72,7 @@ const INTENT_PATTERNS = [
     regex: /archiv/i,
     intent: "archived_docs",
     label: "Documents archivés",
-    roles: ["Admin","Ing. Qualité"],
+    roles: ["Admin","Ing. Qualité","Visiteur"],
   },
   // Documents en retard
   {
@@ -420,7 +420,7 @@ async function buildSQLForIntent(intent, entities, role) {
       };
 
     case "archived_docs":
-      if (!["Admin","Ing. Qualité"].includes(role)) {
+      if (!["Admin","Ing. Qualité","Visiteur"].includes(role)) {
         return { error: "Vous n'avez pas les droits pour consulter les documents archivés.", code: 403 };
       }
       return {
@@ -432,6 +432,41 @@ async function buildSQLForIntent(intent, entities, role) {
         params: [],
         message: "Voici les documents archivés.",
       };
+
+    case "archived_recent":
+      if (!["Admin","Ing. Qualité","Visiteur"].includes(role)) {
+        return { error: "Accès refusé.", code: 403 };
+      }
+      return {
+        sql: BASE_SELECT + `
+          WHERE s.name = 'Archivé'
+          ORDER BY d.updated_at DESC
+          LIMIT 10
+        `,
+        params: [],
+        message: "Voici les documents les plus récemment archivés.",
+      };
+
+    case "archived_stats": {
+      if (!["Admin","Ing. Qualité","Visiteur"].includes(role)) {
+        return { error: "Accès refusé.", code: 403 };
+      }
+      const arStats = await pool.query(`
+        SELECT COALESCE(NULLIF(dt.label, ''), 'Type inconnu') AS stat_label, COUNT(*) AS stat_count
+        FROM documents d
+        JOIN status s ON s.id = d.status_id
+        LEFT JOIN document_types dt ON dt.id = d.type_id
+        WHERE s.name = 'Archivé'
+        GROUP BY dt.label ORDER BY stat_count DESC
+      `);
+      const arTotal = arStats.rows.reduce((sum, r) => sum + parseInt(r.stat_count), 0);
+      return {
+        is_stats: true,
+        statistics: arStats.rows.map(r => ({ name: r.stat_label, count: parseInt(r.stat_count) })),
+        stats_label: "Type documentaire",
+        message: `Il y a **${arTotal}** document(s) archivé(s) dans la GED.`,
+      };
+    }
 
     case "overdue_docs":
       return {
@@ -1160,7 +1195,7 @@ async function handleChatQuery(req, res) {
   }
 
   const trimmedQuery = query.trim();
-  const role         = user?.role || "Reviewer";
+  const role         = user?.role || "Visiteur";
   const useLLM       = !!process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== "your_groq_api_key_here";
 
   try {
@@ -1170,6 +1205,17 @@ async function handleChatQuery(req, res) {
     let intentPattern  = detectIntent(trimmedQuery);
     if (intentPattern.intent === "text_search" && entities.type_code) {
       intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
+    }
+    // Visiteur : restrict to archived documents only, with intent nuance
+    if (role === "Visiteur") {
+      const q = trimmedQuery.toLowerCase();
+      if (/r[eé]cent|dernier|derni[eè]re|nouveau|r[eé]cemment/.test(q)) {
+        intentPattern = { intent: "archived_recent", label: "Archivés récemment",    roles: ["Visiteur","Admin","Ing. Qualité"] };
+      } else if (/combien|nombre|total|statistique|type|r[eé]partition|dossier/.test(q)) {
+        intentPattern = { intent: "archived_stats",  label: "Statistiques archives", roles: ["Visiteur","Admin","Ing. Qualité"] };
+      } else {
+        intentPattern = { intent: "archived_docs",   label: "Documents archivés",    roles: ["Visiteur","Admin","Ing. Qualité"] };
+      }
     }
 
     let rows       = [];
@@ -1192,12 +1238,13 @@ async function handleChatQuery(req, res) {
       } catch { /* ignore SQL errors — LLM will still respond */ }
     }
 
-    // ── Groq LLM répond à TOUT ──────────────────────────────────────────────────
+    // ── Réponse basée sur la base de données uniquement ────────────────────────
     let finalMessage = built.message || "";
 
     const DOC_INTENTS = new Set([
       "expired_docs","validation_pending","overdue_docs","obsolete_docs",
-      "archived_docs","published_docs","in_relecture","draft_docs",
+      "archived_docs","archived_recent","archived_stats",
+      "published_docs","in_relecture","draft_docs",
       "upcoming_reviews","latest_version","validated_docs","list_all",
       "never_viewed","my_docs","recent_docs",
       "by_responsible","by_process","by_type","by_folder",
@@ -1206,18 +1253,18 @@ async function handleChatQuery(req, res) {
     ]);
     const isDocIntent = DOC_INTENTS.has(intentPattern.intent);
 
-    if (useLLM) {
+    // LLM (Groq) désactivé — réponses basées sur la BDD uniquement
+    /* if (useLLM) {
       const snapshot     = await fetchDBSnapshot(user?.id);
       const systemPrompt = buildSystemPrompt(snapshot, role, isDocIntent ? rows : [], built.message);
       const llmMsg       = await callGeminiLLM(systemPrompt, trimmedQuery, history);
       if (llmMsg) finalMessage = llmMsg;
-      if (!finalMessage) finalMessage = "Je suis votre assistant IA GED. Posez-moi n'importe quelle question !";
-    } else {
-      if (!finalMessage) finalMessage = "Je suis votre assistant IA GED. Posez-moi n'importe quelle question !";
-    }
+    } */
+
+    if (!finalMessage) finalMessage = "Je suis votre assistant qualité GED. Posez-moi une question sur vos documents, statuts ou processus ISO 9001.";
 
     // N'envoyer les documents que pour les questions documentaires
-    const docsToSend = isDocIntent ? rows : [];
+    const docsToSend  = isDocIntent ? rows : [];
     const statsToSend = isDocIntent ? statistics : null;
 
     // Journalisation
@@ -1230,13 +1277,13 @@ async function handleChatQuery(req, res) {
 
     return res.json({
       intent:       intentPattern.intent,
-      intent_label: useLLM ? "Groq AI" : intentPattern.label,
+      intent_label: intentPattern.label,
       message:      finalMessage,
       result_count: statsToSend ? statsToSend.length : docsToSend.length,
       documents:    docsToSend,
       statistics:   statsToSend,
       stats_label:  built.stats_label || "Statut",
-      llm_powered:  useLLM,
+      llm_powered:  false,
     });
   } catch (err) {
     console.error("[IA][Chatbot] Erreur:", err.message);
@@ -1256,7 +1303,7 @@ async function handleStreamQuery(req, res) {
   }
 
   const trimmedQuery = query.trim();
-  const role         = user?.role || "Reviewer";
+  const role         = user?.role || "Visiteur";
   const useLLM       = !!process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== "your_groq_api_key_here";
 
   // SSE headers
@@ -1272,6 +1319,10 @@ async function handleStreamQuery(req, res) {
     let intentPattern = detectIntent(trimmedQuery);
     if (intentPattern.intent === "text_search" && entities.type_code) {
       intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
+    }
+    // Visiteur : restrict to archived documents only
+    if (role === "Visiteur") {
+      intentPattern = { intent: "archived_docs", label: "Documents archivés", roles: ["Visiteur","Admin","Ing. Qualité"] };
     }
 
     let rows = [], statistics = null, built = { message: null };

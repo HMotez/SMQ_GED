@@ -159,7 +159,7 @@ function ScoreGauge({ score, color, label }) {
         }}>
           {animated}
         </div>
-        <div style={{ fontSize: 11, color: "rgba(168,191,212,0.4)", fontWeight: 600, marginTop: 2 }}>/100</div>
+        <div style={{ fontSize: 11, color: "var(--ged-tx3)", fontWeight: 600, marginTop: 2 }}>/100</div>
       </div>
     </div>
   );
@@ -190,7 +190,7 @@ function KpiStatCard({ label, value, color, maxValue, onClick }) {
         position: "absolute", bottom: -24, right: -16, width: 80, height: 80,
         borderRadius: "50%", background: `${color}18`, filter: "blur(22px)", pointerEvents: "none",
       }} />
-      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "rgba(168,191,212,0.4)" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "var(--ged-tx3)" }}>
         {label}
       </div>
       <div style={{
@@ -260,7 +260,7 @@ function DistributionChart({ kpis }) {
   const chartRef = useRef(null);
 
   if (active.length === 0) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "rgba(168,191,212,0.3)", fontSize: 13 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--ged-tx3)", fontSize: 13 }}>
       Aucune donnée
     </div>
   );
@@ -321,7 +321,7 @@ function DistributionChart({ kpis }) {
           {animTotal}
         </div>
         <div style={{
-          fontSize: 10, fontWeight: 700, color: "rgba(168,191,212,0.4)",
+          fontSize: 10, fontWeight: 700, color: "var(--ged-tx3)",
           textTransform: "uppercase", letterSpacing: "0.8px", marginTop: 3,
         }}>
           Total
@@ -383,6 +383,19 @@ const QUICK_QUESTIONS = [
       { icon: LuSearch,      label: "Jamais consultés",          q: "Quels documents n'ont jamais été consultés ?" },
       { icon: LuArchive,     label: "Archivés récemment",        q: "Quels documents ont été archivés ?" },
       { icon: LuBookOpen,    label: "En relecture",              q: "Quels documents sont en cours de relecture ?" },
+    ],
+  },
+];
+
+const QUICK_QUESTIONS_VISITOR = [
+  {
+    cat: "Documents archivés",
+    color: "#94a3b8",
+    items: [
+      { icon: LuArchive,   label: "Tous les archivés",     q: "Donne-moi la liste des documents archivés" },
+      { icon: LuCalendar,  label: "Récemment archivés",    q: "Quels sont les documents récemment archivés ?" },
+      { icon: LuChartBar,  label: "Répartition par type",  q: "Combien de documents archivés par type ?" },
+      { icon: LuFileText,  label: "Combien archivés ?",    q: "Combien de documents sont archivés au total ?" },
     ],
   },
 ];
@@ -477,8 +490,8 @@ function inlineFormat(text) {
 
 const INITIAL_MESSAGE = {
   id: 0, from: "bot",
-  text: "Bonjour ! Je suis votre assistant IA propulsé par **Groq AI** (Llama 3.3 70B). Posez-moi n'importe quelle question — sur vos documents, l'ISO 9001, la qualité, ou n'importe quel autre sujet. Je suis là pour vous aider !",
-  intent: null, docs: [], stats: null, llm: true, suggestions: [],
+  text: "Bonjour ! Je suis votre assistant qualité GED. Posez-moi une question sur vos documents, les statuts, les révisions ou les processus ISO 9001 — je consulte directement la base de données pour vous répondre.",
+  intent: null, docs: [], stats: null, llm: false, suggestions: [],
 };
 
 const LS_KEY = "smq_chat_history";
@@ -488,7 +501,15 @@ function loadSavedConvs() {
   catch { return []; }
 }
 
+const INITIAL_MESSAGE_VISITOR = {
+  id: 0, from: "bot",
+  text: "Bonjour ! En tant que Visiteur, vous pouvez interroger l'assistant sur les **documents archivés** de la GED. Posez votre question ci-dessous.",
+  intent: null, docs: [], stats: null, llm: false, suggestions: [],
+};
+
 function ChatbotSection({ token }) {
+  const { currentUser, authLoading } = useUser();
+  const isVisitor = !authLoading && (!currentUser || currentUser?.role === "Visiteur");
   const [messages, setMessages]     = useState([INITIAL_MESSAGE]);
   const [history, setHistory]       = useState([]);
   const [input, setInput]           = useState("");
@@ -502,6 +523,12 @@ function ChatbotSection({ token }) {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Set correct initial message once auth resolves
+  useEffect(() => {
+    if (authLoading) return;
+    setMessages([isVisitor ? INITIAL_MESSAGE_VISITOR : INITIAL_MESSAGE]);
+  }, [authLoading, isVisitor]);
 
   function persistConvs(convs) {
     setSavedConvs(convs);
@@ -542,13 +569,6 @@ function ChatbotSection({ token }) {
     });
   }
 
-  function parseSuggestions(text) {
-    try {
-      const m = text.match(/SUGGESTIONS:(\{.*?\})/);
-      return m ? JSON.parse(m[1]).q || [] : [];
-    } catch { return []; }
-  }
-
   async function sendMessage(text) {
     const query = (text || input).trim();
     if (!query || loading) return;
@@ -558,77 +578,38 @@ function ChatbotSection({ token }) {
     setMessages(prev => [...prev, { id: userMsgId, from: "user", text: query }]);
     setLoading(true);
 
-    // Streaming via SSE
-    const botPlaceholder = {
-      id: botMsgId, from: "bot", text: "", streaming: true,
-      intent: null, intentKey: null, docs: [], stats: null,
-      statsLabel: "Statut", count: 0, llm: true, suggestions: [],
-    };
-    setMessages(prev => [...prev, botPlaceholder]);
-
     try {
-      const resp = await fetch(`${API}/ai/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders(token) },
-        body: JSON.stringify({ query, history }),
-      });
+      const { data } = await axios.post(
+        `${API}/ai/query`,
+        { query, history },
+        { headers: authHeaders(token) }
+      );
 
-      if (!resp.ok) throw new Error("Erreur serveur");
-
-      const reader  = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let   buffer  = "";
-      let   fullText = "";
-      let   meta     = null;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop();
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const raw = line.slice(6).trim();
-          if (raw === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(raw);
-            if (parsed.type === "meta") {
-              meta = parsed;
-              setMessages(prev => prev.map(m => m.id === botMsgId ? {
-                ...m,
-                intent:     meta.intent_label,
-                intentKey:  meta.intent,
-                docs:       meta.documents || [],
-                stats:      meta.statistics || null,
-                statsLabel: meta.stats_label || "Statut",
-                count:      (meta.documents || []).length,
-                llm:        meta.llm_powered || false,
-              } : m));
-            } else if (parsed.token) {
-              fullText += parsed.token;
-              setMessages(prev => prev.map(m =>
-                m.id === botMsgId ? { ...m, text: fullText } : m
-              ));
-            }
-          } catch {}
-        }
-      }
-
-      const suggestions = parseSuggestions(fullText);
-      setMessages(prev => prev.map(m =>
-        m.id === botMsgId ? { ...m, streaming: false, suggestions } : m
-      ));
+      const botMsg = {
+        id:         botMsgId,
+        from:       "bot",
+        text:       data.message || "",
+        streaming:  false,
+        intent:     data.intent_label || null,
+        intentKey:  data.intent       || null,
+        docs:       data.documents    || [],
+        stats:      data.statistics   || null,
+        statsLabel: data.stats_label  || "Statut",
+        count:      (data.documents   || []).length,
+        llm:        false,
+        suggestions: [],
+      };
+      setMessages(prev => [...prev, botMsg]);
       setHistory(prev => [
         ...prev,
         { role: "user",      content: query },
-        { role: "assistant", content: fullText.replace(/SUGGESTIONS:\{.*?\}$/m, "").trim() },
+        { role: "assistant", content: data.message || "" },
       ]);
     } catch (err) {
-      setMessages(prev => prev.map(m =>
-        m.id === botMsgId ? { ...m, from: "bot-error", text: "Erreur lors du traitement.", streaming: false } : m
-      ));
+      setMessages(prev => [...prev, {
+        id: botMsgId, from: "bot-error",
+        text: "Erreur lors du traitement.", streaming: false,
+      }]);
     } finally {
       setLoading(false);
     }
@@ -636,9 +617,22 @@ function ChatbotSection({ token }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 16 }}>
+      {/* Visitor access notice */}
+      {isVisitor && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.2)",
+          borderRadius: 10, padding: "10px 14px",
+        }}>
+          <LuArchive size={14} style={{ color: "#94a3b8", flexShrink: 0 }} />
+          <span style={{ fontSize: 12.5, color: "rgba(168,191,212,0.7)" }}>
+            Accès Visiteur — consultation des <strong style={{ color: "#94a3b8" }}>documents archivés</strong> uniquement
+          </span>
+        </div>
+      )}
       {/* Quick questions — grouped by category */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {QUICK_QUESTIONS.map(({ cat, color, items }) => (
+        {(isVisitor ? QUICK_QUESTIONS_VISITOR : QUICK_QUESTIONS).map(({ cat, color, items }) => (
           <div key={cat}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
@@ -655,7 +649,7 @@ function ChatbotSection({ token }) {
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
                     background: `${color}08`, border: `1px solid ${color}20`,
-                    color: "rgba(168,191,212,0.65)", borderRadius: 20,
+                    color: "var(--ged-tx2)", borderRadius: 20,
                     padding: "5px 13px", fontSize: 12.5, cursor: "pointer", transition: "all 0.15s",
                   }}
                   onMouseEnter={e => {
@@ -715,14 +709,13 @@ function ChatbotSection({ token }) {
                   {msg.intent && (
                     <div style={{
                       display: "inline-flex", alignItems: "center", gap: 5,
-                      background: msg.llm ? "rgba(139,92,246,0.12)" : "rgba(74,184,63,0.1)",
-                      border: `1px solid ${msg.llm ? "rgba(139,92,246,0.3)" : "rgba(74,184,63,0.2)"}`,
+                      background: "rgba(74,184,63,0.1)",
+                      border: "1px solid rgba(74,184,63,0.2)",
                       borderRadius: 6, padding: "2px 8px", fontSize: 11,
-                      color: msg.llm ? "#a78bfa" : GREEN,
-                      fontWeight: 600, marginBottom: 6,
+                      color: GREEN, fontWeight: 600, marginBottom: 6,
                     }}>
                       <LuZap size={10} />
-                      {msg.llm ? "Groq AI" : msg.intent}
+                      {msg.intent}
                     </div>
                   )}
                   <div>{msg.from === "bot" ? renderMarkdown(msg.text) : msg.text}</div>
@@ -731,14 +724,14 @@ function ChatbotSection({ token }) {
                 {/* Stats table */}
                 {msg.stats && msg.stats.length > 0 && (
                   <div style={{
-                    background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`,
+                    background: "var(--ged-header)", border: `1px solid ${BORDER}`,
                     borderRadius: 10, overflow: "hidden",
                   }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
                         <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                          <th style={{ padding: "8px 12px", fontSize: 11, color: "rgba(168,191,212,0.5)", fontWeight: 600, textAlign: "left" }}>{msg.statsLabel || "Statut"}</th>
-                          <th style={{ padding: "8px 12px", fontSize: 11, color: "rgba(168,191,212,0.5)", fontWeight: 600, textAlign: "right" }}>Nb</th>
+                          <th style={{ padding: "8px 12px", fontSize: 11, color: "var(--ged-tx2)", fontWeight: 600, textAlign: "left" }}>{msg.statsLabel || "Statut"}</th>
+                          <th style={{ padding: "8px 12px", fontSize: 11, color: "var(--ged-tx2)", fontWeight: 600, textAlign: "right" }}>Nb</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -788,7 +781,7 @@ function ChatbotSection({ token }) {
                 {msg.from === "bot" && (
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: -4 }}>
                     {msg.streaming && (
-                      <span style={{ fontSize: 11, color: "rgba(168,191,212,0.4)", fontStyle: "italic" }}>
+                      <span style={{ fontSize: 11, color: "var(--ged-tx3)", fontStyle: "italic" }}>
                         l'assistant écrit…
                       </span>
                     )}
@@ -845,11 +838,11 @@ function ChatbotSection({ token }) {
                 {/* Documents list */}
                 {msg.docs && msg.docs.length > 0 && (
                   <div style={{
-                    background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`,
+                    background: "var(--ged-header)", border: `1px solid ${BORDER}`,
                     borderRadius: 10, overflow: "hidden",
                   }}>
                     <div style={{ padding: "8px 12px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, color: "rgba(168,191,212,0.5)", fontWeight: 600 }}>RÉSULTATS</span>
+                      <span style={{ fontSize: 11, color: "var(--ged-tx2)", fontWeight: 600 }}>RÉSULTATS</span>
                       <span style={{ fontSize: 11, color: GREEN, fontWeight: 700 }}>{msg.count} doc(s)</span>
                     </div>
                     <div style={{ maxHeight: 260, overflowY: "auto" }}>
@@ -874,10 +867,10 @@ function ChatbotSection({ token }) {
                             <div style={{ fontSize: 12, color: "rgba(220,235,248,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240, marginBottom: 2 }}>{doc.title}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                               {doc.responsible && (
-                                <span style={{ fontSize: 10.5, color: "rgba(168,191,212,0.5)" }}>{doc.responsible}</span>
+                                <span style={{ fontSize: 10.5, color: "var(--ged-tx2)" }}>{doc.responsible}</span>
                               )}
                               {doc.next_review_date && (
-                                <span style={{ fontSize: 10.5, color: "rgba(168,191,212,0.45)" }}>
+                                <span style={{ fontSize: 10.5, color: "var(--ged-tx3)" }}>
                                   Rev. {new Date(doc.next_review_date).toLocaleDateString("fr-FR")}
                                 </span>
                               )}
@@ -929,14 +922,14 @@ function ChatbotSection({ token }) {
           <div style={{ display: "flex", gap: 8 }}>
             {/* New conversation */}
             <button onClick={clearConversation} title="Nouvelle conversation"
-              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
+              style={{ background: "var(--ged-card)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "var(--ged-tx2)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.1)"; e.currentTarget.style.color = "#f87171"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
             ><LuPlus size={15} /></button>
 
             {/* Save conversation */}
             <button onClick={saveCurrentConversation} title="Sauvegarder la conversation"
-              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
+              style={{ background: "var(--ged-card)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "var(--ged-tx2)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.1)"; e.currentTarget.style.color = GREEN; e.currentTarget.style.borderColor = "rgba(74,184,63,0.3)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
             ><LuMessageSquare size={15} /></button>
@@ -954,7 +947,7 @@ function ChatbotSection({ token }) {
           </div>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {history.length > 0 && (
-              <span style={{ fontSize: 11, color: "rgba(168,191,212,0.3)", display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 11, color: "var(--ged-tx3)", display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} />
                 {Math.floor(history.length / 2)} échange(s) en mémoire
               </span>
@@ -1112,7 +1105,7 @@ function ImprovementsSection({ token }) {
         <Card style={{ padding: "22px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
           {/* Background glow */}
           <div style={{ position: "absolute", top: -40, left: "50%", transform: "translateX(-50%)", width: 180, height: 180, borderRadius: "50%", background: `${healthColor}10`, filter: "blur(40px)", pointerEvents: "none" }} />
-          <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "rgba(168,191,212,0.4)" }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "var(--ged-tx3)" }}>
             Score Qualité
           </div>
           <ScoreGauge score={data.health_score} color={healthColor} label={data.health_label} />
@@ -1151,7 +1144,7 @@ function ImprovementsSection({ token }) {
 
       {/* ── Row 2 : Distribution doughnut + legend ─────────── */}
       <Card style={{ padding: "20px 24px" }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "rgba(168,191,212,0.4)", marginBottom: 18 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "var(--ged-tx3)", marginBottom: 18 }}>
           Distribution par statut
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
@@ -1236,8 +1229,8 @@ function ImprovementsSection({ token }) {
               <LuSparkles size={14} color="#a78bfa" />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>Rapport IA — Amélioration Continue</div>
-              <div style={{ fontSize: 11, color: "rgba(167,139,250,0.5)" }}>Généré par llama-3.3-70b · ISO 9001</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>Rapport — Amélioration Continue</div>
+              <div style={{ fontSize: 11, color: "rgba(167,139,250,0.5)" }}>Analyse automatique · ISO 9001</div>
             </div>
           </div>
 
@@ -1267,7 +1260,7 @@ function ImprovementsSection({ token }) {
                   {data.ai_synthesis.axes.map((axe, i) => (
                     <div key={i} style={{
                       display: "flex", alignItems: "flex-start", gap: 12, padding: "11px 14px",
-                      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                      background: "var(--ged-header)", border: "1px solid rgba(255,255,255,0.06)",
                       borderRadius: 9,
                     }}>
                       <div style={{
@@ -1338,7 +1331,7 @@ function ImprovementsSection({ token }) {
             <LuCircleCheck size={40} color={GREEN} />
             <div>
               <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: GREEN }}>Excellent état documentaire !</p>
-              <p style={{ margin: 0, fontSize: 13, color: "rgba(168,191,212,0.5)" }}>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--ged-tx2)" }}>
                 Aucune anomalie détectée. Continuez ainsi.
               </p>
             </div>
@@ -1376,7 +1369,7 @@ function ImprovementsSection({ token }) {
                         <PriorityBadge priority={rec.priority} />
                         <span style={{
                           fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px",
-                          color: "rgba(168,191,212,0.4)", background: "rgba(255,255,255,0.04)",
+                          color: "var(--ged-tx3)", background: "var(--ged-card)",
                           border: `1px solid ${BORDER}`, borderRadius: 5, padding: "2px 6px",
                         }}>
                           {rec.category}
@@ -1390,7 +1383,7 @@ function ImprovementsSection({ token }) {
                           <div style={{ fontSize: 20, fontWeight: 900, color: pcfg.color, lineHeight: 1, fontFamily: "monospace" }}>
                             {rec.metric.value}
                           </div>
-                          <div style={{ fontSize: 10, color: "rgba(168,191,212,0.45)", fontWeight: 600 }}>
+                          <div style={{ fontSize: 10, color: "var(--ged-tx3)", fontWeight: 600 }}>
                             {rec.metric.unit}
                           </div>
                         </div>
@@ -1425,7 +1418,7 @@ function ImprovementsSection({ token }) {
                       {/* Documents list if any */}
                       {rec.documents && rec.documents.length > 0 && (
                         <div style={{ marginTop: 12 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(168,191,212,0.5)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--ged-tx2)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
                             Documents concernés ({rec.documents.length})
                           </div>
                           <div style={{
@@ -1475,7 +1468,7 @@ function ImprovementsSection({ token }) {
         )}
       </div>
 
-      <div style={{ textAlign: "right", fontSize: 11, color: "rgba(168,191,212,0.3)" }}>
+      <div style={{ textAlign: "right", fontSize: 11, color: "var(--ged-tx3)" }}>
         Analyse générée le {new Date(data.generated_at).toLocaleString("fr-FR")}
       </div>
     </div>
@@ -1491,8 +1484,11 @@ const TABS = [
 ];
 
 export default function AIAssistant() {
-  const { currentUser, token } = useUser();
+  const { currentUser, token, authLoading } = useUser();
+  const userRole = currentUser?.role || null;
+  const isVisitor = !authLoading && (!currentUser || userRole === "Visiteur");
   const [activeTab, setActiveTab] = useState("chatbot");
+  const visibleTabs = isVisitor ? TABS.filter(t => t.id === "chatbot") : TABS;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(145deg,#0a1420 0%,#0d1f2d 50%,#0b1929 100%)" }}>
@@ -1519,23 +1515,13 @@ export default function AIAssistant() {
               }}>
                 <LuCpu size={22} color={GREEN} />
               </div>
-              {/* Title + badge */}
+              {/* Title */}
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 3 }}>
-                  <h1 style={{ margin: 0, fontSize: 21, fontWeight: 800, color: "rgba(220,235,248,0.96)", letterSpacing: "-0.025em" }}>
-                    Assistant IA
-                  </h1>
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 5,
-                    background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.28)",
-                    borderRadius: 7, padding: "3px 9px",
-                    fontSize: 10.5, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.2px",
-                  }}>
-                    <LuZap size={10} /> Groq AI
-                  </span>
-                </div>
+                <h1 style={{ margin: "0 0 3px", fontSize: 21, fontWeight: 800, color: "rgba(220,235,248,0.96)", letterSpacing: "-0.025em" }}>
+                  Assistant IA
+                </h1>
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
-                  llama-3.3-70b · Streaming · Données ACTIA ES en temps réel
+                  Données ACTIA ES en temps réel · ISO 9001
                 </p>
               </div>
             </div>
@@ -1553,11 +1539,11 @@ export default function AIAssistant() {
           {/* ── Tabs (pill style) ── */}
           <div style={{
             display: "flex", gap: 4, padding: "4px",
-            background: "rgba(255,255,255,0.03)",
+            background: "var(--ged-header)",
             border: "1px solid rgba(255,255,255,0.07)",
             borderRadius: 12, width: "fit-content",
           }}>
-            {TABS.map(tab => {
+            {visibleTabs.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (

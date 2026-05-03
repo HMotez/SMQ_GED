@@ -41,8 +41,8 @@ function DarkSelect({ options = [], value, onChange, placeholder = "— Sélecti
         onClick={() => !disabled && setOpen(o => !o)}
         className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all text-left"
         style={{
-          background:   disabled ? "rgba(255,255,255,0.02)" : open ? "rgba(74,184,63,0.08)" : "rgba(255,255,255,0.04)",
-          borderColor:  disabled ? "rgba(255,255,255,0.06)" : open ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.10)",
+          background:   disabled ? "var(--ged-header)" : open ? "rgba(74,184,63,0.08)" : "var(--ged-card)",
+          borderColor:  disabled ? "var(--ged-border-sm)" : open ? "rgba(74,184,63,0.45)" : "var(--ged-border-md)",
           color:        disabled ? "rgba(168,191,212,0.3)" : selected ? "rgba(255,255,255,0.9)" : "rgba(168,191,212,0.45)",
           cursor:       disabled ? "not-allowed" : "pointer",
           boxShadow:    open ? "0 0 0 3px rgba(74,184,63,0.12)" : "none",
@@ -53,7 +53,7 @@ function DarkSelect({ options = [], value, onChange, placeholder = "— Sélecti
         <LuChevronDown
           size={15}
           style={{
-            color: "rgba(168,191,212,0.4)",
+            color: "var(--ged-tx3)",
             flexShrink: 0,
             marginLeft: 8,
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
@@ -91,7 +91,7 @@ function DarkSelect({ options = [], value, onChange, placeholder = "— Sélecti
                   fontWeight:   isSelected ? 600 : 400,
                   fontFamily:   "inherit",
                   cursor:       "pointer",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--ged-border-sm)",
                 }}
                 onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.95)"; }}}
                 onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(168,191,212,0.85)"; }}}
@@ -116,7 +116,7 @@ function DarkSelect({ options = [], value, onChange, placeholder = "— Sélecti
 function Label({ children }) {
   return (
     <label className="block text-xs uppercase tracking-wider font-semibold mb-1.5"
-      style={{ color: "rgba(168,191,212,0.6)" }}>
+      style={{ color: "var(--ged-tx2)" }}>
       {children}
     </label>
   );
@@ -129,7 +129,7 @@ function I(props) {
       {...props}
       className="w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all"
       style={{
-        background: "rgba(255,255,255,0.04)",
+        background: "var(--ged-card)",
         borderColor: "rgba(255,255,255,0.10)",
         color: "rgba(255,255,255,0.85)",
         fontFamily: "inherit",
@@ -186,7 +186,7 @@ function UserPicker({ label, users, selected, onAdd, onRemove, roleFilter, accen
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2 mb-1">
         <Icon size={13} style={{ color: accentColor }} />
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color:"rgba(168,191,212,0.6)" }}>{label}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color:"var(--ged-tx2)" }}>{label}</span>
       </div>
 
       {/* Selected chips */}
@@ -197,11 +197,11 @@ function UserPicker({ label, users, selected, onAdd, onRemove, roleFilter, accen
               style={{ background:`${accentColor}12`, borderColor:`${accentColor}30` }}>
               <div>
                 <span className="text-xs font-semibold text-white">{u.name}</span>
-                <span className="text-[10px] block" style={{ color:"rgba(168,191,212,0.5)" }}>{u.email}</span>
+                <span className="text-[10px] block" style={{ color:"var(--ged-tx2)" }}>{u.email}</span>
               </div>
               <button type="button" onClick={() => onRemove(u.id)}
                 className="ml-1 border-none p-0 flex items-center justify-center rounded-full"
-                style={{ background:"transparent", cursor:"pointer", color:"rgba(168,191,212,0.4)", width:16, height:16 }}
+                style={{ background:"transparent", cursor:"pointer", color:"var(--ged-tx3)", width:16, height:16 }}
                 onMouseEnter={e => e.currentTarget.style.color="#f87171"}
                 onMouseLeave={e => e.currentTarget.style.color="rgba(168,191,212,0.4)"}>
                 <LuX size={11} />
@@ -216,9 +216,9 @@ function UserPicker({ label, users, selected, onAdd, onRemove, roleFilter, accen
         <button type="button" onClick={() => setOpen(o => !o)}
           className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-lg border text-sm text-left transition-all"
           style={{
-            background: open ? `${accentColor}08` : "rgba(255,255,255,0.04)",
-            borderColor: open ? `${accentColor}45` : "rgba(255,255,255,0.10)",
-            color: "rgba(168,191,212,0.6)",
+            background: open ? `${accentColor}08` : "var(--ged-card)",
+            borderColor: open ? `${accentColor}45` : "var(--ged-border-md)",
+            color: "var(--ged-tx2)",
             cursor: "pointer",
             fontFamily: "inherit",
             boxShadow: open ? `0 0 0 3px ${accentColor}12` : "none",
@@ -240,7 +240,7 @@ function UserPicker({ label, users, selected, onAdd, onRemove, roleFilter, accen
               zIndex: 9999,
             }}>
             {available.length === 0 ? (
-              <div className="px-4 py-3 text-sm" style={{ color:"rgba(168,191,212,0.35)" }}>
+              <div className="px-4 py-3 text-sm" style={{ color:"var(--ged-tx3)" }}>
                 Aucun utilisateur disponible
               </div>
             ) : available.map(u => (
@@ -257,7 +257,7 @@ function UserPicker({ label, users, selected, onAdd, onRemove, roleFilter, accen
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="m-0 text-sm font-semibold text-white truncate">{u.name}</p>
-                  <p className="m-0 text-[11px] truncate" style={{ color:"rgba(168,191,212,0.45)" }}>{u.email}</p>
+                  <p className="m-0 text-[11px] truncate" style={{ color:"var(--ged-tx3)" }}>{u.email}</p>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
                   style={{ background:`${ROLE_COLOR[u.role] || "#8b949e"}15`, color: ROLE_COLOR[u.role] || "#8b949e" }}>
@@ -281,7 +281,7 @@ function STitle({ num, title }) {
         {num}
       </span>
       <h2 className="m-0 text-lg font-bold text-white tracking-tight">{title}</h2>
-      <div className="flex-1 h-px" style={{ background:"rgba(255,255,255,0.06)" }} />
+      <div className="flex-1 h-px" style={{ background:"var(--ged-card-md)" }} />
     </div>
   );
 }
@@ -419,7 +419,7 @@ export default function CreateDocument() {
   const sidebarMiddle = (
     <div className="px-3 pt-2 pb-4 flex flex-col gap-1.5">
       <p className="text-[10px] uppercase tracking-[1px] font-bold px-1 mb-2"
-        style={{ color:"rgba(168,191,212,0.45)" }}>Étapes de création</p>
+        style={{ color:"var(--ged-tx3)" }}>Étapes de création</p>
       {STEPS.map(({ num, icon: StepIcon, label, n }) => (
         <button key={n} type="button" onClick={() => setStep(n)}
           className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl text-sm transition-all border-l-4 border-none
@@ -448,21 +448,21 @@ export default function CreateDocument() {
         <div className="rounded-xl px-4 py-3.5 border mb-4"
           style={{ background:"rgba(74,184,63,0.08)", borderColor:"rgba(74,184,63,0.25)" }}>
           <p className="text-[10px] uppercase tracking-[1px] mb-1.5 font-semibold"
-            style={{ color:"rgba(168,191,212,0.5)" }}>Référence prévisionnelle</p>
+            style={{ color:"var(--ged-tx2)" }}>Référence prévisionnelle</p>
           <p className="font-mono font-bold text-lg tracking-wide m-0 text-[#4ab83f]">{preview}</p>
         </div>
       )}
       <div className="rounded-xl px-4 py-3.5 border"
         style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.09)" }}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>Statut</span>
+          <span className="text-xs" style={{ color:"var(--ged-tx2)" }}>Statut</span>
           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
             style={{ background:"rgba(251,146,60,0.12)", color:"#fb923c", border:"1px solid rgba(251,146,60,0.3)" }}>
             Brouillon
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>Version</span>
+          <span className="text-xs" style={{ color:"var(--ged-tx2)" }}>Version</span>
           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
             style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f", border:"1px solid rgba(74,184,63,0.3)" }}>
             —
@@ -494,7 +494,7 @@ export default function CreateDocument() {
 
   return (
     <div className="min-h-screen flex"
-      style={{ background:"linear-gradient(145deg, #0a1420 0%, #0f1e30 35%, #1a2f4a 70%, #1e3a55 100%)" }}>
+      style={{ background: "linear-gradient(145deg, #0a1420 0%, #0f1e30 35%, #1a2f4a 70%, #1e3a55 100%)" }}>
 
       <AppSidebar user={currentUser} middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
 
@@ -509,8 +509,8 @@ export default function CreateDocument() {
               <LuFilePlus size={19} style={{ color:"#4ab83f" }} />
             </div>
             <div>
-              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Nouveau Document</h1>
-              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+              <h1 className="m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2, color:"var(--ged-tx1)" }}>Nouveau Document</h1>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"var(--ged-tx4)" }}>
                 Création
               </p>
             </div>
@@ -618,7 +618,7 @@ export default function CreateDocument() {
                       <F label="Mots-clés (séparés par virgule)">
                         <div className="relative">
                           <LuTag size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2"
-                            style={{ color:"rgba(168,191,212,0.5)" }} />
+                            style={{ color:"var(--ged-tx2)" }} />
                           <I name="keywords" value={form.keywords} onChange={handleChange}
                             placeholder="iso9001, audit, conception, ..."
                             style={{ paddingLeft:"2.5rem" }} />
@@ -658,7 +658,7 @@ export default function CreateDocument() {
                       icon={LuUserCheck}
                     />
 
-                    <p className="text-[11px] m-0" style={{ color:"rgba(168,191,212,0.35)" }}>
+                    <p className="text-[11px] m-0" style={{ color:"var(--ged-tx3)" }}>
                       Les participants sélectionnés recevront un e-mail avec les informations du document à leur création.
                     </p>
                   </div>
@@ -667,7 +667,7 @@ export default function CreateDocument() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(1)}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer border-none"
-                    style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
+                    style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
                     <LuArrowLeft size={15} /> Retour
                   </button>
                   <button type="button" onClick={() => setStep(3)}
@@ -736,7 +736,7 @@ export default function CreateDocument() {
                           <LuHash size={22} style={{ color:"#4ab83f" }} />
                         </div>
                         <div>
-                          <p className="text-xs uppercase tracking-wider mb-1" style={{ color:"rgba(168,191,212,0.5)" }}>
+                          <p className="text-xs uppercase tracking-wider mb-1" style={{ color:"var(--ged-tx2)" }}>
                             Référence générée
                           </p>
                           <p className="font-mono font-bold text-2xl tracking-wider m-0 text-[#4ab83f]">{preview}</p>
@@ -749,7 +749,7 @@ export default function CreateDocument() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(2)}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer border-none"
-                    style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
+                    style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
                     <LuArrowLeft size={15} /> Retour
                   </button>
                   <button type="button" onClick={() => setStep(4)}
@@ -776,13 +776,13 @@ export default function CreateDocument() {
                     <div className="text-center px-6">
                       <LuFileText size={44} className="mx-auto mb-3" style={{ color:"#4ab83f" }} />
                       <p className="text-base font-semibold m-0 text-white">{file.name}</p>
-                      <p className="text-xs mt-1.5" style={{ color:"rgba(168,191,212,0.6)" }}>
+                      <p className="text-xs mt-1.5" style={{ color:"var(--ged-tx2)" }}>
                         {(file.size/1024/1024).toFixed(2)} Mo · Cliquer pour changer
                       </p>
                     </div>
                   ) : (
                     <div className="text-center px-6">
-                      <LuUpload size={44} className="mx-auto mb-3" style={{ color:"rgba(168,191,212,0.4)" }} />
+                      <LuUpload size={44} className="mx-auto mb-3" style={{ color:"var(--ged-tx3)" }} />
                       <p className="text-base font-medium m-0 text-white">Déposer ou cliquer pour uploader</p>
                       <p className="text-xs mt-1.5" style={{ color:"rgba(168,191,212,0.55)" }}>PDF, Word, Excel · Max 50 Mo</p>
                     </div>
@@ -794,8 +794,8 @@ export default function CreateDocument() {
                 {/* SharePoint link */}
                 <div className="mb-6">
                   <label className="block text-xs uppercase tracking-wider font-semibold mb-1.5"
-                    style={{ color:"rgba(168,191,212,0.6)" }}>
-                    Lien SharePoint <span style={{ color:"rgba(168,191,212,0.35)", fontWeight:400, textTransform:"none" }}>(optionnel)</span>
+                    style={{ color:"var(--ged-tx2)" }}>
+                    Lien SharePoint <span style={{ color:"var(--ged-tx3)", fontWeight:400, textTransform:"none" }}>(optionnel)</span>
                   </label>
                   <input
                     type="url"
@@ -803,7 +803,7 @@ export default function CreateDocument() {
                     onChange={e => setSharepointLink(e.target.value)}
                     placeholder="https://mohetn.sharepoint.com/..."
                     className="w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all"
-                    style={{ background:"rgba(255,255,255,0.04)", borderColor: sharepointLink ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.10)", color:"rgba(255,255,255,0.85)", fontFamily:"inherit" }}
+                    style={{ background:"var(--ged-card)", borderColor: sharepointLink ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.10)", color:"rgba(255,255,255,0.85)", fontFamily:"inherit" }}
                   />
                 </div>
 
@@ -837,7 +837,7 @@ export default function CreateDocument() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(3)}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer border-none"
-                    style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
+                    style={{ background:"var(--ged-card)", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
                     <LuArrowLeft size={15} /> Retour
                   </button>
                   <button type="submit" disabled={loading}

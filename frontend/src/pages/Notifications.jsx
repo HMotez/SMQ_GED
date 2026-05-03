@@ -118,11 +118,11 @@ function InfoRow({ Icon, label, value, valueStyle }) {
     <div className="flex items-start gap-3">
       <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <Icon size={12} style={{ color: "rgba(168,191,212,0.6)" }} />
+        <Icon size={12} style={{ color: "var(--ged-tx2)" }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-[10px] font-semibold uppercase tracking-wider mb-0.5"
-          style={{ color: "rgba(168,191,212,0.35)" }}>{label}</div>
+          style={{ color: "var(--ged-tx3)" }}>{label}</div>
         <div className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.82)", ...valueStyle }}>
           {value}
         </div>
@@ -157,11 +157,11 @@ function DocumentModal({ doc, loading, onClose }) {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer z-10"
-          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid var(--ged-border-md)" }}
           onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.15)"}
           onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
         >
-          <LuX size={14} style={{ color: "rgba(168,191,212,0.7)" }} />
+          <LuX size={14} style={{ color: "var(--ged-tx2)" }} />
         </button>
 
         {/* ── Loading state ── */}
@@ -230,9 +230,9 @@ function DocumentModal({ doc, loading, onClose }) {
               {/* Process chain */}
               {(doc.strategic_process || doc.main_process || doc.sub_process) && (
                 <div className="rounded-xl p-4"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  style={{ background: "var(--ged-header)", border: "1px solid var(--ged-border-sm)" }}>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-3 m-0"
-                    style={{ color: "rgba(168,191,212,0.35)" }}>Processus</p>
+                    style={{ color: "var(--ged-tx3)" }}>Processus</p>
                   <div className="flex items-center gap-2 flex-wrap text-[12px]"
                     style={{ color: "rgba(255,255,255,0.7)" }}>
                     {doc.strategic_process && (
@@ -266,9 +266,9 @@ function DocumentModal({ doc, loading, onClose }) {
               {/* Description */}
               {doc.description && (
                 <div className="rounded-xl p-4"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  style={{ background: "var(--ged-header)", border: "1px solid var(--ged-border-sm)" }}>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-2 m-0"
-                    style={{ color: "rgba(168,191,212,0.35)" }}>Description</p>
+                    style={{ color: "var(--ged-tx3)" }}>Description</p>
                   <p className="text-[13px] leading-relaxed m-0"
                     style={{ color: "rgba(255,255,255,0.65)" }}>
                     {doc.description}
@@ -283,7 +283,7 @@ function DocumentModal({ doc, loading, onClose }) {
               <button
                 onClick={onClose}
                 className="w-full py-2.5 rounded-xl text-[13px] font-semibold cursor-pointer"
-                style={{ background: "rgba(255,255,255,0.05)", color: "rgba(168,191,212,0.7)", border: "1px solid rgba(255,255,255,0.09)" }}
+                style={{ background: "rgba(255,255,255,0.05)", color: "var(--ged-tx2)", border: "1px solid rgba(255,255,255,0.09)" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.09)"}
                 onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
               >
@@ -464,7 +464,7 @@ export default function Notifications() {
               <LuBell size={19} style={{ color: "#4ab83f" }} />
             </div>
             <div>
-              <h1 className="text-white m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>
+              <h1 className="m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2, color:"var(--ged-tx1)" }}>
                 Notifications
               </h1>
               <p className="m-0 text-[12px] mt-0.5" style={{ color: "rgba(168,191,212,0.48)" }}>
@@ -488,7 +488,7 @@ export default function Notifications() {
               onClick={() => { fetchNotifications(); fetchExpiredDocs(); }}
               disabled={loading}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border cursor-pointer"
-              style={{ background: "rgba(255,255,255,0.05)", color: "rgba(168,191,212,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              style={{ background: "rgba(255,255,255,0.05)", color: "var(--ged-tx2)", border: "1px solid var(--ged-border-md)" }}>
               <LuRefreshCw size={13} className={loading ? "animate-spin" : ""} />
               Actualiser
             </button>
@@ -514,11 +514,11 @@ export default function Notifications() {
           ].map(stat => (
             <div key={stat.label} className="px-4 py-3 rounded-xl border"
               style={{
-                background:  stat.highlight ? "rgba(248,113,113,0.07)" : "rgba(255,255,255,0.04)",
+                background:  stat.highlight ? "rgba(248,113,113,0.07)" : "var(--ged-card)",
                 borderColor: stat.highlight ? "rgba(248,113,113,0.25)" : "rgba(255,255,255,0.07)",
               }}>
               <div className="text-[22px] font-black tabular-nums" style={{ color: stat.color }}>{stat.value}</div>
-              <div className="text-[11px] font-semibold mt-0.5" style={{ color: "rgba(168,191,212,0.5)" }}>{stat.label}</div>
+              <div className="text-[11px] font-semibold mt-0.5" style={{ color: "var(--ged-tx2)" }}>{stat.label}</div>
             </div>
           ))}
         </div>
@@ -561,7 +561,7 @@ export default function Notifications() {
               <div className="flex items-center justify-center py-8 gap-2"
                 style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
                 <LuCircleCheckBig size={16} style={{ color: "rgba(74,222,128,0.5)" }} />
-                <p className="text-[13px] font-semibold m-0" style={{ color: "rgba(168,191,212,0.4)" }}>
+                <p className="text-[13px] font-semibold m-0" style={{ color: "var(--ged-tx3)" }}>
                   Aucun document expiré
                 </p>
               </div>
@@ -599,7 +599,7 @@ export default function Notifications() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(168,191,212,0.5)" }}>
+                          <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx2)" }}>
                             <LuCalendar size={10} />
                             Révision : {fmtDate(doc.next_review_date)}
                           </span>
@@ -610,7 +610,7 @@ export default function Notifications() {
                             </span>
                           )}
                           {doc.responsible && (
-                            <span className="flex items-center gap-1 text-[11px]" style={{ color: "rgba(168,191,212,0.45)" }}>
+                            <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx3)" }}>
                               <LuUser size={10} />
                               {doc.responsible}
                             </span>
@@ -650,7 +650,7 @@ export default function Notifications() {
                 onClick={() => setFilter(tab.key)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border cursor-pointer transition-all duration-150"
                 style={{
-                  background:  active ? (cfg ? cfg.bg : "rgba(74,184,63,0.12)")    : "rgba(255,255,255,0.04)",
+                  background:  active ? (cfg ? cfg.bg : "rgba(74,184,63,0.12)")    : "var(--ged-card)",
                   borderColor: active ? (cfg ? cfg.border : "rgba(74,184,63,0.3)") : "rgba(255,255,255,0.08)",
                   color:       active ? (cfg ? cfg.color : "#4ab83f") : "rgba(168,191,212,0.55)",
                 }}>
@@ -677,9 +677,9 @@ export default function Notifications() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 rounded-2xl border"
-            style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+            style={{ border: "1px solid var(--ged-border-sm)", background: "rgba(255,255,255,0.02)" }}>
             <LuBell size={36} style={{ color: "rgba(168,191,212,0.12)", marginBottom: 12 }} />
-            <p className="text-[14px] font-semibold m-0" style={{ color: "rgba(168,191,212,0.35)" }}>
+            <p className="text-[14px] font-semibold m-0" style={{ color: "var(--ged-tx3)" }}>
               Aucune notification
             </p>
             <p className="text-[12px] mt-1 m-0" style={{ color: "rgba(168,191,212,0.2)" }}>
@@ -699,7 +699,7 @@ export default function Notifications() {
                   onClick={() => handleRowClick(n)}
                   className="flex items-start gap-4 px-5 py-4 transition-colors duration-150"
                   style={{
-                    borderBottom: idx < filtered.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                    borderBottom: idx < filtered.length - 1 ? "1px solid var(--ged-border-sm)" : "none",
                     background:   n.is_read ? "transparent" : "rgba(255,255,255,0.022)",
                     cursor:       hasDoc ? "pointer" : "default",
                   }}
@@ -727,13 +727,13 @@ export default function Notifications() {
                       {/* Doc code */}
                       {n.doc_code && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-lg"
-                          style={{ background: "rgba(255,255,255,0.06)", color: "rgba(168,191,212,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                          style={{ background: "var(--ged-card-md)", color: "var(--ged-tx2)", border: "1px solid var(--ged-border-md)" }}>
                           {n.doc_code}
                         </span>
                       )}
                       {/* Doc title */}
                       {n.doc_title && (
-                        <span className="text-[11px]" style={{ color: "rgba(168,191,212,0.4)" }}>
+                        <span className="text-[11px]" style={{ color: "var(--ged-tx3)" }}>
                           {n.doc_title}
                         </span>
                       )}
@@ -745,7 +745,7 @@ export default function Notifications() {
                         </span>
                       )}
                       {/* Time */}
-                      <span className="flex items-center gap-1 text-[10.5px] ml-auto" style={{ color: "rgba(168,191,212,0.35)" }}>
+                      <span className="flex items-center gap-1 text-[10.5px] ml-auto" style={{ color: "var(--ged-tx3)" }}>
                         <LuClock size={10} />
                         {timeAgo(n.created_at)}
                       </span>

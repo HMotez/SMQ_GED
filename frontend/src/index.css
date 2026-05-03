@@ -30,6 +30,27 @@
   --dk-shadow-lg:    0 20px 60px rgba(0,0,0,0.4);
 }
 
+/* ── GED theme tokens ─ */
+:root {
+  --ged-card:      rgba(255,255,255,0.04);
+  --ged-card-md:   rgba(255,255,255,0.06);
+  --ged-header:    rgba(255,255,255,0.03);
+  --ged-section:   rgba(255,255,255,0.035);
+  --ged-border:    rgba(255,255,255,0.08);
+  --ged-border-sm: rgba(255,255,255,0.05);
+  --ged-border-md: rgba(255,255,255,0.1);
+  --ged-tx1:       rgba(220,235,248,0.92);
+  --ged-tx2:       rgba(168,191,212,0.65);
+  --ged-tx3:       rgba(168,191,212,0.38);
+  --ged-tx4:       rgba(168,191,212,0.48);
+  --ged-input:     rgba(255,255,255,0.045);
+  --ged-input-bdr: rgba(255,255,255,0.1);
+  --ged-row-hvr:   rgba(255,255,255,0.025);
+  --ged-modal-bg:  rgba(9,18,32,0.97);
+  --ged-shadow:    0 8px 32px rgba(0,0,0,0.28);
+}
+
+
 /* ══════════════════════════════════════════════════════════
    ACTIA Logo — Dynamic global animation
    ══════════════════════════════════════════════════════════ */
@@ -211,27 +232,27 @@
   .btn-dk-green:active { transform: none; filter: brightness(0.96); }
   .btn-dk-green:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-  /* ── Dark ghost button (dark theme) ─────────────── */
+  /* ── Ghost button (theme-aware) ──────────────────── */
   .btn-dk-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: rgba(255,255,255,0.05);
-    color: rgba(168,191,212,0.75);
+    background: var(--ged-card);
+    color: var(--ged-tx2);
     font-weight: 600;
     padding: 9px 16px;
     border-radius: 10px;
-    border: 1.5px solid rgba(255,255,255,0.1);
+    border: 1.5px solid var(--ged-border-md);
     cursor: pointer;
     transition: all 0.18s ease;
     font-size: 13px;
     font-family: inherit;
   }
   .btn-dk-ghost:hover {
-    background: rgba(255,255,255,0.09);
-    color: rgba(220,235,248,0.95);
-    border-color: rgba(255,255,255,0.18);
+    background: var(--ged-card-md);
+    color: var(--ged-tx1);
+    border-color: var(--ged-border-md);
     transform: translateY(-1px);
   }
   .btn-dk-ghost:active { transform: none; }
@@ -247,28 +268,28 @@
   }
   .card:hover { box-shadow: 0 4px 16px rgba(46,74,107,0.11); }
 
-  /* ── Glass card (dark theme) ─────────────────────── */
+  /* ── Glass card (theme-aware) ────────────────────── */
   .glass-card {
-    background: rgba(255,255,255,0.04);
+    background: var(--ged-card);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1.5px solid rgba(255,255,255,0.08);
+    border: 1.5px solid var(--ged-border);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+    box-shadow: var(--ged-shadow);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
   .glass-card:hover {
-    border-color: rgba(255,255,255,0.13);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.08);
+    border-color: var(--ged-border-md);
+    box-shadow: var(--ged-shadow);
   }
 
-  /* ── Dark input ──────────────────────────────────── */
+  /* ── Dark input (theme-aware) ────────────────────── */
   .dark-input {
     width: 100%;
-    background: rgba(255,255,255,0.045);
-    border: 1.5px solid rgba(255,255,255,0.1);
+    background: var(--ged-input);
+    border: 1.5px solid var(--ged-input-bdr);
     border-radius: 10px;
-    color: rgba(220,235,248,0.9);
+    color: var(--ged-tx1);
     padding: 10px 14px;
     font-size: 13.5px;
     font-family: inherit;
@@ -280,7 +301,7 @@
     box-shadow: 0 0 0 3px rgba(74,184,63,0.13);
     background: rgba(74,184,63,0.04);
   }
-  .dark-input::placeholder { color: rgba(168,191,212,0.38); }
+  .dark-input::placeholder { color: var(--ged-tx3); }
   .dark-input:disabled { opacity: 0.45; cursor: not-allowed; }
 
   /* ── Dark input with left icon ───────────────────── */
@@ -288,13 +309,13 @@
     padding-left: 38px;
   }
 
-  /* ── Dark select ─────────────────────────────────── */
+  /* ── Dark select (theme-aware) ───────────────────── */
   .dark-select {
     width: 100%;
-    background: rgba(255,255,255,0.045);
-    border: 1.5px solid rgba(255,255,255,0.1);
+    background: var(--ged-input);
+    border: 1.5px solid var(--ged-input-bdr);
     border-radius: 10px;
-    color: rgba(220,235,248,0.88);
+    color: var(--ged-tx1);
     padding: 9px 32px 9px 12px;
     font-size: 13px;
     font-family: inherit;
@@ -313,11 +334,11 @@
   }
   .dark-select option { background: #0d1f2d; color: rgba(220,235,248,0.9); }
 
-  /* ── Dark table ──────────────────────────────────── */
+  /* ── Dark table (theme-aware) ────────────────────── */
   .dark-table { width: 100%; border-collapse: collapse; }
   .dark-table thead tr {
-    background: rgba(255,255,255,0.035);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: var(--ged-section);
+    border-bottom: 1px solid var(--ged-border);
   }
   .dark-table th {
     text-align: left;
@@ -325,18 +346,18 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.1px;
-    color: rgba(168,191,212,0.5);
+    color: var(--ged-tx2);
     padding: 11px 14px;
   }
   .dark-table td {
     padding: 12px 14px;
     font-size: 13px;
-    color: rgba(220,235,248,0.82);
-    border-bottom: 1px solid rgba(255,255,255,0.045);
+    color: var(--ged-tx1);
+    border-bottom: 1px solid var(--ged-border-sm);
     vertical-align: middle;
   }
   .dark-table tbody tr { transition: background 0.15s ease; }
-  .dark-table tbody tr:hover td { background: rgba(255,255,255,0.025); }
+  .dark-table tbody tr:hover td { background: var(--ged-row-hvr); }
   .dark-table tbody tr:last-child td { border-bottom: none; }
 
   /* ── Sidebar nav link ────────────────────────────── */
@@ -379,17 +400,17 @@
     margin-bottom: 12px;
   }
 
-  /* ── Page title (dark theme) ─────────────────────── */
+  /* ── Page title (theme-aware) ────────────────────── */
   .page-title {
     font-size: 21px;
     font-weight: 800;
-    color: rgba(220,235,248,0.96);
+    color: var(--ged-tx1);
     letter-spacing: -0.028em;
     line-height: 1.2;
   }
   .page-subtitle {
     font-size: 12.5px;
-    color: rgba(168,191,212,0.58);
+    color: var(--ged-tx2);
     margin-top: 4px;
     line-height: 1.4;
   }
@@ -427,43 +448,44 @@
     border: 1px solid transparent;
   }
 
-  /* ── KPI stat card ───────────────────────────────── */
+  /* ── KPI stat card (theme-aware) ─────────────────── */
   .stat-card {
-    background: rgba(255,255,255,0.04);
+    background: var(--ged-card);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1.5px solid rgba(255,255,255,0.08);
+    border: 1.5px solid var(--ged-border);
     border-radius: 16px;
     padding: 20px;
     transition: all 0.22s ease;
   }
   .stat-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(255,255,255,0.14);
-    box-shadow: 0 12px 36px rgba(0,0,0,0.32);
+    border-color: var(--ged-border-md);
+    box-shadow: var(--ged-shadow);
   }
   .stat-value {
     font-size: 32px;
     font-weight: 900;
     letter-spacing: -0.04em;
     line-height: 1;
+    color: var(--ged-tx1);
   }
   .stat-label {
     font-size: 11.5px;
     font-weight: 600;
-    color: rgba(168,191,212,0.55);
+    color: var(--ged-tx2);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-top: 6px;
   }
 
-  /* ── Info row ────────────────────────────────────── */
+  /* ── Info row (theme-aware) ──────────────────────── */
   .info-row {
     display: flex;
     align-items: flex-start;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--ged-border-sm);
   }
   .info-row:last-child { border-bottom: none; }
   .info-row-label {
@@ -471,18 +493,18 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: rgba(168,191,212,0.45);
+    color: var(--ged-tx3);
     min-width: 90px;
     flex-shrink: 0;
     margin-top: 1px;
   }
   .info-row-value {
     font-size: 13px;
-    color: rgba(220,235,248,0.88);
+    color: var(--ged-tx1);
     font-weight: 500;
   }
 
-  /* ── Empty state ─────────────────────────────────── */
+  /* ── Empty state (theme-aware) ───────────────────── */
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -490,19 +512,19 @@
     justify-content: center;
     gap: 10px;
     padding: 48px 24px;
-    color: rgba(168,191,212,0.4);
+    color: var(--ged-tx3);
   }
   .empty-state-icon { opacity: 0.35; }
-  .empty-state-text { font-size: 13.5px; font-weight: 500; }
-  .empty-state-sub  { font-size: 12px; color: rgba(168,191,212,0.3); }
+  .empty-state-text { font-size: 13.5px; font-weight: 500; color: var(--ged-tx2); }
+  .empty-state-sub  { font-size: 12px; color: var(--ged-tx3); }
 
-  /* ── Search bar ──────────────────────────────────── */
+  /* ── Search bar (theme-aware) ────────────────────── */
   .search-bar {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255,255,255,0.045);
-    border: 1.5px solid rgba(255,255,255,0.09);
+    background: var(--ged-input);
+    border: 1.5px solid var(--ged-input-bdr);
     border-radius: 10px;
     padding: 0 12px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -515,13 +537,13 @@
     background: transparent;
     border: none;
     outline: none;
-    color: rgba(220,235,248,0.88);
+    color: var(--ged-tx1);
     font-size: 13px;
     font-family: inherit;
     padding: 9px 0;
     width: 100%;
   }
-  .search-bar input::placeholder { color: rgba(168,191,212,0.38); }
+  .search-bar input::placeholder { color: var(--ged-tx3); }
 
   /* ── Modal overlay ───────────────────────────────── */
   .modal-overlay {
@@ -537,14 +559,14 @@
     padding: 16px;
   }
 
-  /* ── Modal panel ─────────────────────────────────── */
+  /* ── Modal panel (theme-aware) ───────────────────── */
   .modal-panel {
-    background: rgba(9,18,32,0.97);
+    background: var(--ged-modal-bg);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
-    border: 1.5px solid rgba(255,255,255,0.1);
+    border: 1.5px solid var(--ged-border-md);
     border-radius: 20px;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.07);
+    box-shadow: var(--ged-shadow);
   }
 
   /* ── ACTIA Logo grid dots ────────────────────────── */
@@ -555,10 +577,10 @@
     background-color: var(--actia-green);
   }
 
-  /* ── Divider ─────────────────────────────────────── */
+  /* ── Divider (theme-aware) ───────────────────────── */
   .dk-divider {
     height: 1px;
-    background: rgba(255,255,255,0.065);
+    background: var(--ged-border);
     border: none;
     margin: 0;
   }
@@ -586,7 +608,7 @@
     flex-shrink: 0;
   }
 
-  /* ── Tab button ──────────────────────────────────── */
+  /* ── Tab button (theme-aware) ────────────────────── */
   .tab-btn {
     display: inline-flex;
     align-items: center;
@@ -599,12 +621,12 @@
     cursor: pointer;
     transition: all 0.18s ease;
     background: transparent;
-    color: rgba(168,191,212,0.6);
+    color: var(--ged-tx2);
     font-family: inherit;
   }
   .tab-btn:hover {
-    background: rgba(255,255,255,0.055);
-    color: rgba(220,235,248,0.9);
+    background: var(--ged-card);
+    color: var(--ged-tx1);
   }
   .tab-btn.active {
     background: rgba(74,184,63,0.14);
@@ -613,7 +635,7 @@
     box-shadow: 0 2px 10px rgba(74,184,63,0.1);
   }
 
-  /* ── Chip / filter button ────────────────────────── */
+  /* ── Chip / filter button (theme-aware) ─────────── */
   .filter-chip {
     display: inline-flex;
     align-items: center;
@@ -622,18 +644,18 @@
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1.5px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.04);
-    color: rgba(168,191,212,0.65);
+    border: 1.5px solid var(--ged-border);
+    background: var(--ged-card);
+    color: var(--ged-tx2);
     cursor: pointer;
     transition: all 0.16s ease;
     font-family: inherit;
     white-space: nowrap;
   }
   .filter-chip:hover {
-    background: rgba(255,255,255,0.08);
-    color: rgba(220,235,248,0.9);
-    border-color: rgba(255,255,255,0.14);
+    background: var(--ged-card-md);
+    color: var(--ged-tx1);
+    border-color: var(--ged-border-md);
   }
   .filter-chip.active {
     background: rgba(74,184,63,0.13);

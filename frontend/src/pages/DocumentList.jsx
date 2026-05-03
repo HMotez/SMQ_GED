@@ -72,7 +72,7 @@ function LifecycleBar({ currentStatus }) {
   const idx = ISO_LIFECYCLE.indexOf(currentStatus);
   return (
     <div className="mb-5">
-      <p className="text-xs uppercase tracking-wider mb-2 font-semibold" style={{ color:"rgba(168,191,212,0.6)" }}>Cycle de vie ISO 9001</p>
+      <p className="text-xs uppercase tracking-wider mb-2 font-semibold" style={{ color:"var(--ged-tx2)" }}>Cycle de vie ISO 9001</p>
       <div className="flex items-center overflow-x-auto pb-1">
         {ISO_LIFECYCLE.map((s, i) => {
           const cfg = sCfg(s);
@@ -82,15 +82,15 @@ function LifecycleBar({ currentStatus }) {
             <div key={s} className="flex items-center">
               <div className="flex flex-col items-center gap-1 min-w-[56px]">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center border-2" style={{
-                  background:curr?cfg.bg:done?"rgba(74,184,63,0.12)":"rgba(255,255,255,0.04)",
+                  background:curr?cfg.bg:done?"rgba(74,184,63,0.12)":"var(--ged-card)",
                   borderColor:curr?cfg.border:done?"rgba(74,184,63,0.4)":"rgba(255,255,255,0.1)",
                 }}>
                   {done ? <LuCheck size={12} style={{ color:"#4ade80" }} />
                         : curr ? <CI size={12} style={{ color:cfg.text }} />
-                        : <span className="text-xs" style={{ color:"rgba(168,191,212,0.4)" }}>{i+1}</span>}
+                        : <span className="text-xs" style={{ color:"var(--ged-tx3)" }}>{i+1}</span>}
                 </div>
                 <span className="text-[10px] text-center leading-tight max-w-[52px] break-words"
-                  style={{ color:curr?cfg.text:done?"#4ade80":"rgba(168,191,212,0.4)", fontWeight:curr?700:400 }}>{s}</span>
+                  style={{ color:curr?cfg.text:done?"#4ade80":"var(--ged-tx3)", fontWeight:curr?700:400 }}>{s}</span>
               </div>
               {i < ISO_LIFECYCLE.length - 1 && (
                 <div className="h-0.5 w-3 flex-shrink-0 mb-4" style={{ background:done?"rgba(74,184,63,0.4)":"rgba(255,255,255,0.08)" }} />
@@ -109,8 +109,8 @@ function PagBtn({ label, target, current, disabled=false, onChange }) {
     <button onClick={() => !disabled && onChange(target)} disabled={disabled}
       className="px-2.5 py-1 rounded-lg text-sm transition-all border"
       style={{
-        background:target===current?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.04)",
-        color:target===current?"white":disabled?"rgba(168,191,212,0.3)":"rgba(168,191,212,0.7)",
+        background:target===current?"rgba(255,255,255,0.15)":"var(--ged-card)",
+        color:target===current?"white":disabled?"var(--ged-tx3)":"var(--ged-tx2)",
         borderColor:target===current?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)",
         fontWeight:target===current?700:400,
         cursor:disabled?"default":"pointer",
@@ -127,12 +127,12 @@ function Pagination({ page, totalPages, onChange }) {
     <div className="flex items-center gap-1 justify-center py-5">
       <PagBtn label="«" target={1}          current={page} disabled={page===1}          onChange={onChange} />
       <PagBtn label="‹" target={page-1}     current={page} disabled={page===1}          onChange={onChange} />
-      {start > 1 && <span className="px-1" style={{ color:"rgba(168,191,212,0.4)" }}>…</span>}
+      {start > 1 && <span className="px-1" style={{ color:"var(--ged-tx3)" }}>…</span>}
       {pages.map(p => <PagBtn key={p} label={p} target={p} current={page} onChange={onChange} />)}
-      {end < totalPages && <span className="px-1" style={{ color:"rgba(168,191,212,0.4)" }}>…</span>}
+      {end < totalPages && <span className="px-1" style={{ color:"var(--ged-tx3)" }}>…</span>}
       <PagBtn label="›" target={page+1}     current={page} disabled={page===totalPages} onChange={onChange} />
       <PagBtn label="»" target={totalPages} current={page} disabled={page===totalPages} onChange={onChange} />
-      <span className="text-sm ml-2" style={{ color:"rgba(168,191,212,0.5)" }}>Page {page} / {totalPages}</span>
+      <span className="text-sm ml-2" style={{ color:"var(--ged-tx2)" }}>Page {page} / {totalPages}</span>
     </div>
   );
 }
@@ -165,20 +165,20 @@ function ProcessDropdown({ folderTree, value, onChange }) {
       <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm outline-none transition-all"
         style={{
-          background: value ? "rgba(74,184,63,0.08)" : "rgba(255,255,255,0.04)",
-          borderColor: value ? "rgba(74,184,63,0.4)" : "rgba(255,255,255,0.1)",
-          color: value ? "rgba(255,255,255,0.9)" : "rgba(168,191,212,0.55)",
+          background: value ? "rgba(74,184,63,0.08)" : "var(--ged-input)",
+          borderColor: value ? "rgba(74,184,63,0.4)" : "var(--ged-border-md)",
+          color: value ? "var(--ged-tx1)" : "var(--ged-tx2)",
           cursor: "pointer",
         }}>
         <span className="truncate">{label}</span>
-        <LuChevronDown size={13} style={{ flexShrink:0, marginLeft:6, color:"rgba(168,191,212,0.4)", transform: open?"rotate(180deg)":"none", transition:"transform 0.2s" }} />
+        <LuChevronDown size={13} style={{ flexShrink:0, marginLeft:6, color:"var(--ged-tx3)", transform: open?"rotate(180deg)":"none", transition:"transform 0.2s" }} />
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1.5 rounded-xl overflow-hidden z-50"
-          style={{ background:"rgba(10,22,36,0.98)", border:"1px solid rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.6)", minWidth:"100%", maxHeight:280, overflowY:"auto" }}>
+          style={{ background:"var(--ged-modal-bg)", border:"1px solid var(--ged-border-md)", boxShadow:"var(--ged-shadow)", minWidth:"100%", maxHeight:280, overflowY:"auto" }}>
           <button type="button" onClick={() => { onChange(""); setOpen(false); }}
             className="w-full text-left px-4 py-2 text-sm"
-            style={{ color: !value ? "#4ade80" : "rgba(168,191,212,0.5)", background: !value ? "rgba(74,184,63,0.08)" : "transparent" }}>
+            style={{ color: !value ? "#4ade80" : "var(--ged-tx2)", background: !value ? "rgba(74,184,63,0.08)" : "transparent" }}>
             Tous les processus
           </button>
           {folderTree.map(strategic => (
@@ -192,7 +192,7 @@ function ProcessDropdown({ folderTree, value, onChange }) {
                   onClick={() => { onChange(String(main.id)); setOpen(false); }}
                   className="w-full text-left px-5 py-2 text-sm transition-all"
                   style={{
-                    color: String(main.id) === String(value) ? "#4ade80" : "rgba(168,191,212,0.8)",
+                    color: String(main.id) === String(value) ? "#4ade80" : "var(--ged-tx1)",
                     background: String(main.id) === String(value) ? "rgba(74,184,63,0.1)" : "transparent",
                   }}
                   onMouseEnter={e => { if (String(main.id) !== String(value)) e.currentTarget.style.background="rgba(255,255,255,0.05)"; }}
@@ -395,9 +395,9 @@ export default function DocumentList() {
 
   /* ── Input/select shared dark style ─────────────────────── */
   const inputStyle = (active) => ({
-    background: active ? "rgba(74,184,63,0.08)" : "rgba(255,255,255,0.04)",
-    borderColor: active ? "rgba(74,184,63,0.4)" : "rgba(255,255,255,0.1)",
-    color: "rgba(255,255,255,0.85)",
+    background: active ? "rgba(74,184,63,0.08)" : "var(--ged-input)",
+    borderColor: active ? "rgba(74,184,63,0.4)" : "var(--ged-border-md)",
+    color: "var(--ged-tx1)",
   });
 
   /* ── Sidebar middle content ───────────────────────────────── */
@@ -408,14 +408,14 @@ export default function DocumentList() {
           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold border transition-all"
           style={{
             background:filters.overdue?"rgba(251,146,60,0.12)":"transparent",
-            borderColor:filters.overdue?"rgba(251,146,60,0.3)":"rgba(255,255,255,0.08)",
-            color:filters.overdue?"#fb923c":"rgba(168,191,212,0.7)",
+            borderColor:filters.overdue?"rgba(251,146,60,0.3)":"var(--ged-border)",
+            color:filters.overdue?"#fb923c":"var(--ged-tx2)",
           }}>
           <span className="flex items-center gap-1.5"><LuClock size={13} /> En retard</span>
           {stats.overdue > 0 && <span className="rounded-full px-1.5 py-px text-[11px] font-bold" style={{ background:"#ea580c", color:"white" }}>{stats.overdue}</span>}
         </button>
       )}
-      <p className="text-[10px] uppercase tracking-[1px] font-bold px-1 mt-2 mb-1" style={{ color:"rgba(168,191,212,0.4)" }}>Par statut</p>
+      <p className="text-[10px] uppercase tracking-[1px] font-bold px-1 mt-2 mb-1" style={{ color:"var(--ged-tx3)" }}>Par statut</p>
       {ISO_LIFECYCLE.filter(s => !isVisiteur || s === "Archivé").map(s => {
         const cnt = stats.byStatus?.[s] || 0;
         if (!cnt) return null;
@@ -428,11 +428,11 @@ export default function DocumentList() {
             style={{
               background:active?`${cfg.bg}`:"transparent",
               borderColor:active?cfg.border:"transparent",
-              color:active?cfg.text:"rgba(168,191,212,0.6)",
+              color:active?cfg.text:"var(--ged-tx2)",
               cursor:isVisiteur?"default":"pointer",
             }}>
             <span className="flex items-center gap-1"><CI size={10} /> {s}</span>
-            <span className="rounded-full px-1.5 py-px text-[11px]" style={{ color:"rgba(168,191,212,0.5)" }}>{cnt}</span>
+            <span className="rounded-full px-1.5 py-px text-[11px]" style={{ color:"var(--ged-tx2)" }}>{cnt}</span>
           </button>
         );
       })}
@@ -442,15 +442,15 @@ export default function DocumentList() {
   const sidebarBottom = (
     <>
       <div className="rounded-xl px-3.5 py-3 border" style={{ background:"rgba(74,184,63,0.08)", borderColor:"rgba(74,184,63,0.2)" }}>
-        <p className="text-[10px] uppercase tracking-[1px] font-bold m-0" style={{ color:"rgba(168,191,212,0.5)" }}>Total</p>
+        <p className="text-[10px] uppercase tracking-[1px] font-bold m-0" style={{ color:"var(--ged-tx2)" }}>Total</p>
         <p className="font-black text-2xl m-0" style={{ color:"#4ab83f" }}>{stats.total}</p>
-        <p className="text-xs m-0 mt-0.5" style={{ color:"rgba(168,191,212,0.4)" }}>documents</p>
+        <p className="text-xs m-0 mt-0.5" style={{ color:"var(--ged-tx3)" }}>documents</p>
       </div>
     </>
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+    <div className="min-h-screen flex" style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         .animate-fade-in { animation: fadeIn 0.2s ease; }
@@ -464,20 +464,20 @@ export default function DocumentList() {
 
         {/* ── Header ────────────────────────────────────────── */}
         <header className="flex items-center justify-between px-8 py-4 border-b"
-          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
+          style={{ background:"var(--ged-header)", backdropFilter:"blur(20px)", borderColor:"var(--ged-border)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.18),rgba(74,184,63,0.08))", border:"1.5px solid rgba(74,184,63,0.3)", boxShadow:"0 4px 14px rgba(74,184,63,0.15)" }}>
               <LuFileText size={19} style={{ color:"#4ab83f" }} />
             </div>
             <div>
-              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>
+              <h1 className="m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2, color:"var(--ged-tx1)" }}>
                 {isVisiteur ? "Documents archivés" : "Documents"}
               </h1>
-              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"var(--ged-tx4)" }}>
                 {pagination.total} document{pagination.total>1?"s":""}
                 {!isVisiteur && filters.overdue    && <span style={{ color:"#fb923c" }}> · En retard</span>}
-                {!isVisiteur && filters.statusName && <span style={{ color:"rgba(168,191,212,0.7)" }}> · {filters.statusName}</span>}
+                {!isVisiteur && filters.statusName && <span style={{ color:"var(--ged-tx2)" }}> · {filters.statusName}</span>}
               </p>
             </div>
           </div>
@@ -491,10 +491,10 @@ export default function DocumentList() {
 
         {/* ── Filter bar ────────────────────────────────────── */}
         <div className="px-8 py-3.5 border-b flex flex-col gap-2.5"
-          style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.06)" }}>
+          style={{ background:"var(--ged-header)", borderColor:"var(--ged-border-sm)" }}>
           <div className="flex gap-2.5 flex-wrap">
             <div className="relative flex-shrink-0 w-[190px]">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm font-mono" style={{ color:"rgba(168,191,212,0.5)" }}>#</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm font-mono" style={{ color:"var(--ged-tx2)" }}>#</span>
               <input placeholder="Référence…" value={filters.docCode} onChange={(e) => setFilter("docCode", e.target.value)}
                 className="w-full pl-6 pr-3 py-2 rounded-lg border text-sm outline-none transition-all"
                 style={inputStyle(!!filters.docCode)} />
@@ -535,16 +535,16 @@ export default function DocumentList() {
               <button onClick={() => setFilter("overdue", !filters.overdue)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold border transition-all"
                 style={{
-                  background:filters.overdue?"rgba(251,146,60,0.1)":"rgba(255,255,255,0.04)",
+                  background:filters.overdue?"rgba(251,146,60,0.1)":"var(--ged-card)",
                   borderColor:filters.overdue?"rgba(251,146,60,0.35)":"rgba(255,255,255,0.1)",
-                  color:filters.overdue?"#fb923c":"rgba(168,191,212,0.6)",
+                  color:filters.overdue?"#fb923c":"var(--ged-tx2)",
                 }}>
                 <LuClock size={13} /> En retard {filters.overdue && <LuCheck size={12} />}
               </button>
             )}
             {hasActiveFilters && (
               <button onClick={clearAllFilters} className="ml-auto flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm border transition-all"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)" }}>
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)" }}>
                 <LuX size={12} /> Effacer tout
               </button>
             )}
@@ -565,14 +565,14 @@ export default function DocumentList() {
         {/* ── Document table ─────────────────────────────────── */}
         <div className="flex-1 px-8 py-5">
           {loading ? (
-            <div className="flex flex-col items-center gap-3 py-16" style={{ color:"rgba(168,191,212,0.5)" }}>
+            <div className="flex flex-col items-center gap-3 py-16" style={{ color:"var(--ged-tx2)" }}>
               <LuRefreshCw size={32} className="animate-spin" style={{ color:"rgba(74,184,63,0.5)" }} />
               <p className="m-0 text-sm">Chargement…</p>
             </div>
           ) : documents.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
-              <LuInbox size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-              <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Aucun document trouvé</p>
+              <LuInbox size={40} style={{ color:"var(--ged-tx3)" }} />
+              <p className="m-0 text-sm" style={{ color:"var(--ged-tx2)" }}>Aucun document trouvé</p>
               {hasActiveFilters && (
                 <button onClick={clearAllFilters} className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
                   style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)" }}>
@@ -583,11 +583,11 @@ export default function DocumentList() {
           ) : (
             <>
               {/* Table */}
-              <div className="rounded-2xl overflow-hidden border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+              <div className="rounded-2xl overflow-hidden border" style={{ background:"var(--ged-header)", borderColor:"var(--ged-border)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                 {/* Header */}
-                <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:"240px 1fr 120px 80px 130px 105px 28px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                <div className="grid px-5 py-2.5 border-b" style={{ gridTemplateColumns:"240px 1fr 120px 80px 130px 105px 28px", background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.07)" }}>
                   {["Référence","Titre","Responsable","Type","Statut","Revue",""].map(h => (
-                    <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]" style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
+                    <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]" style={{ color:"var(--ged-tx2)" }}>{h}</span>
                   ))}
                 </div>
                 {/* Rows */}
@@ -614,17 +614,17 @@ export default function DocumentList() {
                     <div className="overflow-hidden pr-3">
                       <p className="m-0 text-sm font-medium text-white truncate" title={doc.title}>{doc.title}</p>
                       {doc.folder_name && (
-                        <p className="m-0 mt-0.5 text-xs flex items-center gap-1" style={{ color:"rgba(168,191,212,0.45)" }}>
+                        <p className="m-0 mt-0.5 text-xs flex items-center gap-1" style={{ color:"var(--ged-tx3)" }}>
                           <LuFolder size={10} /> {doc.folder_name}
                         </p>
                       )}
                     </div>
-                    <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible||"—"}</span>
+                    <span className="text-sm truncate" style={{ color:"var(--ged-tx2)" }}>{doc.responsible||"—"}</span>
                     <span className="px-2 py-0.5 rounded-md text-[13px] font-semibold w-fit border" style={{ background:"rgba(96,165,250,0.1)", color:"#60a5fa", borderColor:"rgba(96,165,250,0.2)" }}>
                       {doc.type_code}
                     </span>
                     <StatusBadge name={doc.status_name} />
-                    <span className="text-sm" style={{ color:doc.is_overdue?"#fb923c":"rgba(168,191,212,0.5)", fontWeight:doc.is_overdue?600:400 }}>
+                    <span className="text-sm" style={{ color:doc.is_overdue?"#fb923c":"var(--ged-tx2)", fontWeight:doc.is_overdue?600:400 }}>
                       {doc.next_review_date ? new Date(doc.next_review_date).toLocaleDateString("fr-FR") : "—"}
                     </span>
                     <span className="flex items-center">
@@ -665,14 +665,14 @@ export default function DocumentList() {
                     </span>
                   )}
                   <StatusBadge name={selected.status_name} size="lg" />
-                  <button onClick={closeDoc} className="p-1 flex items-center" style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>
+                  <button onClick={closeDoc} className="p-1 flex items-center" style={{ color:"var(--ged-tx2)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="var(--ged-tx2)"}>
                     <LuX size={18} />
                   </button>
                 </div>
               </div>
 
               {/* Tab bar */}
-              <div className="flex items-end gap-0.5 mb-5 border-b" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+              <div className="flex items-end gap-0.5 mb-5 border-b" style={{ borderColor:"var(--ged-border)" }}>
                 {[
                   { id:"detail",       label:"Détail" },
                   { id:"consultation", label:"Consultation", count: timeline.length },
@@ -680,7 +680,7 @@ export default function DocumentList() {
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                     className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
                     style={{
-                      color: activeTab === tab.id ? "#fff" : "rgba(168,191,212,0.45)",
+                      color: activeTab === tab.id ? "var(--ged-tx1)" : "var(--ged-tx3)",
                       borderBottomColor: activeTab === tab.id ? "#4ab83f" : "transparent",
                       background: activeTab === tab.id ? "rgba(74,184,63,0.06)" : "transparent",
                       cursor: "pointer", marginBottom: -1,
@@ -688,7 +688,7 @@ export default function DocumentList() {
                     {tab.label}
                     {tab.count > 0 && (
                       <span className="rounded-full px-1.5 py-px text-[10px] font-black"
-                        style={{ background: activeTab === tab.id ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.06)", color: activeTab === tab.id ? "#4ab83f" : "rgba(168,191,212,0.35)" }}>
+                        style={{ background: activeTab === tab.id ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.06)", color: activeTab === tab.id ? "#4ab83f" : "var(--ged-tx3)" }}>
                         {tab.count}
                       </span>
                     )}
@@ -703,22 +703,22 @@ export default function DocumentList() {
               <LifecycleBar currentStatus={selected.status_name} />
 
               {/* Status transition */}
-              <div className="rounded-xl px-4 py-3.5 mb-5 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)" }}>
+              <div className="rounded-xl px-4 py-3.5 mb-5 border" style={{ background:"var(--ged-header)", borderColor:"var(--ged-border)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} />
-                  <p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>Transition de statut</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"var(--ged-tx2)" }}>Transition de statut</p>
                 </div>
                 {isTerminal(selected.status_name) ? (
-                  <p className="m-0 text-sm flex items-center gap-1.5" style={{ color:"rgba(168,191,212,0.5)" }}><LuArchive size={13} /> Document archivé — état terminal.</p>
+                  <p className="m-0 text-sm flex items-center gap-1.5" style={{ color:"var(--ged-tx2)" }}><LuArchive size={13} /> Document archivé — état terminal.</p>
                 ) : nextSteps(selected.status_name).length === 0 ? (
-                  <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Aucune transition disponible.</p>
+                  <p className="m-0 text-sm" style={{ color:"var(--ged-tx2)" }}>Aucune transition disponible.</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {selected.status_name === "En validation" && (
                       <div className="rounded-xl px-3 py-2.5 border flex items-start gap-2 mb-1"
                         style={{ background:"rgba(165,180,252,0.08)", borderColor:"rgba(165,180,252,0.25)" }}>
                         <LuClipboardCheck size={14} style={{ color:"#a5b4fc", flexShrink:0, marginTop:1 }} />
-                        <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.75)" }}>
+                        <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
                           Pour valider ce document, utilisez la page{" "}
                           <NavLink to="/validations" className="font-bold no-underline" style={{ color:"#a5b4fc" }}>Validations</NavLink>
                           {" "}pour approuver ou rejeter.
@@ -733,7 +733,7 @@ export default function DocumentList() {
                       return (
                         <button key={next} onClick={() => allowed && handleStatusChange(next)} disabled={statusChanging||!allowed} title={reason||undefined}
                           className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold border transition-all"
-                          style={{ background:allowed?cfg.bg:"rgba(255,255,255,0.03)", borderColor:allowed?cfg.border:"rgba(255,255,255,0.08)", color:allowed?cfg.text:"rgba(168,191,212,0.35)", cursor:(statusChanging||!allowed)?"not-allowed":"pointer" }}>
+                          style={{ background:allowed?cfg.bg:"var(--ged-card)", borderColor:allowed?cfg.border:"var(--ged-border)", color:allowed?cfg.text:"var(--ged-tx3)", cursor:(statusChanging||!allowed)?"not-allowed":"pointer" }}>
                           <span className="flex items-center gap-1.5"><NI size={13} /> Passer à : <strong>{next}</strong></span>
                           <span>{allowed?<LuArrowRight size={13} />:<LuLock size={13} />}</span>
                         </button>
@@ -762,8 +762,8 @@ export default function DocumentList() {
                   ["Créé le",        selected.created_at?new Date(selected.created_at).toLocaleDateString("fr-FR"):"—"],
                   ["Créé par",       selected.created_by_name||"—"],
                 ].map(([l,v]) => (
-                  <div key={l} className="rounded-lg px-3.5 py-2.5 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
-                    <p className="m-0 mb-0.5 text-xs uppercase tracking-[0.8px]" style={{ color:"rgba(168,191,212,0.45)" }}>{l}</p>
+                  <div key={l} className="rounded-lg px-3.5 py-2.5 border" style={{ background:"var(--ged-header)", borderColor:"rgba(255,255,255,0.07)" }}>
+                    <p className="m-0 mb-0.5 text-xs uppercase tracking-[0.8px]" style={{ color:"var(--ged-tx3)" }}>{l}</p>
                     <p className="m-0 text-sm font-medium text-white">{v}</p>
                   </div>
                 ))}
@@ -772,7 +772,7 @@ export default function DocumentList() {
               {/* Keywords */}
               {selected.keywords?.length > 0 && (
                 <div className="mb-5">
-                  <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>Mots-clés</p></div>
+                  <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"var(--ged-tx2)" }}>Mots-clés</p></div>
                   <div className="flex gap-1.5 flex-wrap">
                     {selected.keywords.map(k => (
                       <span key={k} className="rounded-full text-sm px-2.5 py-0.5 border" style={{ background:"rgba(96,165,250,0.1)", color:"#60a5fa", borderColor:"rgba(96,165,250,0.2)" }}>{k}</span>
@@ -783,12 +783,12 @@ export default function DocumentList() {
 
               {/* File */}
               {selected.file_name && (
-                <div className="rounded-xl px-4 py-3.5 mb-5 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
+                <div className="rounded-xl px-4 py-3.5 mb-5 border" style={{ background:"var(--ged-header)", borderColor:"rgba(255,255,255,0.07)" }}>
                   <div className="flex items-center gap-3 mb-3">
-                    <LuFileText size={24} style={{ color:"rgba(168,191,212,0.4)" }} />
+                    <LuFileText size={24} style={{ color:"var(--ged-tx3)" }} />
                     <div>
                       <p className="m-0 text-sm font-semibold text-white">{selected.file_name}</p>
-                      <p className="m-0 mt-0.5 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>Fichier document</p>
+                      <p className="m-0 mt-0.5 text-xs" style={{ color:"var(--ged-tx3)" }}>Fichier document</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -801,14 +801,14 @@ export default function DocumentList() {
                       <button
                         onClick={() => setDownloadOpen(o => !o)}
                         className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold border transition-all"
-                        style={{ background:"rgba(255,255,255,0.06)", borderColor:"rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.8)" }}>
+                        style={{ background:"var(--ged-card-md)", borderColor:"rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.8)" }}>
                         <LuDownload size={14} /> Télécharger
                       </button>
                       {downloadOpen && (
                         <div className="absolute top-[calc(100%+6px)] left-0 right-0 rounded-xl overflow-hidden z-20 border"
                           style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.55)", minWidth:"260px" }}>
                           <p className="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider border-b m-0"
-                            style={{ color:"rgba(168,191,212,0.45)", borderColor:"rgba(255,255,255,0.07)" }}>
+                            style={{ color:"var(--ged-tx3)", borderColor:"rgba(255,255,255,0.07)" }}>
                             Format de téléchargement
                           </p>
                           {versions.slice(-1).map(v => (
@@ -818,7 +818,7 @@ export default function DocumentList() {
                                 <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded flex-shrink-0" style={{ background:"rgba(74,184,63,0.12)", color:"#4ab83f" }}>
                                   {v.version_letter}
                                 </span>
-                                <span className="text-xs truncate" style={{ color:"rgba(168,191,212,0.45)" }}>
+                                <span className="text-xs truncate" style={{ color:"var(--ged-tx3)" }}>
                                   {v.created_at ? new Date(v.created_at).toLocaleDateString("fr-FR") : "—"}
                                   {v.change_summary ? ` — ${v.change_summary}` : ""}
                                 </span>
@@ -828,9 +828,9 @@ export default function DocumentList() {
                                   <button key={ext}
                                     onClick={() => { handleDownloadAs(v.file_path, ext); setDownloadOpen(false); }}
                                     className="px-2 py-0.5 rounded text-[10px] font-bold border transition-all"
-                                    style={{ background:"rgba(255,255,255,0.04)", borderColor:`${color}40`, color, cursor:"pointer" }}
+                                    style={{ background:"var(--ged-card)", borderColor:`${color}40`, color, cursor:"pointer" }}
                                     onMouseEnter={e => { e.currentTarget.style.background=`${color}22`; e.currentTarget.style.borderColor=color; }}
-                                    onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor=`${color}40`; }}>
+                                    onMouseLeave={e => { e.currentTarget.style.background="var(--ged-card)"; e.currentTarget.style.borderColor=`${color}40`; }}>
                                     {ext === "docx" ? "Word" : ext === "xlsx" ? "Excel" : "PDF"}
                                   </button>
                                 ))}
@@ -857,25 +857,25 @@ export default function DocumentList() {
               {/* Version history */}
               {versions.length > 0 && (
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"rgba(168,191,212,0.6)" }}>🕐 Historique versions</p></div>
+                  <div className="flex items-center gap-2 mb-3"><div className="w-0.5 h-3.5 rounded-full" style={{ background:"#4ab83f" }} /><p className="text-xs font-semibold uppercase tracking-wider m-0" style={{ color:"var(--ged-tx2)" }}>🕐 Historique versions</p></div>
                   {versions.map((v, idx) => {
                     return (
-                    <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.07)" }}>
+                    <div key={v.id} className="rounded-lg mb-1.5 px-3 py-2 border" style={{ background:"var(--ged-header)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex justify-between items-center gap-2">
                         <span className="font-mono font-bold text-sm text-white">{v.version_letter || "-"}</span>
-                        <span className="text-sm flex-1" style={{ color:"rgba(168,191,212,0.5)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
+                        <span className="text-sm flex-1" style={{ color:"var(--ged-tx2)" }}>{v.created_at?new Date(v.created_at).toLocaleDateString("fr-FR"):"—"}</span>
                         {v.file_path && (
                           <div className="flex gap-1.5">
                             <button onClick={() => { setPreviewFile(v.file_path); setPreviewOpen(true); }}
                               className="rounded-md px-2 py-0.5 text-xs flex items-center gap-1 border transition-all"
-                              style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
+                              style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)", cursor:"pointer" }}>
                               <LuEye size={12} /> Consulter
                             </button>
                             <DownloadMenu filename={v.file_path} size="small" />
                           </div>
                         )}
                       </div>
-                      {v.change_summary && <p className="m-0 mt-1 text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>{v.change_summary}</p>}
+                      {v.change_summary && <p className="m-0 mt-1 text-sm" style={{ color:"var(--ged-tx2)" }}>{v.change_summary}</p>}
                       {v.sharepoint_link && v.version_letter !== "-" && (
                         <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
                           className="mt-1 inline-flex items-center gap-1 text-xs font-medium"
@@ -896,8 +896,8 @@ export default function DocumentList() {
                 <div>
                   {timeline.length === 0 ? (
                     <div className="flex flex-col items-center py-12 gap-3">
-                      <LuFileText size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                      <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune activité enregistrée.</p>
+                      <LuFileText size={32} style={{ color:"var(--ged-tx3)" }} />
+                      <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune activité enregistrée.</p>
                     </div>
                   ) : (
                     <div className="relative pl-2">
@@ -928,25 +928,25 @@ export default function DocumentList() {
                               <div className="flex-1 min-w-0 pt-1.5">
                                 <div className="flex items-center justify-between gap-2 mb-1">
                                   <span className="text-sm font-bold" style={{ color:cfg.text }}>{cfg.label}</span>
-                                  <span className="text-[11px] flex-shrink-0" style={{ color:"rgba(168,191,212,0.35)" }}>
+                                  <span className="text-[11px] flex-shrink-0" style={{ color:"var(--ged-tx3)" }}>
                                     {event.timestamp ? new Date(event.timestamp).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
                                   </span>
                                 </div>
                                 {event.type === "LOG" && details.from && details.to && (
-                                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                    <span style={{ color:"rgba(168,191,212,0.38)" }}>{details.from}</span>
+                                  <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
+                                    <span style={{ color:"var(--ged-tx3)" }}>{details.from}</span>
                                     {" "}<span style={{ color:cfg.text }}>→</span>{" "}
                                     <span className="font-semibold text-white">{details.to}</span>
                                   </p>
                                 )}
                                 {event.type === "VERSION" && (
-                                  <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                  <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
                                     <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>{event.version_letter}</span>
                                     {event.change_summary && <span> · {event.change_summary}</span>}
                                   </p>
                                 )}
                                 {event.type === "LOG" && event.user_id && (
-                                  <p className="m-0 mt-0.5 text-[11px]" style={{ color:"rgba(168,191,212,0.3)" }}>
+                                  <p className="m-0 mt-0.5 text-[11px]" style={{ color:"var(--ged-tx3)" }}>
                                     {details.user_name || `Utilisateur #${event.user_id}`}
                                   </p>
                                 )}
@@ -961,9 +961,9 @@ export default function DocumentList() {
               )}
 
               <button onClick={closeDoc} className="w-full mt-2 py-2.5 rounded-xl text-sm font-semibold border transition-all cursor-pointer"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)" }}
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; e.currentTarget.style.color="white"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.6)"; }}>
+                onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="var(--ged-tx2)"; }}>
                 Fermer
               </button>
             </div>
@@ -975,9 +975,9 @@ export default function DocumentList() {
       {previewOpen && (
         <div onClick={() => setPreviewOpen(false)} className="fixed inset-0 z-[1100] flex flex-col items-center justify-center" style={{ background:"rgba(5,12,20,0.9)", backdropFilter:"blur(8px)" }}>
           <div onClick={e => e.stopPropagation()} className="w-[90vw] h-[90vh] rounded-2xl flex flex-col overflow-hidden border" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)" }}>
-            <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"var(--ged-card)", borderColor:"var(--ged-border)" }}>
               <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile?.split("/").pop()}</span>
-              <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>
+              <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"var(--ged-tx2)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="var(--ged-tx2)"}>
                 <LuX size={18} />
               </button>
             </div>
@@ -993,7 +993,7 @@ export default function DocumentList() {
             className="rounded-2xl p-6 w-[420px] flex flex-col gap-3.5 border animate-fade-in"
             style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6)" }}>
             <h3 className="m-0 text-white text-base font-bold flex items-center gap-1.5"><LuPlus size={15} /> Nouvelle version — {selected.doc_code}</h3>
-            <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
+            <p className="m-0 text-sm" style={{ color:"var(--ged-tx2)" }}>
               Version actuelle : <strong className="text-white">{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>{(() => {
                 const raw = selected.current_version || "-";
                 const c = raw.replace(/^v/, "");
@@ -1010,31 +1010,31 @@ export default function DocumentList() {
               })()}</strong>
             </p>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Nouveau fichier *</label>
+              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"var(--ged-tx2)" }}>Nouveau fichier *</label>
               <input type="file" required onChange={e => setNewFile(e.target.files[0])}
-                className="w-full px-3 py-1.5 rounded-lg border text-sm" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
+                className="w-full px-3 py-1.5 rounded-lg border text-sm" style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Résumé des changements *</label>
+              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"var(--ged-tx2)" }}>Résumé des changements *</label>
               <textarea required rows={3} value={summary} onChange={e => setSummary(e.target.value)} placeholder="Décrivez les modifications…"
                 className="w-full px-3 py-1.5 rounded-lg border text-sm resize-y outline-none"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"rgba(168,191,212,0.5)" }}>Lien SharePoint <span style={{ color:"rgba(168,191,212,0.35)", fontWeight:400, textTransform:"none" }}>(optionnel)</span></label>
+              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"var(--ged-tx2)" }}>Lien SharePoint <span style={{ color:"var(--ged-tx3)", fontWeight:400, textTransform:"none" }}>(optionnel)</span></label>
               <input type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
                 className="w-full px-3 py-1.5 rounded-lg border text-sm outline-none"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={submitting}
                 className="flex-1 py-2.5 rounded-xl border-none text-white text-sm font-bold flex items-center justify-center gap-1.5"
-                style={{ background:submitting?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:submitting?"none":"0 4px 16px rgba(74,184,63,0.35)", cursor:submitting?"not-allowed":"pointer", color:submitting?"rgba(168,191,212,0.4)":"white" }}>
+                style={{ background:submitting?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:submitting?"none":"0 4px 16px rgba(74,184,63,0.35)", cursor:submitting?"not-allowed":"pointer", color:submitting?"var(--ged-tx3)":"white" }}>
                 {submitting?"Enregistrement…":<><LuCircleCheckBig size={14} /> Créer la version</>}
               </button>
               <button type="button" onClick={() => setNewVerOpen(false)}
                 className="flex-1 py-2.5 rounded-xl text-sm border transition-all cursor-pointer"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)" }}>
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)" }}>
                 Annuler
               </button>
             </div>

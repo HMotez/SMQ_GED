@@ -2,7 +2,7 @@
 // pages/Logs.jsx — Consultation et export des logs (Admin)
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
 import { API } from "../config";
@@ -25,7 +25,7 @@ const ACTION_LABEL_MAP = {
 
 // ── Helpers ──────────────────────────────────────────────────
 function fmtDate(iso) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleString("fr-FR", {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit", second: "2-digit",
@@ -91,8 +91,9 @@ function ActionDetails({ action, details }) {
   }
 
   if (action === "NEW_VERSION") {
+    const fromLabel = (!d.from || d.from === "-") ? "Initiale" : d.from;
     return wrap(<>
-      Version mise à jour : <Ver v={d.from} /> → <Ver v={d.to} />
+      Version mise à jour : <Ver v={fromLabel} /> → <Ver v={d.to} />
       {d.change_summary && <> — <Em>{d.change_summary}</Em></>}
     </>);
   }
@@ -159,7 +160,8 @@ function formatDetailsText(action, details) {
     return s;
   }
   if (action === "NEW_VERSION") {
-    let s = `Version mise a jour : ${d.from || "?"} >> ${d.to || "?"}`;
+    const fromLabel = (!d.from || d.from === "-") ? "Initiale" : d.from;
+    let s = `Version mise a jour : ${fromLabel} >> ${d.to || "?"}`;
     if (d.change_summary) s += ` | ${d.change_summary}`;
     return s;
   }
@@ -205,10 +207,40 @@ const ACTION_COLORS = {
   VALIDATION_DELETE_ATTEMPT_BLOCKED:  [234, 67, 53],
 };
 
+// ── Resolve the doc_code at the time of the action
+// CREATE_DOCUMENT stores the original code (e.g. GU0002_Guide_-) in details.doc_code
+// All other actions can derive it from the base code + the version at that moment
+function resolveDocRef(row) {
+  try {
+    const d = typeof row.details === "string" ? JSON.parse(row.details) : (row.details || {});
+    // All actions that store doc_code in details use the code at the time of the action
+    if (d.doc_code) return d.doc_code;
+    // NEW_VERSION stores from/to but not doc_code — reconstruct the "before" code
+    if (row.action === "NEW_VERSION" && d.from && row.document_reference) {
+      return row.document_reference.replace(/_[^_]+$/, `_${d.from}`);
+    }
+  } catch {}
+  return row.document_reference;
+}
+
+// ── Resolve best user label for PDF (user_name → user_role in details → "Système")
+function resolveUser(row) {
+  if (row.user_name) return row.user_name;
+  try {
+    const d = typeof row.details === "string" ? JSON.parse(row.details) : (row.details || {});
+    if (d.user_name) return d.user_name;
+    if (d.user_role && d.user_role !== "SYSTEM") return d.user_role;
+  } catch { /* ignore */ }
+  return "Systeme";
+}
+
 // ── PDF export ────────────────────────────────────────────────
 async function exportPDF(logs, meta = {}) {
   const { default: jsPDF }     = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
+
+  // Chronological order for PDF: oldest (creation) first
+  const sortedLogs = [...logs].reverse();
 
   const doc    = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W      = doc.internal.pageSize.getWidth();   // 297
@@ -224,9 +256,10 @@ async function exportPDF(logs, meta = {}) {
   });
 
   // ══════════════════════════════════════════════
-  // HEADER — single clean band (0 → 28mm)
+  // HEADER — single dark band (0 → 30mm)
   // ══════════════════════════════════════════════
-  const HEADER_H = 28;
+  const HEADER_H = 30;
+  const isFiltered = !!(meta.filterAction || meta.filterUser || meta.filterDocRef || meta.filterFrom || meta.filterTo);
 
   // Dark navy background
   doc.setFillColor(6, 13, 26);
@@ -236,34 +269,38 @@ async function exportPDF(logs, meta = {}) {
   doc.setFillColor(...G);
   doc.rect(0, 0, 5, HEADER_H, "F");
 
+  // ACTIA logo — right side
+  const LH = 16, LW = 50;
+  doc.addImage(logoEl, "PNG", W - MARGIN - LW, (HEADER_H - LH) / 2, LW, LH);
+
   // Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(17);
   doc.setTextColor(255, 255, 255);
-  doc.text("JOURNAL DES ACTIVITES", MARGIN + 6, 12);
+  doc.text("JOURNAL DES ACTIVITES", MARGIN + 6, 11);
 
-  // Subtitle — title, date, count in one clean line
-  const isFiltered = !!(meta.filterAction || meta.filterUser || meta.filterFrom || meta.filterTo);
-  doc.setFont("helvetica", "normal");
+  // Subtitle — bold green
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(...G);
-  doc.text(
-    `SMQ GED  |  Systeme de Gestion Electronique des Documents`,
-    MARGIN + 6, 19
-  );
+  doc.text("SMQ GED  |  Systeme de Gestion Electronique des Documents", MARGIN + 6, 19);
 
-  // Meta line — date + count + filter hint
-  doc.setFontSize(7);
+  // Meta line — bold muted blue-gray
+  const filterHint = [
+    meta.filterDocRef && `Ref : ${meta.filterDocRef}`,
+    meta.filterAction && `Action : ${actionLabel(meta.filterAction)}`,
+    meta.filterUser   && `Utilisateur : ${meta.filterUser}`,
+    meta.filterFrom   && `Du ${meta.filterFrom}`,
+    meta.filterTo     && `Au ${meta.filterTo}`,
+  ].filter(Boolean).join("  |  ");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 135, 170);
   doc.text(
-    `Exporte le ${fmtDate(new Date().toISOString())}  ·  ${logs.length} entree${logs.length > 1 ? "s" : ""}${isFiltered ? "  ·  Filtres actifs" : ""}  ·  ${meta.exportedBy || "Admin"}`,
-    MARGIN + 6, 24.5
+    `Exporte le ${fmtDate(new Date().toISOString())}  |  ${logs.length} entree${logs.length > 1 ? "s" : ""}${filterHint ? `  |  ${filterHint}` : ""}  |  ${meta.exportedBy || "Admin"}`,
+    MARGIN + 6, 26
   );
-
-  // ACTIA logo — right side, centered vertically
-  const LH = 16;
-  const LW = 50;
-  doc.addImage(logoEl, "PNG", W - MARGIN - LW, (HEADER_H - LH) / 2, LW, LH);
 
   // Bottom green line
   doc.setDrawColor(...G);
@@ -288,20 +325,20 @@ async function exportPDF(logs, meta = {}) {
       { content: "#",               styles: { halign: "center" } },
       { content: "Date & Heure",    styles: { halign: "left"   } },
       { content: "Type d'action",   styles: { halign: "left"   } },
-      { content: "Réf. document",   styles: { halign: "left"   } },
+      { content: "Ref. document",   styles: { halign: "left"   } },
       { content: "Titre document",  styles: { halign: "left"   } },
       { content: "Utilisateur",     styles: { halign: "left"   } },
-      { content: "Détails de l'action", styles: { halign: "left" } },
+      { content: "Details de l'action", styles: { halign: "left" } },
     ]],
 
-    body: logs.map(r => [
-      "",
+    body: sortedLogs.map((r, i) => [
+      String(i + 1),
       fmtDate(r.created_at),
       actionLabel(r.action),
-      r.document_reference || "—",
-      r.document_title     || "—",
-      r.user_name          || "Système",
-      formatDetailsText(r.action, r.details) || "—",
+      resolveDocRef(r) || "-",
+      r.document_title     || "-",
+      resolveUser(r),
+      formatDetailsText(r.action, r.details) || "-",
     ]),
 
     // ── Header row style ─────────────────────────────────────
@@ -336,7 +373,7 @@ async function exportPDF(logs, meta = {}) {
     didParseCell(data) {
       if (data.section !== "body") return;
 
-      const row    = logs[data.row.index];
+      const row    = sortedLogs[data.row.index];
       const action = row?.action;
       const color  = ACTION_COLORS[action] || [100, 120, 150];
 
@@ -389,7 +426,7 @@ async function exportPDF(logs, meta = {}) {
     // ── Draw left accent bar on Action cells ─────────────────
     didDrawCell(data) {
       if (data.section === "body" && data.column.index === 2) {
-        const action = logs[data.row.index]?.action;
+        const action = sortedLogs[data.row.index]?.action;
         const color  = ACTION_COLORS[action] || [160, 175, 195];
         doc.setFillColor(...color);
         doc.rect(data.cell.x, data.cell.y, 2, data.cell.height, "F");
@@ -404,33 +441,33 @@ async function exportPDF(logs, meta = {}) {
       // Re-draw mini header on pages > 1
       if (pageNum > 1) {
         const MH = 13;
-        doc.setFillColor(6, 13, 26);
+        doc.setFillColor(15, 23, 42);
         doc.rect(0, 0, W, MH, "F");
         doc.setFillColor(...G);
-        doc.rect(0, 0, 5, MH, "F");
+        doc.rect(0, 0, 6, MH, "F");
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
         doc.setTextColor(255, 255, 255);
-        doc.text("JOURNAL DES ACTIVITES", MARGIN + 6, 8.5);
+        doc.text("JOURNAL DES ACTIVITES", MARGIN + 8, 6);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(6.5);
+        doc.setFontSize(7);
         doc.setTextColor(...G);
-        doc.text("SMQ GED  |  ACTIA Engineering Services", MARGIN + 6, 12);
+        doc.text("SMQ GED  |  ACTIA Engineering Services", MARGIN + 8, 11);
         doc.setDrawColor(...G);
-        doc.setLineWidth(0.5);
+        doc.setLineWidth(1);
         doc.line(0, MH, W, MH);
       }
 
-      // Footer — simple dark band
+      // Footer
       const FH = 9;
-      doc.setFillColor(6, 13, 26);
+      doc.setFillColor(15, 23, 42);
       doc.rect(0, H - FH, W, FH, "F");
       doc.setDrawColor(...G);
-      doc.setLineWidth(0.4);
+      doc.setLineWidth(0.8);
       doc.line(0, H - FH, W, H - FH);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.5);
-      doc.setTextColor(90, 120, 155);
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
       doc.text("SMQ GED  |  ACTIA Engineering Services", MARGIN, H - 3);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
@@ -497,6 +534,7 @@ export default function Logs() {
   // Filters
   const [filterAction, setFilterAction] = useState("");
   const [filterUser,   setFilterUser]   = useState("");
+  const [filterDocRef, setFilterDocRef] = useState("");
   const [filterFrom,   setFilterFrom]   = useState("");
   const [filterTo,     setFilterTo]     = useState("");
 
@@ -522,6 +560,7 @@ export default function Logs() {
       const params = new URLSearchParams();
       if (filterAction) params.set("action",   filterAction);
       if (filterUser)   params.set("userName", filterUser);
+      if (filterDocRef) params.set("docRef",   filterDocRef);
       if (filterFrom)   params.set("from",     filterFrom);
       if (filterTo)     params.set("to",       filterTo);
 
@@ -537,14 +576,14 @@ export default function Logs() {
     } finally {
       setLoading(false);
     }
-  }, [token, filterAction, filterUser, filterFrom, filterTo]);
+  }, [token, filterAction, filterUser, filterDocRef, filterFrom, filterTo]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
   const handleExport = async () => {
     if (logs.length === 0) return;
     await exportPDF(logs, {
-      filterAction, filterUser, filterFrom, filterTo,
+      filterAction, filterUser, filterDocRef, filterFrom, filterTo,
       exportedBy: currentUser?.name || "Admin",
     });
   };
@@ -552,11 +591,12 @@ export default function Logs() {
   const clearFilters = () => {
     setFilterAction("");
     setFilterUser("");
+    setFilterDocRef("");
     setFilterFrom("");
     setFilterTo("");
   };
 
-  const hasFilters = filterAction || filterUser || filterFrom || filterTo;
+  const hasFilters = filterAction || filterUser || filterDocRef || filterFrom || filterTo;
 
 
   return (
@@ -636,6 +676,17 @@ export default function Logs() {
               />
             </div>
 
+            {/* Document reference filter */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold" style={{ color: "rgba(168,191,212,0.5)" }}>Référence document</label>
+              <input
+                className="filter-input"
+                placeholder="Ex : TR0003, FPS-TR…"
+                value={filterDocRef}
+                onChange={e => setFilterDocRef(e.target.value)}
+              />
+            </div>
+
             {/* Date from */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold" style={{ color: "rgba(168,191,212,0.5)" }}>Du</label>
@@ -655,10 +706,11 @@ export default function Logs() {
               style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               <span className="text-xs" style={{ color: "rgba(168,191,212,0.4)" }}>
                 {[
-                  filterAction && `Action : "${actionLabel(filterAction)}"`,
-                  filterUser   && `Utilisateur : "${filterUser}"`,
-                  filterFrom   && `Du ${filterFrom}`,
-                  filterTo     && `Au ${filterTo}`,
+                  filterAction  && `Action : "${actionLabel(filterAction)}"`,
+                  filterUser    && `Utilisateur : "${filterUser}"`,
+                  filterDocRef  && `Réf. : "${filterDocRef}"`,
+                  filterFrom    && `Du ${filterFrom}`,
+                  filterTo      && `Au ${filterTo}`,
                 ].filter(Boolean).join("  ·  ")}
               </span>
               <button onClick={clearFilters}
@@ -757,11 +809,10 @@ export default function Logs() {
                 <div className="pt-0.5 min-w-0 flex flex-col gap-0.5">
                   {row.document_reference ? (
                     <>
-                      <NavLink
-                        to={`/list?docCode=${encodeURIComponent(row.document_reference)}`}
-                        onClick={e => e.stopPropagation()}
-                        className="no-underline"
-                        title={`Voir ${row.document_reference}`}
+                      <button
+                        onClick={() => setFilterDocRef(row.document_reference)}
+                        className="no-underline border-none bg-transparent p-0 text-left cursor-pointer"
+                        title={`Voir tous les logs de ${resolveDocRef(row)}`}
                       >
                         <span
                           className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-md whitespace-nowrap transition-all"
@@ -769,9 +820,9 @@ export default function Logs() {
                           onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.2)"; e.currentTarget.style.borderColor = "rgba(74,184,63,0.5)"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "rgba(74,184,63,0.1)"; e.currentTarget.style.borderColor = "rgba(74,184,63,0.25)"; }}
                         >
-                          {row.document_reference}
+                          {resolveDocRef(row)}
                         </span>
-                      </NavLink>
+                      </button>
                       {row.document_title && (
                         <span className="text-[11px] truncate" style={{ color: "rgba(200,218,235,0.55)" }}
                           title={row.document_title}>
@@ -785,10 +836,8 @@ export default function Logs() {
                 </div>
 
                 {/* User */}
-                <span className="text-xs pt-1" style={{ color: "rgba(168,191,212,0.65)" }}>
-                  {row.user_name || (
-                    <span className="italic" style={{ color: "rgba(168,191,212,0.25)" }}>Système</span>
-                  )}
+                <span className="text-xs pt-1" style={{ color: row.user_name ? "rgba(168,191,212,0.65)" : "rgba(168,191,212,0.45)" }}>
+                  {resolveUser(row)}
                 </span>
 
                 {/* Smart details */}

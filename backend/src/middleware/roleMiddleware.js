@@ -28,6 +28,9 @@ const ROLE_PERMISSIONS = {
   "Reviewer": [
     "document:read", "validation:create",
   ],
+  "Visiteur": [
+    "ai:archived",
+  ],
 };
 
 // Transitions autorisées par rôle (EF06 — Ing. Qualité ≠ Reviewer)
@@ -35,7 +38,7 @@ const TRANSITION_ROLE_MAP = {
   "Brouillon→En rédaction":                ["Admin", "Ing. Qualité"],
   "En rédaction→Appel en relecture":        ["Admin", "Ing. Qualité"],
   "Appel en relecture→En relecture":        ["Admin", "Ing. Qualité", "Reviewer"],
-  "En relecture→En correction":             ["Admin", "Reviewer"],
+  "En relecture→En correction":             ["Admin", "Reviewer", "Ing. Qualité"],
   "En relecture→En validation":             ["Admin", "Reviewer", "Ing. Qualité"],
   "En correction→Appel en relecture":       ["Admin", "Ing. Qualité"],
   "En validation→Validé":                   ["Admin", "Ing. Qualité"],

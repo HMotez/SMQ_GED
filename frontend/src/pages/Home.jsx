@@ -74,17 +74,14 @@ const NAV_ITEMS_BY_ROLE = {
   ],
 };
 NAV_ITEMS_BY_ROLE["Visiteur"] = [
-  { to: "/",        label: "Accueil",    end: true, Icon: LuHouse    },
-  { to: "/list",    label: "Documents",             Icon: LuFileText },
-  { to: "/archive", label: "Archivage",             Icon: LuArchive  },
+  { to: "/",         label: "Accueil",      end: true, Icon: LuHouse      },
+  { to: "/workflow", label: "Workflow",                Icon: LuGitBranch  },
+  { to: "/archive",  label: "Docs archivés",           Icon: LuArchive    },
+  { to: "/ai",       label: "Assistant IA",            Icon: LuCpu        },
 ];
 
-// Fallback for unauthenticated — public nav only
-const NAV_ITEMS_DEFAULT = [
-  { to: "/",        label: "Accueil",    end: true, Icon: LuHouse    },
-  { to: "/list",    label: "Documents",             Icon: LuFileText },
-  { to: "/archive", label: "Archivage",             Icon: LuArchive  },
-];
+// Fallback for unauthenticated — same as Visiteur
+const NAV_ITEMS_DEFAULT = NAV_ITEMS_BY_ROLE["Visiteur"];
 
 /* ── Quick-access roles (for switcher) ───────────────────── */
 const QUICK_ROLES = [
@@ -482,15 +479,12 @@ function Navbar({ onOpenLogin = () => {} }) {
                 )}
               </>
             ) : (
-              /* Visitor — full nav, ProtectedRoute handles dashboard access */
+              /* Visitor — read-only: home, workflow, archived docs, AI */
               <>
-                <NavItem to="/"            label="Accueil"         end={true} icon={LuHouse}          />
-                <NavItem to="/dashboard"   label="Tableau de bord"            icon={LuLayoutDashboard} />
-                <NavItem to="/list"        label="Documents"                  icon={LuFileText}        />
-                <NavItem to="/validations" label="Validations"                icon={LuClipboardCheck}  />
-                <NavItem to="/archive"     label="Archivage"                  icon={LuArchive}         />
-                <NavItem to="/workflow"    label="Workflow"                   icon={LuGitBranch}       />
-                <NavItem to="/ai"          label="Assistant IA"               icon={LuCpu}             />
+                <NavItem to="/"         label="Accueil"       end={true} icon={LuHouse}     />
+                <NavItem to="/workflow" label="Workflow"                  icon={LuGitBranch} />
+                <NavItem to="/archive"  label="Docs archivés"            icon={LuArchive}   />
+                <NavItem to="/ai"       label="Assistant IA"             icon={LuCpu}       />
               </>
             )}
           </div>
@@ -634,7 +628,7 @@ function SectionLabel({ children }) {
 }
 
 /* ── Feature Card — scroll-reveal + shimmer + expand panel ─ */
-function FeatureCard({ icon, title, desc, accent = "#60a5fa", tag, index = 0, href, linkLabel = "En savoir plus" }) {
+function FeatureCard({ icon, title, desc, accent = "#60a5fa", tag, index = 0, href, linkLabel = "En savoir plus", locked = false }) {
   const FeatIcon   = icon;
   const [hov,      setHov]      = useState(false);
   const [visible,  setVisible]  = useState(false);
@@ -757,27 +751,40 @@ function FeatureCard({ icon, title, desc, accent = "#60a5fa", tag, index = 0, hr
             </p>
           </div>
           {href && (
-            <NavLink to={href}
-              className="no-underline w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-[13px] transition-all duration-200"
-              style={{
-                background: `${accent}30`,
-                color: "#ffffff",
-                border: `1.5px solid ${accent}60`,
-                boxShadow: `0 4px 14px ${accent}25`,
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = `${accent}50`;
-                e.currentTarget.style.boxShadow = `0 6px 20px ${accent}40`;
-                e.currentTarget.style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = `${accent}30`;
-                e.currentTarget.style.boxShadow = `0 4px 14px ${accent}25`;
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
-            >
-              {linkLabel} <LuArrowRight size={13} />
-            </NavLink>
+            locked ? (
+              <div className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1.5px solid rgba(255,255,255,0.08)",
+                  color: "rgba(168,191,212,0.35)",
+                  fontSize: 13, fontWeight: 600,
+                }}>
+                <LuLock size={13} />
+                Connexion requise
+              </div>
+            ) : (
+              <NavLink to={href}
+                className="no-underline w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-[13px] transition-all duration-200"
+                style={{
+                  background: `${accent}30`,
+                  color: "#ffffff",
+                  border: `1.5px solid ${accent}60`,
+                  boxShadow: `0 4px 14px ${accent}25`,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = `${accent}50`;
+                  e.currentTarget.style.boxShadow = `0 6px 20px ${accent}40`;
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = `${accent}30`;
+                  e.currentTarget.style.boxShadow = `0 4px 14px ${accent}25`;
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                {linkLabel} <LuArrowRight size={13} />
+              </NavLink>
+            )
           )}
         </div>
 
@@ -1010,6 +1017,7 @@ const FEATURES = [
     desc:      "Pilotage intégral du cycle documentaire — de la rédaction à l'obsolescence. Chaque étape est formalisée, tracée et soumise aux contrôles qualité définis par le référentiel ISO 9001:2015.",
     href:      "/workflow",
     linkLabel: "Voir le workflow",
+    public:    true,
   },
   {
     icon:      LuCircleCheckBig,
@@ -1037,6 +1045,7 @@ const FEATURES = [
     desc:      "Conservation sécurisée selon les durées légales et normatives. Versionnage intégral avec accès permanent à l'historique complet des révisions, métadonnées et preuves d'approbation.",
     href:      "/archive",
     linkLabel: "Parcourir les archives",
+    public:    true,
   },
   {
     icon:      LuSearch,
@@ -1117,7 +1126,7 @@ export default function Home() {
     <div
       className="min-h-screen text-white"
       style={{
-        background: "linear-gradient(145deg, #0a1420 0%, #0f1e30 35%, #1a2f4a 70%, #1e3a55 100%)",
+        background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)",
       }}
     >
       {/* Background decorative orbs */}
@@ -1223,7 +1232,7 @@ export default function Home() {
                 </button>
               )}
               <NavLink
-                to="/list"
+                to={currentUser ? "/list" : "/archive"}
                 className="flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 hover:-translate-y-0.5 no-underline"
                 style={{
                   background: "rgba(255,255,255,0.06)",
@@ -1503,7 +1512,7 @@ export default function Home() {
                   className="m-0 text-3xl font-black text-white"
                   style={{ letterSpacing: -1, textShadow: "0 4px 20px rgba(74,184,63,0.3)" }}
                 >
-                  Conformité ISO 9001
+                  Conformité ISO 9001 &amp; ISO 27001
                 </h2>
                 <div className="w-1 h-8 rounded-full" style={{ background: "linear-gradient(to bottom, rgba(74,184,63,0.2), #4ab83f)" }} />
               </div>
@@ -1511,7 +1520,7 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               {FEATURES.map((f, i) => (
-                <FeatureCard key={f.title} {...f} index={i} />
+                <FeatureCard key={f.title} {...f} index={i} locked={!currentUser && !f.public} />
               ))}
             </div>
           </div>
@@ -1534,7 +1543,7 @@ export default function Home() {
               <div className="flex items-center justify-center gap-3 mb-1">
                 <div className="w-1 h-8 rounded-full" style={{ background:"linear-gradient(to bottom,#4ab83f,rgba(74,184,63,0.2))" }} />
                 <h2 className="m-0 text-3xl font-black text-white" style={{ letterSpacing:-1, textShadow:"0 4px 20px rgba(74,184,63,0.3)" }}>
-                  Conformité ISO 9001
+                  Conformité ISO 9001 &amp; ISO 27001
                 </h2>
                 <div className="w-1 h-8 rounded-full" style={{ background:"linear-gradient(to bottom,rgba(74,184,63,0.2),#4ab83f)" }} />
               </div>
@@ -1544,7 +1553,7 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               {FEATURES.map((f, i) => (
-                <FeatureCard key={f.title} {...f} index={i} />
+                <FeatureCard key={f.title} {...f} index={i} locked={!currentUser && !f.public} />
               ))}
             </div>
           </div>
@@ -1562,8 +1571,8 @@ export default function Home() {
             </div>
             <div className="grid gap-5" style={{ gridTemplateColumns:"repeat(auto-fit,minmax(500px,1fr))" }}>
 
-              {/* Documents */}
-              <NavLink to="/list" className="no-underline rounded-2xl border flex items-center gap-4 px-6 py-5 transition-all duration-200"
+              {/* Documents — visitors see archived only */}
+              <NavLink to="/archive" className="no-underline rounded-2xl border flex items-center gap-4 px-6 py-5 transition-all duration-200"
                 style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(96,165,250,0.15)" }}
                 onMouseEnter={e => { e.currentTarget.style.background="rgba(96,165,250,0.06)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.3)"; e.currentTarget.style.transform="translateY(-2px)"; }}
                 onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.025)"; e.currentTarget.style.borderColor="rgba(96,165,250,0.15)"; e.currentTarget.style.transform="translateY(0)"; }}>
@@ -1572,7 +1581,7 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <p className="m-0 text-base font-bold text-white" style={{ letterSpacing:-0.2 }}>Liste des Documents</p>
-                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Consulter les documents qualité ISO — lecture seule</p>
+                  <p className="m-0 text-[12px] mt-0.5" style={{ color:"rgba(168,191,212,0.6)" }}>Consulter les documents archivés — lecture seule</p>
                 </div>
                 <LuArrowRight size={16} style={{ color:"rgba(96,165,250,0.5)", flexShrink:0 }} />
               </NavLink>

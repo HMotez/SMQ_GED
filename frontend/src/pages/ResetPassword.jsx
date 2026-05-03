@@ -93,7 +93,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
     if (!password)            { setError("Veuillez saisir un nouveau mot de passe."); return; }
-    if (password.length < 6)  { setError("Le mot de passe doit contenir au moins 6 caractères."); return; }
+    if (password.length < 12) { setError("Le mot de passe doit contenir au moins 12 caractères."); return; }
     if (password !== confirm)  { setError("Les mots de passe ne correspondent pas."); return; }
     if (!token)                { setError("Lien invalide. Veuillez refaire une demande."); return; }
 
@@ -212,7 +212,7 @@ export default function ResetPassword() {
                       type={showPass ? "text" : "password"}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      placeholder="Min. 6 caractères"
+                      placeholder="Min. 12 caractères"
                       autoComplete="new-password"
                       disabled={loading}
                       className="dark-input dark-input-pr"

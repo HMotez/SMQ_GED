@@ -42,6 +42,7 @@ const getLogs = async (req, res) => {
     userId,
     userName,
     documentId,
+    docRef,
     severity,
     from,
     to,
@@ -74,6 +75,10 @@ const getLogs = async (req, res) => {
     conditions.push(`l.document_id = $${idx++}`);
     params.push(parseInt(documentId));
   }
+  if (docRef) {
+    conditions.push(`d.doc_code ILIKE $${idx++}`);
+    params.push(`%${docRef}%`);
+  }
   if (severity) {
     conditions.push(`l.severity = $${idx++}`);
     params.push(severity);
@@ -91,7 +96,10 @@ const getLogs = async (req, res) => {
 
   try {
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM logs l LEFT JOIN users u ON u.id = l.user_id ${where}`,
+      `SELECT COUNT(*) FROM logs l
+       LEFT JOIN documents d ON d.id = l.document_id
+       LEFT JOIN users     u ON u.id = l.user_id
+       ${where}`,
       params
     );
     const total = parseInt(countResult.rows[0].count);

@@ -59,10 +59,10 @@ function DecisionBadge({ decision }) {
 function StatCard({ Icon, label, value, accent }) {
   return (
     <div className="flex-1 min-w-[120px] rounded-2xl px-5 py-4 border"
-      style={{ background:"rgba(255,255,255,0.04)", borderColor:`${accent}25`, backdropFilter:"blur(10px)" }}>
+      style={{ background:"var(--ged-card)", borderColor:`${accent}25`, backdropFilter:"blur(10px)" }}>
       <div className="flex items-center gap-1.5 mb-2">
         <Icon size={13} style={{ color:accent }} />
-        <p className="m-0 text-[11px] uppercase tracking-[0.8px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>{label}</p>
+        <p className="m-0 text-[11px] uppercase tracking-[0.8px] font-bold" style={{ color:"var(--ged-tx2)" }}>{label}</p>
       </div>
       <p className="m-0 font-black text-3xl text-white" style={{ letterSpacing:-0.5 }}>{value}</p>
     </div>
@@ -160,9 +160,9 @@ function DocDetailModal({ docId, onClose }) {
             </div>
             <button onClick={onClose}
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
-              style={{ color:"rgba(168,191,212,0.5)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}
+              style={{ color:"var(--ged-tx2)", background:"var(--ged-card)", border:"1px solid rgba(255,255,255,0.08)" }}
               onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.1)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.3)"; e.currentTarget.style.color="#f87171"; }}
-              onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.08)"; e.currentTarget.style.color="rgba(168,191,212,0.5)"; }}>
+              onMouseLeave={e => { e.currentTarget.style.background="var(--ged-card)"; e.currentTarget.style.borderColor="var(--ged-border)"; e.currentTarget.style.color="var(--ged-tx2)"; }}>
               <LuX size={16} />
             </button>
           </div>
@@ -175,7 +175,7 @@ function DocDetailModal({ docId, onClose }) {
                   onClick={() => setActiveTab(tab.id)}
                   className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-xl border-b-2 transition-all"
                   style={{
-                    color: activeTab === tab.id ? "#fff" : "rgba(168,191,212,0.45)",
+                    color: activeTab === tab.id ? "var(--ged-tx1)" : "var(--ged-tx3)",
                     borderBottomColor: activeTab === tab.id ? "#4ab83f" : "transparent",
                     background: activeTab === tab.id ? "rgba(74,184,63,0.06)" : "transparent",
                     cursor:"pointer",
@@ -203,11 +203,11 @@ function DocDetailModal({ docId, onClose }) {
         {loading ? (
           <div className="flex-1 flex items-center justify-center gap-3 py-16">
             <LuRefreshCw size={22} className="animate-spin" style={{ color:"rgba(74,184,63,0.5)" }} />
-            <span className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Chargement…</span>
+            <span className="text-sm" style={{ color:"var(--ged-tx3)" }}>Chargement…</span>
           </div>
         ) : !doc ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Document introuvable.</p>
+            <p className="text-sm" style={{ color:"var(--ged-tx3)" }}>Document introuvable.</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-7 py-6">
@@ -231,8 +231,8 @@ function DocDetailModal({ docId, onClose }) {
                     <div key={label} className="rounded-xl px-4 py-3 border"
                       style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <Icon size={11} style={{ color:"rgba(168,191,212,0.4)" }} />
-                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"rgba(168,191,212,0.35)" }}>{label}</p>
+                        <Icon size={11} style={{ color:"var(--ged-tx3)" }} />
+                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"var(--ged-tx3)" }}>{label}</p>
                       </div>
                       <p className="m-0 text-sm font-medium text-white truncate" title={value}>{value}</p>
                     </div>
@@ -242,14 +242,14 @@ function DocDetailModal({ docId, onClose }) {
                 {(doc.context || doc.description) && (
                   <div className="rounded-xl px-4 py-3.5 border"
                     style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.06)" }}>
-                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"rgba(168,191,212,0.35)" }}>Description / Contexte</p>
-                    <p className="m-0 text-sm leading-relaxed" style={{ color:"rgba(168,191,212,0.65)" }}>{doc.context || doc.description}</p>
+                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"var(--ged-tx3)" }}>Description / Contexte</p>
+                    <p className="m-0 text-sm leading-relaxed" style={{ color:"var(--ged-tx2)" }}>{doc.context || doc.description}</p>
                   </div>
                 )}
 
                 {doc.keywords?.length > 0 && (
                   <div>
-                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"rgba(168,191,212,0.35)" }}>Mots-clés</p>
+                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"var(--ged-tx3)" }}>Mots-clés</p>
                     <div className="flex flex-wrap gap-2">
                       {doc.keywords.map(k => (
                         <span key={k} className="px-2.5 py-0.5 rounded-full text-xs border font-medium"
@@ -269,8 +269,8 @@ function DocDetailModal({ docId, onClose }) {
               <div className="flex flex-col gap-3">
                 {versions.length === 0 ? (
                   <div className="flex flex-col items-center py-12 gap-3">
-                    <LuHistory size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                    <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune version enregistrée.</p>
+                    <LuHistory size={32} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune version enregistrée.</p>
                   </div>
                 ) : versions.map((v, idx) => {
                   const isFirst = idx === 0;
@@ -282,7 +282,7 @@ function DocDetailModal({ docId, onClose }) {
                     <div className="px-5 py-4 flex items-center gap-4">
                       <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                         <span className="rounded-xl px-3 py-1 text-sm font-black border"
-                          style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
+                          style={{ background: isLast ? "rgba(74,184,63,0.15)" : "var(--ged-border-sm)", color: isLast ? "#4ab83f" : "var(--ged-tx2)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "var(--ged-border)" }}>
                           {v.version_letter}
                         </span>
                         {isLast && (
@@ -291,7 +291,7 @@ function DocDetailModal({ docId, onClose }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="m-0 text-sm font-semibold text-white">{v.change_summary || "Version initiale"}</p>
-                        <p className="m-0 text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{ color:"rgba(168,191,212,0.45)" }}>
+                        <p className="m-0 text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{ color:"var(--ged-tx3)" }}>
                           {v.created_by_name && <span className="flex items-center gap-1"><LuUser size={10} />{v.created_by_name} ·</span>}
                           <span className="flex items-center gap-1"><LuCalendar size={10} />{v.created_at ? new Date(v.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"}) : "—"}</span>
                           {v.file_size > 0 && <span>· {(v.file_size/1024).toFixed(0)} Ko</span>}
@@ -312,13 +312,13 @@ function DocDetailModal({ docId, onClose }) {
                         v.sharepoint_link ? (
                           <a href={v.sharepoint_link} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border font-semibold no-underline transition-all flex-shrink-0"
-                            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)" }}
-                            onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; }}>
+                            style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.12)", color:"var(--ged-tx2)" }}
+                            onMouseEnter={e => { e.currentTarget.style.background="var(--ged-border)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background="var(--ged-card)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; }}>
                             <LuShare2 size={14} /> SharePoint
                           </a>
                         ) : (
-                          <span className="text-xs flex-shrink-0" style={{ color:"rgba(168,191,212,0.3)" }}>Via SharePoint</span>
+                          <span className="text-xs flex-shrink-0" style={{ color:"var(--ged-tx3)" }}>Via SharePoint</span>
                         )
                       ) : null}
                     </div>
@@ -333,8 +333,8 @@ function DocDetailModal({ docId, onClose }) {
               <div className="flex flex-col gap-3">
                 {valHist.length === 0 ? (
                   <div className="flex flex-col items-center py-12 gap-3">
-                    <LuCircleCheck size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                    <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune décision de validation enregistrée.</p>
+                    <LuCircleCheck size={32} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune décision de validation enregistrée.</p>
                   </div>
                 ) : valHist.map(v => {
                   const dc = dcfgMap[v.decision] || dcfgMap["EN_ATTENTE"];
@@ -350,26 +350,26 @@ function DocDetailModal({ docId, onClose }) {
                           </span>
                           {v.version_letter && v.version_letter !== "-" && (
                             <span className="text-xs px-2 py-0.5 rounded-md border font-mono font-bold"
-                              style={{ background:"rgba(255,255,255,0.04)", color:"rgba(168,191,212,0.5)", borderColor:"rgba(255,255,255,0.08)" }}>
+                              style={{ background:"var(--ged-card)", color:"var(--ged-tx2)", borderColor:"var(--ged-border)" }}>
                               {v.version_letter}
                             </span>
                           )}
                         </div>
-                        <span className="text-xs flex-shrink-0" style={{ color:"rgba(168,191,212,0.4)" }}>
+                        <span className="text-xs flex-shrink-0" style={{ color:"var(--ged-tx3)" }}>
                           {v.validated_at ? new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ background:"rgba(168,191,212,0.08)", border:"1px solid rgba(168,191,212,0.12)" }}>
-                          <LuUser size={13} style={{ color:"rgba(168,191,212,0.5)" }} />
+                          style={{ background:"var(--ged-card)", border:"1px solid var(--ged-border)" }}>
+                          <LuUser size={13} style={{ color:"var(--ged-tx2)" }} />
                         </div>
                         <span className="text-sm font-semibold text-white">{v.validator_name}</span>
                       </div>
                       {v.comment && (
                         <div className="rounded-lg px-3 py-2.5 border mt-1"
                           style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.06)" }}>
-                          <p className="m-0 text-xs leading-relaxed italic" style={{ color:"rgba(168,191,212,0.6)" }}>"{v.comment}"</p>
+                          <p className="m-0 text-xs leading-relaxed italic" style={{ color:"var(--ged-tx2)" }}>"{v.comment}"</p>
                         </div>
                       )}
                       {v.signature_hash && (
@@ -389,8 +389,8 @@ function DocDetailModal({ docId, onClose }) {
               <div>
                 {timeline.length === 0 ? (
                   <div className="flex flex-col items-center py-12 gap-3">
-                    <LuFileText size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                    <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune activité enregistrée pour ce document.</p>
+                    <LuFileText size={32} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune activité enregistrée pour ce document.</p>
                   </div>
                 ) : (
                   <div className="relative pl-2">
@@ -424,37 +424,37 @@ function DocDetailModal({ docId, onClose }) {
                             <div className="flex-1 min-w-0 pt-1.5">
                               <div className="flex items-center justify-between gap-2 mb-1">
                                 <span className="text-sm font-bold" style={{ color:cfg.text }}>{cfg.label}</span>
-                                <span className="text-[11px] flex-shrink-0" style={{ color:"rgba(168,191,212,0.35)" }}>
+                                <span className="text-[11px] flex-shrink-0" style={{ color:"var(--ged-tx3)" }}>
                                   {event.timestamp ? new Date(event.timestamp).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
                                 </span>
                               </div>
                               {event.type === "LOG" && details.from && details.to && (
-                                <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                  <span style={{ color:"rgba(168,191,212,0.38)" }}>{details.from}</span>
+                                <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
+                                  <span style={{ color:"var(--ged-tx3)" }}>{details.from}</span>
                                   {" "}<span style={{ color:cfg.text }}>→</span>{" "}
                                   <span className="font-semibold text-white">{details.to}</span>
                                 </p>
                               )}
                               {event.type === "VALIDATION" && (
-                                <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
                                   Par <span className="font-semibold text-white">{event.validator_name}</span>
-                                  {event.version && <span style={{ color:"rgba(168,191,212,0.35)" }}> · v{event.version}</span>}
+                                  {event.version && <span style={{ color:"var(--ged-tx3)" }}> · v{event.version}</span>}
                                 </p>
                               )}
                               {event.type === "VERSION" && (
-                                <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
                                   <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>{event.version_letter}</span>
                                   {event.change_summary && <span> · {event.change_summary}</span>}
                                 </p>
                               )}
                               {event.type === "VALIDATION" && event.comment && (
                                 <div className="mt-1 rounded-lg px-3 py-1.5 border"
-                                  style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.05)" }}>
-                                  <p className="m-0 text-xs italic" style={{ color:"rgba(168,191,212,0.5)" }}>"{event.comment}"</p>
+                                  style={{ background:"rgba(255,255,255,0.02)", borderColor:"var(--ged-border-sm)" }}>
+                                  <p className="m-0 text-xs italic" style={{ color:"var(--ged-tx2)" }}>"{event.comment}"</p>
                                 </div>
                               )}
                               {event.type === "LOG" && event.user_id && (
-                                <p className="m-0 mt-0.5 text-[11px] flex items-center gap-1" style={{ color:"rgba(168,191,212,0.3)" }}>
+                                <p className="m-0 mt-0.5 text-[11px] flex items-center gap-1" style={{ color:"var(--ged-tx3)" }}>
                                   <LuUser size={9} /> {details.user_name || `Utilisateur #${event.user_id}`}
                                 </p>
                               )}
@@ -476,9 +476,9 @@ function DocDetailModal({ docId, onClose }) {
       {previewOpen && (
         <div onClick={() => setPreviewOpen(false)} className="fixed inset-0 z-[1200] flex flex-col items-center justify-center" style={{ background:"rgba(5,12,20,0.9)", backdropFilter:"blur(8px)" }}>
           <div onClick={e => e.stopPropagation()} className="w-[90vw] h-[90vh] rounded-2xl flex flex-col overflow-hidden border" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)" }}>
-            <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"var(--ged-card)", borderColor:"var(--ged-border)" }}>
               <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile}</span>
-              <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>
+              <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"var(--ged-tx2)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="var(--ged-tx2)"}>
                 <LuX size={18} />
               </button>
             </div>
@@ -563,7 +563,7 @@ export default function Validations() {
       ].map(({ label, value, accent }) => (
         <div key={label} className="flex justify-between items-center px-3 py-2 rounded-lg border"
           style={{ background:`${accent}10`, borderColor:`${accent}25` }}>
-          <span className="text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>{label}</span>
+          <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>{label}</span>
           <span className="font-bold text-base" style={{ color:accent }}>{value}</span>
         </div>
       ))}
@@ -572,7 +572,7 @@ export default function Validations() {
 
   return (
     <div className="min-h-screen flex"
-      style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+      style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
@@ -585,17 +585,17 @@ export default function Validations() {
 
         {/* ── Header ─────────────────────────────────────────── */}
         <header className="px-8 py-4 border-b flex items-center justify-between"
-          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
+          style={{ background:"var(--ged-header)", backdropFilter:"blur(20px)", borderColor:"var(--ged-border)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.18),rgba(74,184,63,0.08))", border:"1.5px solid rgba(74,184,63,0.3)", boxShadow:"0 4px 14px rgba(74,184,63,0.15)" }}>
               <LuClipboardCheck size={19} style={{ color:"#4ab83f" }} />
             </div>
             <div>
-              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>
+              <h1 className="m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2, color:"var(--ged-tx1)" }}>
                 Validations ISO
               </h1>
-              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"var(--ged-tx4)" }}>
                 Décisions de validation · Traçabilité complète
                 {activeTab === "validates" && <span style={{ color:"#4ade80" }}> · {validatedDocs.length} validés</span>}
                 {activeTab === "history"   && <span style={{ color:"#a5b4fc" }}> · {allHistory.length} entrées</span>}
@@ -604,9 +604,9 @@ export default function Validations() {
           </div>
           <button onClick={load}
             className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold border transition-all"
-            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)", cursor:"pointer" }}
+            style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)", cursor:"pointer" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(74,184,63,0.4)"; e.currentTarget.style.color="#4ab83f"; e.currentTarget.style.background="rgba(74,184,63,0.06)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.6)"; e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}>
+            onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="var(--ged-tx2)"; e.currentTarget.style.background="var(--ged-card)"; }}>
             <LuRefreshCw size={14} /> Actualiser
           </button>
         </header>
@@ -629,16 +629,16 @@ export default function Validations() {
               <button key={id} onClick={() => setActiveTab(id)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border transition-all"
                 style={{
-                  background:  activeTab===id ? `${accent}18`      : "rgba(255,255,255,0.04)",
-                  borderColor: activeTab===id ? `${accent}40`      : "rgba(255,255,255,0.08)",
-                  color:       activeTab===id ? accent              : "rgba(168,191,212,0.6)",
+                  background:  activeTab===id ? `${accent}18`      : "var(--ged-card)",
+                  borderColor: activeTab===id ? `${accent}40`      : "var(--ged-border)",
+                  color:       activeTab===id ? accent              : "var(--ged-tx2)",
                   cursor:"pointer",
                 }}>
                 <Icon size={14} />
                 {label}
                 {count > 0 && (
                   <span className="rounded-full px-2 py-px text-xs font-bold"
-                    style={{ background:activeTab===id?`${accent}28`:"rgba(255,255,255,0.08)", color:activeTab===id?accent:"rgba(168,191,212,0.6)" }}>
+                    style={{ background:activeTab===id?`${accent}28`:"var(--ged-border)", color:activeTab===id?accent:"var(--ged-tx2)" }}>
                     {count}
                   </span>
                 )}
@@ -648,7 +648,7 @@ export default function Validations() {
 
           {/* ── Content ────────────────────────────────────────── */}
           {loading ? (
-            <div className="flex flex-col items-center gap-3 py-16" style={{ color:"rgba(168,191,212,0.5)" }}>
+            <div className="flex flex-col items-center gap-3 py-16" style={{ color:"var(--ged-tx2)" }}>
               <LuRefreshCw size={32} className="animate-spin" style={{ color:"rgba(74,184,63,0.5)" }} />
               <p className="m-0 text-sm">Chargement…</p>
             </div>
@@ -658,8 +658,8 @@ export default function Validations() {
               {activeTab === "pending" && (
                 pendingDocs.length === 0 ? (
                   <div className="flex flex-col items-center py-16 gap-3">
-                    <LuClipboardCheck size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>Aucun document en attente de validation.</p>
+                    <LuClipboardCheck size={40} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="m-0 text-sm" style={{ color:"var(--ged-tx3)" }}>Aucun document en attente de validation.</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
@@ -685,16 +685,16 @@ export default function Validations() {
                             </div>
                             <p className="m-0 font-semibold text-white text-sm leading-snug">{doc.title || "—"}</p>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
-                              {doc.responsible && <span className="text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>{doc.responsible}</span>}
-                              {doc.folder_name && <span className="text-xs" style={{ color:"rgba(168,191,212,0.4)" }}>{doc.folder_name}</span>}
+                              {doc.responsible && <span className="text-xs" style={{ color:"var(--ged-tx2)" }}>{doc.responsible}</span>}
+                              {doc.folder_name && <span className="text-xs" style={{ color:"var(--ged-tx3)" }}>{doc.folder_name}</span>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <button onClick={() => setSelectedDocId(doc.id)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all"
-                              style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}
+                              style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.12)", color:"var(--ged-tx2)", cursor:"pointer" }}
                               onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(165,180,252,0.4)"; e.currentTarget.style.color="#a5b4fc"; }}
-                              onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; e.currentTarget.style.color="rgba(168,191,212,0.7)"; }}>
+                              onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; e.currentTarget.style.color="var(--ged-tx2)"; }}>
                               <LuEye size={13} /> Détails
                             </button>
                             {["Admin","Reviewer"].includes(userRole) && (<>
@@ -725,14 +725,14 @@ export default function Validations() {
               {activeTab === "validates" && (
                 validatedDocs.length === 0 ? (
                   <div className="flex flex-col items-center py-16 gap-3">
-                    <LuCircleCheckBig size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>
+                    <LuCircleCheckBig size={40} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="m-0 text-sm" style={{ color:"var(--ged-tx3)" }}>
                       Aucun document validé.
                     </p>
                   </div>
                 ) : (
                   <div className="rounded-2xl overflow-hidden border"
-                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(134,239,172,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    style={{ background:"var(--ged-header)", borderColor:"rgba(134,239,172,0.15)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                     <div className="px-5 py-2.5 border-b"
                       style={{ background:"rgba(74,222,128,0.05)", borderColor:"rgba(134,239,172,0.12)" }}>
                       <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#4ade80" }}>
@@ -741,10 +741,10 @@ export default function Validations() {
                     </div>
                     {/* header row */}
                     <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.07)" }}>
                       {["Référence","Titre","Responsable","Type","Statut","Version"].map(h => (
                         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
-                          style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
+                          style={{ color:"var(--ged-tx2)" }}>{h}</span>
                       ))}
                     </div>
                     {/* rows */}
@@ -763,15 +763,15 @@ export default function Validations() {
                         <span className="font-mono font-bold text-[13px]" style={{ color: sc.text }}>{doc.doc_code}</span>
                         <div className="overflow-hidden pr-3">
                           <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
-                          {doc.folder_name && <p className="m-0 text-xs flex items-center gap-1" style={{ color:"rgba(168,191,212,0.45)" }}><LuFolder size={10}/> {doc.folder_name}</p>}
+                          {doc.folder_name && <p className="m-0 text-xs flex items-center gap-1" style={{ color:"var(--ged-tx3)" }}><LuFolder size={10}/> {doc.folder_name}</p>}
                         </div>
-                        <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
+                        <span className="text-sm truncate" style={{ color:"var(--ged-tx2)" }}>{doc.responsible || "—"}</span>
                         <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
                           style={{ background:"rgba(74,222,128,0.1)", color:"#4ade80", borderColor:"rgba(74,222,128,0.2)" }}>
                           {doc.type_code}
                         </span>
                         <StatusBadge name={doc.status_name} />
-                        <span className="text-sm font-semibold" style={{ color:"rgba(168,191,212,0.6)" }}>
+                        <span className="text-sm font-semibold" style={{ color:"var(--ged-tx2)" }}>
                           {doc.current_version ? (doc.current_version === "-" ? "Initiale" : doc.current_version.replace(/^v/, "")) : "—"}
                         </span>
                       </div>
@@ -785,14 +785,14 @@ export default function Validations() {
               {activeTab === "history" && (
                 allHistory.length === 0 ? (
                   <div className="flex flex-col items-center py-16 gap-3">
-                    <LuInbox size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>
+                    <LuInbox size={40} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="m-0 text-sm" style={{ color:"var(--ged-tx3)" }}>
                       Aucune validation enregistrée.
                     </p>
                   </div>
                 ) : (
                   <div className="rounded-2xl overflow-hidden border"
-                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    style={{ background:"var(--ged-header)", borderColor:"var(--ged-border)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                     <div className="px-5 py-2.5 border-b"
                       style={{ background:"rgba(74,184,63,0.04)", borderColor:"rgba(74,184,63,0.1)" }}>
                       <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#4ab83f" }}>
@@ -801,10 +801,10 @@ export default function Validations() {
                     </div>
                     {/* header row */}
                     <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"110px 130px 1fr 1fr 140px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      style={{ gridTemplateColumns:"110px 130px 1fr 1fr 140px", background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.07)" }}>
                       {["Date","Décision","Référence / Titre","Commentaire","Validateur"].map(h => (
                         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
-                          style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
+                          style={{ color:"var(--ged-tx2)" }}>{h}</span>
                       ))}
                     </div>
                     {/* rows */}
@@ -821,10 +821,10 @@ export default function Validations() {
                         <div className="absolute left-0 top-0 bottom-0 w-[3px]"
                           style={{ background:`linear-gradient(to bottom,${dcfg.text},${dcfg.text}55)` }} />
                           <div>
-                            <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
+                            <p className="m-0 text-sm" style={{ color:"var(--ged-tx2)" }}>
                               {new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})}
                             </p>
-                            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.35)" }}>
+                            <p className="m-0 text-xs" style={{ color:"var(--ged-tx3)" }}>
                               {new Date(v.validated_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
                             </p>
                           </div>
@@ -834,14 +834,14 @@ export default function Validations() {
                           </span>
                           <div>
                             <p className="m-0 font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{v.doc_code}</p>
-                            <p className="m-0 text-xs truncate" style={{ color:"rgba(168,191,212,0.45)" }}>{v.doc_title || "—"}</p>
+                            <p className="m-0 text-xs truncate" style={{ color:"var(--ged-tx3)" }}>{v.doc_title || "—"}</p>
                           </div>
-                          <span className="text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>
-                            {v.comment || <span style={{ color:"rgba(168,191,212,0.25)" }}>—</span>}
+                          <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>
+                            {v.comment || <span style={{ color:"var(--ged-tx3)" }}>—</span>}
                           </span>
                           <div className="flex items-center gap-1.5 overflow-hidden">
-                            <LuUser size={12} style={{ color:"rgba(168,191,212,0.4)", flexShrink:0 }} />
-                            <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{v.validator_name}</span>
+                            <LuUser size={12} style={{ color:"var(--ged-tx3)", flexShrink:0 }} />
+                            <span className="text-sm truncate" style={{ color:"var(--ged-tx2)" }}>{v.validator_name}</span>
                           </div>
                         </div>
                       );
@@ -875,7 +875,7 @@ export default function Validations() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color:"rgba(168,191,212,0.6)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color:"var(--ged-tx2)" }}>
                 Commentaire {decisionModal.action === "REJETÉ" ? "(obligatoire)" : "(optionnel)"}
               </label>
               <textarea
@@ -884,13 +884,13 @@ export default function Validations() {
                 rows={7}
                 placeholder={decisionModal.action === "APPROUVÉ" ? "Document conforme aux exigences…" : "Motif du rejet…"}
                 className="w-full rounded-xl border px-3 py-2.5 text-sm resize-y outline-none"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"white", fontFamily:"inherit" }}
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"white", fontFamily:"inherit" }}
               />
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setDecisionModal(null)}
                 className="px-4 py-2 rounded-lg border text-sm font-semibold"
-                style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}>
+                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)", cursor:"pointer" }}>
                 Annuler
               </button>
               <button onClick={submitDecision}

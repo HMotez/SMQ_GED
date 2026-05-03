@@ -21,7 +21,7 @@ const STATUS_CFG = {
   "Obsolète":        { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert },
   "Archivé":         { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive       },
 };
-const statusCfg = (name) => STATUS_CFG[name] || { bg:"rgba(240,243,246,0.06)", text:"rgba(168,191,212,0.6)", border:"rgba(255,255,255,0.1)", Icon:LuFileText };
+const statusCfg = (name) => STATUS_CFG[name] || { bg:"rgba(240,243,246,0.06)", text:"var(--ged-tx2)", border:"rgba(255,255,255,0.1)", Icon:LuFileText };
 
 function StatusBadge({ name }) {
   const s = statusCfg(name);
@@ -38,10 +38,10 @@ function StatCard({ Icon, label, value, accent }) {
   const I = Icon;
   return (
     <div className="flex-1 min-w-[120px] rounded-2xl px-5 py-4 border"
-      style={{ background:"rgba(255,255,255,0.04)", borderColor:`${accent}25`, backdropFilter:"blur(10px)" }}>
+      style={{ background:"var(--ged-card)", borderColor:`${accent}25`, backdropFilter:"blur(10px)" }}>
       <div className="flex items-center gap-1.5 mb-2">
         <I size={13} style={{ color:accent }} />
-        <p className="m-0 text-[11px] uppercase tracking-[0.8px] font-bold" style={{ color:"rgba(168,191,212,0.5)" }}>{label}</p>
+        <p className="m-0 text-[11px] uppercase tracking-[0.8px] font-bold" style={{ color:"var(--ged-tx2)" }}>{label}</p>
       </div>
       <p className="m-0 font-black text-3xl text-white" style={{ letterSpacing:-0.5 }}>{value}</p>
     </div>
@@ -131,15 +131,15 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <h2 className="m-0 text-white font-bold" style={{ fontSize:20, letterSpacing:-0.3 }}>{doc.title}</h2>
                   </>
                 ) : loading ? (
-                  <div className="h-8 w-56 rounded-lg animate-pulse" style={{ background:"rgba(255,255,255,0.06)" }} />
+                  <div className="h-8 w-56 rounded-lg animate-pulse" style={{ background:"var(--ged-card-md)" }} />
                 ) : null}
               </div>
             </div>
             <button onClick={onClose}
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
-              style={{ color:"rgba(168,191,212,0.5)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}
+              style={{ color:"var(--ged-tx2)", background:"var(--ged-card)", border:"1px solid rgba(255,255,255,0.08)" }}
               onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.1)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.3)"; e.currentTarget.style.color="#f87171"; }}
-              onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.08)"; e.currentTarget.style.color="rgba(168,191,212,0.5)"; }}>
+              onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.08)"; e.currentTarget.style.color="var(--ged-tx2)"; }}>
               <LuX size={16} />
             </button>
           </div>
@@ -152,7 +152,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                   onClick={() => setActiveTab(tab.id)}
                   className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-xl border-b-2 transition-all"
                   style={{
-                    color: activeTab === tab.id ? "#fff" : "rgba(168,191,212,0.45)",
+                    color: activeTab === tab.id ? "#fff" : "var(--ged-tx3)",
                     borderBottomColor: activeTab === tab.id ? "#4ab83f" : "transparent",
                     background: activeTab === tab.id ? "rgba(74,184,63,0.06)" : "transparent",
                     cursor:"pointer",
@@ -162,7 +162,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <span className="rounded-full px-1.5 py-px text-[10px] font-black"
                       style={{
                         background: activeTab === tab.id ? "rgba(74,184,63,0.2)" : "rgba(255,255,255,0.06)",
-                        color: activeTab === tab.id ? "#4ab83f" : "rgba(168,191,212,0.35)",
+                        color: activeTab === tab.id ? "#4ab83f" : "var(--ged-tx3)",
                       }}>
                       {tab.count}
                     </span>
@@ -180,11 +180,11 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
         {loading ? (
           <div className="flex-1 flex items-center justify-center gap-3 py-16">
             <LuRefreshCw size={22} className="animate-spin" style={{ color:"rgba(74,184,63,0.5)" }} />
-            <span className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Chargement…</span>
+            <span className="text-sm" style={{ color:"var(--ged-tx3)" }}>Chargement…</span>
           </div>
         ) : !doc ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm" style={{ color:"rgba(168,191,212,0.4)" }}>Document introuvable.</p>
+            <p className="text-sm" style={{ color:"var(--ged-tx3)" }}>Document introuvable.</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-7 py-6">
@@ -208,8 +208,8 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <div key={label} className="rounded-xl px-4 py-3 border"
                       style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(255,255,255,0.07)" }}>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <Icon size={11} style={{ color:"rgba(168,191,212,0.4)" }} />
-                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"rgba(168,191,212,0.35)" }}>{label}</p>
+                        <Icon size={11} style={{ color:"var(--ged-tx3)" }} />
+                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"var(--ged-tx3)" }}>{label}</p>
                       </div>
                       <p className="m-0 text-sm font-medium text-white truncate" title={value}>{value}</p>
                     </div>
@@ -219,14 +219,14 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                 {(doc.context || doc.description) && (
                   <div className="rounded-xl px-4 py-3.5 border"
                     style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.06)" }}>
-                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"rgba(168,191,212,0.35)" }}>Description / Contexte</p>
-                    <p className="m-0 text-sm leading-relaxed" style={{ color:"rgba(168,191,212,0.65)" }}>{doc.context || doc.description}</p>
+                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"var(--ged-tx3)" }}>Description / Contexte</p>
+                    <p className="m-0 text-sm leading-relaxed" style={{ color:"var(--ged-tx2)" }}>{doc.context || doc.description}</p>
                   </div>
                 )}
 
                 {doc.keywords?.length > 0 && (
                   <div>
-                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"rgba(168,191,212,0.35)" }}>Mots-clés</p>
+                    <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"var(--ged-tx3)" }}>Mots-clés</p>
                     <div className="flex flex-wrap gap-2">
                       {doc.keywords.map(k => (
                         <span key={k} className="px-2.5 py-0.5 rounded-full text-xs border font-medium"
@@ -255,8 +255,8 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
               <div className="flex flex-col gap-3">
                 {versions.length === 0 ? (
                   <div className="flex flex-col items-center py-12 gap-3">
-                    <LuHistory size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                    <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune version enregistrée.</p>
+                    <LuHistory size={32} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune version enregistrée.</p>
                   </div>
                 ) : versions.map((v, idx) => {
                   const isLast  = idx === versions.length - 1;
@@ -266,7 +266,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                     <div className="px-5 py-4 flex items-center gap-4">
                       <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                         <span className="rounded-xl px-3 py-1 text-sm font-black border"
-                          style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "rgba(168,191,212,0.5)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
+                          style={{ background: isLast ? "rgba(74,184,63,0.15)" : "rgba(255,255,255,0.05)", color: isLast ? "#4ab83f" : "var(--ged-tx2)", borderColor: isLast ? "rgba(74,184,63,0.3)" : "rgba(255,255,255,0.08)" }}>
                           {v.version_letter || "-"}
                         </span>
                         {isLast && (
@@ -275,7 +275,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="m-0 text-sm font-semibold text-white">{v.change_summary || "Version initiale"}</p>
-                        <p className="m-0 text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{ color:"rgba(168,191,212,0.45)" }}>
+                        <p className="m-0 text-xs mt-0.5 flex items-center gap-2 flex-wrap" style={{ color:"var(--ged-tx3)" }}>
                           {v.created_by_name && <span className="flex items-center gap-1"><LuUser size={10} />{v.created_by_name} ·</span>}
                           <span className="flex items-center gap-1"><LuCalendar size={10} />{v.created_at ? new Date(v.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"}) : "—"}</span>
                           {v.file_size > 0 && <span>· {(v.file_size/1024).toFixed(0)} Ko</span>}
@@ -305,8 +305,8 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
               <div className="flex flex-col gap-3">
                 {valHist.length === 0 ? (
                   <div className="flex flex-col items-center py-12 gap-3">
-                    <LuCircleCheck size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                    <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune décision de validation enregistrée.</p>
+                    <LuCircleCheck size={32} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune décision de validation enregistrée.</p>
                   </div>
                 ) : valHist.map(v => {
                   const dc = dcfgMap[v.decision] || dcfgMap["EN_ATTENTE"];
@@ -322,26 +322,26 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                           </span>
                           {v.version_letter && v.version_letter !== "-" && (
                             <span className="text-xs px-2 py-0.5 rounded-md border font-mono font-bold"
-                              style={{ background:"rgba(255,255,255,0.04)", color:"rgba(168,191,212,0.5)", borderColor:"rgba(255,255,255,0.08)" }}>
+                              style={{ background:"var(--ged-card)", color:"var(--ged-tx2)", borderColor:"var(--ged-border)" }}>
                               {v.version_letter}
                             </span>
                           )}
                         </div>
-                        <span className="text-xs flex-shrink-0" style={{ color:"rgba(168,191,212,0.4)" }}>
+                        <span className="text-xs flex-shrink-0" style={{ color:"var(--ged-tx3)" }}>
                           {v.validated_at ? new Date(v.validated_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ background:"rgba(168,191,212,0.08)", border:"1px solid rgba(168,191,212,0.12)" }}>
-                          <LuUser size={13} style={{ color:"rgba(168,191,212,0.5)" }} />
+                          style={{ background:"var(--ged-card)", border:"1px solid var(--ged-border)" }}>
+                          <LuUser size={13} style={{ color:"var(--ged-tx2)" }} />
                         </div>
                         <span className="text-sm font-semibold text-white">{v.validator_name}</span>
                       </div>
                       {v.comment && (
                         <div className="rounded-lg px-3 py-2.5 border mt-1"
                           style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.06)" }}>
-                          <p className="m-0 text-xs leading-relaxed italic" style={{ color:"rgba(168,191,212,0.6)" }}>"{v.comment}"</p>
+                          <p className="m-0 text-xs leading-relaxed italic" style={{ color:"var(--ged-tx2)" }}>"{v.comment}"</p>
                         </div>
                       )}
                       {v.signature_hash && (
@@ -361,8 +361,8 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
               <div>
                 {timeline.length === 0 ? (
                   <div className="flex flex-col items-center py-12 gap-3">
-                    <LuFileText size={32} style={{ color:"rgba(168,191,212,0.15)" }} />
-                    <p className="text-sm m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Aucune activité enregistrée pour ce document.</p>
+                    <LuFileText size={32} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="text-sm m-0" style={{ color:"var(--ged-tx3)" }}>Aucune activité enregistrée pour ce document.</p>
                   </div>
                 ) : (
                   <div className="relative pl-2">
@@ -396,25 +396,25 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                             <div className="flex-1 min-w-0 pt-1.5">
                               <div className="flex items-center justify-between gap-2 mb-1">
                                 <span className="text-sm font-bold" style={{ color:cfg.text }}>{cfg.label}</span>
-                                <span className="text-[11px] flex-shrink-0" style={{ color:"rgba(168,191,212,0.35)" }}>
+                                <span className="text-[11px] flex-shrink-0" style={{ color:"var(--ged-tx3)" }}>
                                   {event.timestamp ? new Date(event.timestamp).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}
                                 </span>
                               </div>
                               {event.type === "LOG" && details.from && details.to && (
-                                <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
-                                  <span style={{ color:"rgba(168,191,212,0.38)" }}>{details.from}</span>
+                                <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
+                                  <span style={{ color:"var(--ged-tx3)" }}>{details.from}</span>
                                   {" "}<span style={{ color:cfg.text }}>→</span>{" "}
                                   <span className="font-semibold text-white">{details.to}</span>
                                 </p>
                               )}
                               {event.type === "VALIDATION" && (
-                                <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
                                   Par <span className="font-semibold text-white">{event.validator_name}</span>
-                                  {event.version && <span style={{ color:"rgba(168,191,212,0.35)" }}> · v{event.version}</span>}
+                                  {event.version && <span style={{ color:"var(--ged-tx3)" }}> · v{event.version}</span>}
                                 </p>
                               )}
                               {event.type === "VERSION" && (
-                                <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.5)" }}>
+                                <p className="m-0 text-xs" style={{ color:"var(--ged-tx2)" }}>
                                   <span className="font-mono font-bold" style={{ color:"#4ab83f" }}>{event.version_letter}</span>
                                   {event.change_summary && <span> · {event.change_summary}</span>}
                                 </p>
@@ -422,11 +422,11 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                               {event.type === "VALIDATION" && event.comment && (
                                 <div className="mt-1 rounded-lg px-3 py-1.5 border"
                                   style={{ background:"rgba(255,255,255,0.02)", borderColor:"rgba(255,255,255,0.05)" }}>
-                                  <p className="m-0 text-xs italic" style={{ color:"rgba(168,191,212,0.5)" }}>"{event.comment}"</p>
+                                  <p className="m-0 text-xs italic" style={{ color:"var(--ged-tx2)" }}>"{event.comment}"</p>
                                 </div>
                               )}
                               {event.type === "LOG" && event.user_id && (
-                                <p className="m-0 mt-0.5 text-[11px] flex items-center gap-1" style={{ color:"rgba(168,191,212,0.3)" }}>
+                                <p className="m-0 mt-0.5 text-[11px] flex items-center gap-1" style={{ color:"var(--ged-tx3)" }}>
                                   <LuUser size={9} /> {details.user_name || `Utilisateur #${event.user_id}`}
                                 </p>
                               )}
@@ -448,9 +448,9 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
       {previewOpen && (
         <div onClick={() => setPreviewOpen(false)} className="fixed inset-0 z-[1200] flex flex-col items-center justify-center" style={{ background:"rgba(5,12,20,0.9)", backdropFilter:"blur(8px)" }}>
           <div onClick={e => e.stopPropagation()} className="w-[90vw] h-[90vh] rounded-2xl flex flex-col overflow-hidden border" style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)" }}>
-            <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background:"var(--ged-card)", borderColor:"var(--ged-border)" }}>
               <span className="text-sm font-semibold text-white flex items-center gap-1.5"><LuFile size={14} /> {previewFile}</span>
-              <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"rgba(168,191,212,0.5)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="rgba(168,191,212,0.5)"}>
+              <button onClick={() => { setPreviewOpen(false); setPreviewFile(null); }} style={{ color:"var(--ged-tx2)" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color="var(--ged-tx2)"}>
                 <LuX size={18} />
               </button>
             </div>
@@ -472,17 +472,24 @@ export default function Archive() {
   const [selectedDocId, setSelectedDocId] = useState(null);
   const [selectedHistoryEntry, setSelectedHistoryEntry] = useState(null);
 
+  const isVisitor = !currentUser;
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [cand, arch, hist] = await Promise.all([
-        axios.get(`${API}/documents/archive-candidates`),
-        axios.get(`${API}/documents/archived`),
-        axios.get(`${API}/documents/archive-history`),
-      ]);
-      setCandidates(cand.data); setArchived(arch.data); setHistory(hist.data);
+      if (isVisitor) {
+        const arch = await axios.get(`${API}/documents/archived`);
+        setArchived(arch.data);
+      } else {
+        const [cand, arch, hist] = await Promise.all([
+          axios.get(`${API}/documents/archive-candidates`),
+          axios.get(`${API}/documents/archived`),
+          axios.get(`${API}/documents/archive-history`),
+        ]);
+        setCandidates(cand.data); setArchived(arch.data); setHistory(hist.data);
+      }
     } catch (err) { console.error(err); } finally { setLoading(false); }
-  }, []);
+  }, [isVisitor]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -512,20 +519,22 @@ export default function Archive() {
   const ROW_BORDER = "1px solid rgba(255,255,255,0.05)";
 
   const tabs = [
-    { id:"archived",   Icon:LuArchive,       label:"Archivés",        count:archived.length,                          accent:"#94a3b8" },
-    { id:"history",    Icon:LuRefreshCw,     label:"Historique", count:history.length,                           accent:"#4ab83f" },
+    { id:"archived", Icon:LuArchive,   label:"Archivés",   count:archived.length, accent:"#94a3b8" },
+    ...(!isVisitor ? [{ id:"history", Icon:LuRefreshCw, label:"Historique", count:history.length, accent:"#4ab83f" }] : []),
   ];
 
   const sidebarBottom = (
     <>
       {[
-        { label:"À archiver", value:expiredDiffuse.length, accent:"#f87171" },
-        { label:"Obsolètes",  value:obsoletes.length,      accent:"#fb923c" },
+        ...(!isVisitor ? [
+          { label:"À archiver", value:expiredDiffuse.length, accent:"#f87171" },
+          { label:"Obsolètes",  value:obsoletes.length,      accent:"#fb923c" },
+        ] : []),
         { label:"Archivés",   value:archived.length,       accent:"#94a3b8" },
       ].map(({ label, value, accent }) => (
         <div key={label} className="flex justify-between items-center px-3 py-2 rounded-lg border"
           style={{ background:`${accent}10`, borderColor:`${accent}25` }}>
-          <span className="text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>{label}</span>
+          <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>{label}</span>
           <span className="font-bold text-base" style={{ color:accent }}>{value}</span>
         </div>
       ))}
@@ -550,12 +559,12 @@ export default function Archive() {
       <div className="overflow-hidden pr-3">
         <p className="m-0 text-sm font-medium text-white truncate">{doc.title}</p>
         {doc.folder_name && (
-          <p className="m-0 text-xs flex items-center gap-1" style={{ color:"rgba(168,191,212,0.45)" }}>
+          <p className="m-0 text-xs flex items-center gap-1" style={{ color:"var(--ged-tx3)" }}>
             <LuFolder size={10} /> {doc.folder_name}
           </p>
         )}
       </div>
-      <span className="text-sm truncate" style={{ color:"rgba(168,191,212,0.6)" }}>{doc.responsible || "—"}</span>
+      <span className="text-sm truncate" style={{ color:"var(--ged-tx2)" }}>{doc.responsible || "—"}</span>
       <span className="px-2 py-0.5 rounded-md text-xs font-semibold w-fit border"
         style={{ background:"rgba(165,180,252,0.1)", color:"#a5b4fc", borderColor:"rgba(165,180,252,0.2)" }}>
         {doc.type_code}
@@ -565,20 +574,20 @@ export default function Archive() {
         {showDaysOverdue ? (
           <span>
             <span className="font-bold text-sm" style={{ color:"#fb923c" }}>+{doc.days_overdue ?? 0} j</span>
-            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>
+            <p className="m-0 text-xs" style={{ color:"var(--ged-tx3)" }}>
               {doc.next_review_date ? new Date(doc.next_review_date).toLocaleDateString("fr-FR") : "—"}
             </p>
           </span>
         ) : showArchiveBtn && can("archive:manage") ? (
           <button onClick={() => handleManualArchive(doc)}
             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold border transition-all"
-            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.7)", cursor:"pointer" }}
+            style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)", cursor:"pointer" }}
             onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.12)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.3)"; e.currentTarget.style.color="#f87171"; }}
-            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.7)"; }}>
+            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="var(--ged-tx2)"; }}>
             <LuArchive size={12} /> Archiver
           </button>
         ) : (
-          <span className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>
+          <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>
             {doc.next_review_date ? new Date(doc.next_review_date).toLocaleDateString("fr-FR") : "—"}
           </span>
         )}
@@ -589,17 +598,17 @@ export default function Archive() {
 
   const TableHeader = ({ lastCol = "Révision" }) => (
     <div className="grid px-5 py-2.5 border-b"
-      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+      style={{ gridTemplateColumns:"155px 1fr 120px 90px 120px 130px", background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.07)" }}>
       {["Référence", "Titre", "Responsable", "Type", "Statut", lastCol].map(h => (
         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
-          style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
+          style={{ color:"var(--ged-tx2)" }}>{h}</span>
       ))}
     </div>
   );
 
   return (
     <div className="min-h-screen flex"
-      style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+      style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
@@ -612,15 +621,15 @@ export default function Archive() {
 
         {/* ── Header ─────────────────────────────────────────── */}
         <header className="px-8 py-4 border-b flex items-center justify-between"
-          style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(20px)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
+          style={{ background:"var(--ged-header)", backdropFilter:"blur(20px)", borderColor:"var(--ged-border)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background:"linear-gradient(135deg,rgba(148,163,184,0.18),rgba(148,163,184,0.08))", border:"1.5px solid rgba(148,163,184,0.3)", boxShadow:"0 4px 14px rgba(0,0,0,0.2)" }}>
               <LuArchive size={19} style={{ color:"#94a3b8" }} />
             </div>
             <div>
-              <h1 className="m-0 font-extrabold text-white" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2 }}>Archivage</h1>
-              <p className="m-0 text-xs mt-0.5" style={{ color:"rgba(168,191,212,0.48)" }}>
+              <h1 className="m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2, color:"var(--ged-tx1)" }}>Archivage</h1>
+              <p className="m-0 text-xs mt-0.5" style={{ color:"var(--ged-tx4)" }}>
                 Documents obsolètes · Aucune suppression définitive
                 {activeTab === "archived"   && <span style={{ color:"#94a3b8" }}> · {archived.length} archivés</span>}
 
@@ -630,9 +639,9 @@ export default function Archive() {
           </div>
           <button onClick={load}
             className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold border transition-all"
-            style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(168,191,212,0.6)", cursor:"pointer" }}
+            style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)", cursor:"pointer" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(148,163,184,0.4)"; e.currentTarget.style.color="#94a3b8"; e.currentTarget.style.background="rgba(148,163,184,0.06)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="rgba(168,191,212,0.6)"; e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}>
+            onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; e.currentTarget.style.color="var(--ged-tx2)"; e.currentTarget.style.background="rgba(255,255,255,0.04)"; }}>
             <LuRefreshCw size={14} /> Actualiser
           </button>
         </header>
@@ -641,10 +650,10 @@ export default function Archive() {
 
           {/* ── Stats ──────────────────────────────────────────── */}
           <div className="flex gap-4 mb-6 flex-wrap">
-            <StatCard Icon={LuShare2}        label="Diffusés expirés"    value={expiredDiffuse.length} accent={expiredDiffuse.length > 0 ? "#f87171" : "#4ade80"} />
-            <StatCard Icon={LuTriangleAlert} label="En attente archivage" value={obsoletes.length}     accent={obsoletes.length > 0 ? "#fb923c" : "#4ade80"} />
+            {!isVisitor && <StatCard Icon={LuShare2}        label="Diffusés expirés"    value={expiredDiffuse.length} accent={expiredDiffuse.length > 0 ? "#f87171" : "#4ade80"} />}
+            {!isVisitor && <StatCard Icon={LuTriangleAlert} label="En attente archivage" value={obsoletes.length}     accent={obsoletes.length > 0 ? "#fb923c" : "#4ade80"} />}
             <StatCard Icon={LuArchive}       label="Archivés (total)"     value={archived.length}      accent="#94a3b8" />
-            <StatCard Icon={LuLock}          label="Aucune suppression"   value="✓"                 accent="#4ade80" />
+            <StatCard Icon={LuLock}          label="Aucune suppression"   value="✓"                    accent="#4ade80" />
           </div>
 
           {/* ── Tabs ───────────────────────────────────────────── */}
@@ -655,14 +664,14 @@ export default function Archive() {
                 style={{
                   background:  activeTab === id ? `${accent}18`  : "rgba(255,255,255,0.04)",
                   borderColor: activeTab === id ? `${accent}40`  : "rgba(255,255,255,0.08)",
-                  color:       activeTab === id ? accent          : "rgba(168,191,212,0.6)",
+                  color:       activeTab === id ? accent          : "var(--ged-tx2)",
                   cursor: "pointer",
                 }}>
                 <Icon size={14} />
                 {label}
                 {count > 0 && (
                   <span className="rounded-full px-2 py-px text-xs font-bold"
-                    style={{ background:activeTab===id?`${accent}28`:"rgba(255,255,255,0.08)", color:activeTab===id?accent:"rgba(168,191,212,0.6)" }}>
+                    style={{ background:activeTab===id?`${accent}28`:"rgba(255,255,255,0.08)", color:activeTab===id?accent:"var(--ged-tx2)" }}>
                     {count}
                   </span>
                 )}
@@ -674,7 +683,7 @@ export default function Archive() {
           {loading ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <LuRefreshCw size={32} className="animate-spin" style={{ color:"rgba(74,184,63,0.4)" }} />
-              <span className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Chargement…</span>
+              <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>Chargement…</span>
             </div>
           ) : (
             <>
@@ -682,12 +691,12 @@ export default function Archive() {
               {activeTab === "archived" && (
                 archived.length === 0 ? (
                   <div className="flex flex-col items-center py-16 gap-3">
-                    <LuArchive size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>Aucun document archivé.</p>
+                    <LuArchive size={40} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="m-0 text-sm" style={{ color:"var(--ged-tx3)" }}>Aucun document archivé.</p>
                   </div>
                 ) : (
                   <div className="rounded-2xl overflow-hidden border"
-                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    style={{ background:"var(--ged-header)", borderColor:"var(--ged-border)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                     <div className="px-5 py-2.5 border-b"
                       style={{ background:"rgba(148,163,184,0.05)", borderColor:"rgba(148,163,184,0.12)" }}>
                       <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#94a3b8" }}>
@@ -706,12 +715,12 @@ export default function Archive() {
               {activeTab === "history" && (
                 history.length === 0 ? (
                   <div className="flex flex-col items-center py-16 gap-3">
-                    <LuInbox size={40} style={{ color:"rgba(168,191,212,0.2)" }} />
-                    <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.45)" }}>Aucune action d'archivage enregistrée.</p>
+                    <LuInbox size={40} style={{ color:"var(--ged-tx3)" }} />
+                    <p className="m-0 text-sm" style={{ color:"var(--ged-tx3)" }}>Aucune action d'archivage enregistrée.</p>
                   </div>
                 ) : (
                   <div className="rounded-2xl overflow-hidden border"
-                    style={{ background:"rgba(255,255,255,0.03)", borderColor:"rgba(255,255,255,0.08)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
+                    style={{ background:"var(--ged-header)", borderColor:"var(--ged-border)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                     <div className="px-5 py-2.5 border-b"
                       style={{ background:"rgba(74,184,63,0.04)", borderColor:"rgba(74,184,63,0.1)" }}>
                       <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#4ab83f" }}>
@@ -720,10 +729,10 @@ export default function Archive() {
                     </div>
                     {/* header */}
                     <div className="grid px-5 py-2.5 border-b"
-                      style={{ gridTemplateColumns:"110px 130px 1fr 1fr 130px", background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      style={{ gridTemplateColumns:"110px 130px 1fr 1fr 130px", background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.07)" }}>
                       {["Date","Action","Référence / Titre","Détails","Utilisateur"].map(h => (
                         <span key={h} className="text-[11px] font-bold uppercase tracking-[0.8px]"
-                          style={{ color:"rgba(168,191,212,0.5)" }}>{h}</span>
+                          style={{ color:"var(--ged-tx2)" }}>{h}</span>
                       ))}
                     </div>
                     {history.map((entry, i) => {
@@ -741,10 +750,10 @@ export default function Archive() {
                           onMouseEnter={e => e.currentTarget.style.background="rgba(148,163,184,0.06)"}
                           onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                           <div>
-                            <p className="m-0 text-sm" style={{ color:"rgba(168,191,212,0.6)" }}>
+                            <p className="m-0 text-sm" style={{ color:"var(--ged-tx2)" }}>
                               {entry.created_at ? new Date(entry.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}) : "—"}
                             </p>
-                            <p className="m-0 text-xs" style={{ color:"rgba(168,191,212,0.35)" }}>
+                            <p className="m-0 text-xs" style={{ color:"var(--ged-tx3)" }}>
                               {entry.created_at ? new Date(entry.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : ""}
                             </p>
                           </div>
@@ -753,14 +762,14 @@ export default function Archive() {
                           </span>
                           <div>
                             <p className="m-0 font-mono font-bold text-sm" style={{ color:"#4ab83f" }}>{entry.doc_code}</p>
-                            <p className="m-0 text-xs truncate" style={{ color:"rgba(168,191,212,0.45)" }}>{entry.title}</p>
+                            <p className="m-0 text-xs truncate" style={{ color:"var(--ged-tx3)" }}>{entry.title}</p>
                           </div>
-                          <span className="text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>
+                          <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>
                             {details.from && details.to
                               ? <>{details.from} <span style={{ color:actionMeta.color }}>→</span> {details.to}</>
                               : details.reason || details.change_summary || "—"}
                           </span>
-                          <span className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>
+                          <span className="text-sm" style={{ color:"var(--ged-tx2)" }}>
                             {entry.user_name || "Système"}
                           </span>
                         </div>
