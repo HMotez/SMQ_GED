@@ -645,12 +645,15 @@ const changeStatus = async (req, res) => {
       });
     }
 
-    // 3. Vérifier la transition dans la machine à états
+    // 3. Vérifier la transition dans la machine à états ISO 9001
     const ISO_LIFECYCLE_ORDER = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Approuvé","Diffusé","Obsolète","Archivé"];
     const userRole = req.currentUser?.role;
     const curIdx   = ISO_LIFECYCLE_ORDER.indexOf(currentStatus);
+
+    // Retour arrière : Admin et Ing. Qualité peuvent revenir au statut précédent
+    // (ex: Approuvé → Validé) même si ce n'est pas dans ALLOWED_TRANSITIONS
     const prevStatusInCycle = curIdx > 0 ? ISO_LIFECYCLE_ORDER[curIdx - 1] : null;
-    const isAdminRollback = ["Admin", "Ing. Qualité"].includes(userRole) && newStatus === prevStatusInCycle;
+    const isAdminRollback   = ["Admin", "Ing. Qualité"].includes(userRole) && newStatus === prevStatusInCycle;
 
     const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
     if (!allowed.includes(newStatus) && !isAdminRollback) {
@@ -661,7 +664,7 @@ const changeStatus = async (req, res) => {
       });
     }
 
-    // 3b. Vérifier que le rôle autorise cette transition (EF06) — sauf rollback admin
+    // 3b. Vérifier que le rôle autorise cette transition — le rollback admin contourne cette règle
     if (!isAdminRollback && userRole && !canTransition(currentStatus, newStatus, userRole)) {
       await client.query("ROLLBACK");
       return res.status(403).json({

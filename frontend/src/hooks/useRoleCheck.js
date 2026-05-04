@@ -8,7 +8,7 @@
 import { useUser } from '../context/UserContext';
 import { useCallback } from 'react';
 
-const LOCKED_STATUSES = ['Validé', 'Diffusé', 'Obsolète', 'Archivé'];
+const LOCKED_STATUSES = ['Validé', 'Approuvé', 'Diffusé', 'Obsolète', 'Archivé'];
 
 export function useRoleCheck() {
   const { userRole, currentUser } = useUser();
@@ -148,7 +148,11 @@ export function useRoleCheck() {
    * @param {string} toStatus
    * @returns {boolean}
    */
+  // Vérifie si la transition fromStatus→toStatus est autorisée pour le rôle courant.
+  // Ne couvre que les transitions AVANT (forward). Le retour arrière (rollback)
+  // est géré séparément dans DocumentList.jsx via canGoBack (Admin/Ing. Qualité uniquement).
   const canTransitionStatus = useCallback((fromStatus, toStatus) => {
+    // Machine à états ISO 9001 — transitions autorisées vers l'avant uniquement
     const ALLOWED = {
       "Brouillon":           ["En rédaction"],
       "En rédaction":        ["Appel en relecture"],
@@ -156,7 +160,8 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Diffusé"],
+      "Validé":              ["Approuvé"],
+      "Approuvé":            ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],
@@ -165,17 +170,18 @@ export function useRoleCheck() {
     const allowed = ALLOWED[fromStatus] || [];
     if (!allowed.includes(toStatus)) return false;
 
-    // Check role permissions for this specific transition
+    // Matrice rôle × transition — doit rester synchronisée avec roleMiddleware.js côté backend
     const key = `${fromStatus}→${toStatus}`;
     const TRANSITION_ROLE_MAP = {
       "Brouillon→En rédaction":                   ["Admin", "Ing. Qualité"],
       "En rédaction→Appel en relecture":           ["Admin", "Ing. Qualité"],
-      "Appel en relecture→En relecture":           ["Admin", "Ing. Qualité"],
-      "En relecture→En correction":                ["Admin", "Ing. Qualité"],
-      "En relecture→En validation":                ["Admin", "Ing. Qualité"],
+      "Appel en relecture→En relecture":           ["Admin", "Ing. Qualité", "Reviewer"],
+      "En relecture→En correction":                ["Admin", "Ing. Qualité", "Reviewer"],
+      "En relecture→En validation":                ["Admin", "Ing. Qualité", "Reviewer"],
       "En correction→Appel en relecture":          ["Admin", "Ing. Qualité"],
-      "En validation→Validé":                      ["Admin", "Ing. Qualité"],
-      "Validé→Diffusé":                            ["Admin", "Ing. Qualité"],
+      "En validation→Validé":                      ["Admin", "Ing. Qualité", "Reviewer"],
+      "Validé→Approuvé":                           ["Admin", "Ing. Qualité"],
+      "Approuvé→Diffusé":                          ["Admin", "Ing. Qualité"],
       "Diffusé→Obsolète":                          ["Admin", "Ing. Qualité"],
       "Obsolète→Archivé":                          ["Admin", "Ing. Qualité"],
     };
@@ -189,6 +195,7 @@ export function useRoleCheck() {
    * @param {string} currentStatus
    * @returns {string[]} Array of allowed destination statuses
    */
+  // Retourne la liste des statuts cibles accessibles depuis currentStatus pour le rôle courant
   const getAllowedTransitions = useCallback((currentStatus) => {
     const ALLOWED = {
       "Brouillon":           ["En rédaction"],
@@ -197,7 +204,8 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Diffusé"],
+      "Validé":              ["Approuvé"],
+      "Approuvé":            ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],

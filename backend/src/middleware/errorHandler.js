@@ -63,15 +63,6 @@ function getGenericErrorMessage(statusCode, err) {
 }
 
 /**
- * Async Route Wrapper
- * Wraps async route handlers to catch promise rejections
- * Usage: router.get('/path', asyncHandler(async (req, res) => { ... }))
- */
-const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-/**
  * 404 Error Handler
  * Catches all undefined routes
  */
@@ -81,8 +72,4 @@ const notFoundHandler = (req, res, next) => {
   next(error);
 };
 
-module.exports = {
-  errorHandler,
-  asyncHandler,
-  notFoundHandler,
-};
+module.exports = { errorHandler, notFoundHandler };
