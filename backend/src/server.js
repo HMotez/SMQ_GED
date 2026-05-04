@@ -20,6 +20,7 @@ const SCRIPTS_DIR = path.join(__dirname, "scripts");
 const app = express();
 const securityHeaders = require("./middleware/securityHeaders");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+const { metricsMiddleware, metricsHandler } = require("./middleware/metrics");
 
 // Hide Express/Node.js version (Endurcissement infrastructure)
 app.disable("x-powered-by");
@@ -27,6 +28,10 @@ app.disable("x-powered-by");
 app.use(securityHeaders);
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
+
+// ── Prometheus metrics endpoint (Supervision des performances) ─
+app.get("/api/metrics", metricsHandler);
 
 // ── Rate limiting global : 100 requêtes/heure par IP (Passerelle API) ────────
 const globalLimiter = rateLimit({

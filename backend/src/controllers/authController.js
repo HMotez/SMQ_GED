@@ -13,6 +13,7 @@ const ldapService  = require("../services/ldapService");
 const pool         = require("../db");
 const { auditLog }          = require("../utils/auditLog");
 const { validatePassword }  = require("../utils/passwordPolicy");
+const { recordAuthSuccess, recordAuthFailure } = require("../middleware/metrics");
 
 // ── JWT_SECRET — REQUIRED, no fallback (Endurcissement infra) ──
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -238,6 +239,7 @@ async function login(req, res) {
         );
         auditLog({ action: "LOGIN_FAILURE", userId: user.id, severity: "warning",
           details: { email: user.email, attempt: newAttempts, reason: "wrong_password" }, req });
+        recordAuthFailure();
         return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
       }
       authenticated = true;
@@ -264,6 +266,7 @@ async function login(req, res) {
 
     auditLog({ action: "LOGIN_SUCCESS", userId: user.id, severity: "info",
       details: { email: user.email, role: user.role, ip: clientIp }, req });
+    recordAuthSuccess();
 
     const token = signToken(user);
 

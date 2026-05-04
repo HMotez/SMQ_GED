@@ -170,6 +170,60 @@ services:
     depends_on:
       - backend
 
+  # ── Certbot — Renouvellement automatique Let's Encrypt ───────
+  # Renouvelle le cert SSL tous les 12h si nécessaire
+  certbot:
+    image: certbot/certbot:latest
+    container_name: smq_certbot
+    profiles: ["ssl-prod"]
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    networks:
+      - smq_network
+
+  # ── Prometheus — Collecte des métriques (Supervision) ────────
+  # Utilisation : docker compose --profile monitoring up -d
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: smq_prometheus
+    profiles: ["monitoring"]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    expose:
+      - "9090"
+    networks:
+      - smq_network
+    restart: unless-stopped
+
+  # ── Grafana — Tableaux de bord (Supervision) ─────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: smq_grafana
+    profiles: ["monitoring"]
+    environment:
+      GF_SECURITY_ADMIN_USER:     ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-REDACTED}
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_SERVER_ROOT_URL:         "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    expose:
+      - "3000"
+    networks:
+      - smq_network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
   # ── Trivy — Scanner de vulnérabilités (profile audit) ────────
   # Utilisation : docker compose --profile audit run --rm trivy
   trivy:
@@ -181,7 +235,8 @@ services:
       - trivy-cache:/root/.cache/trivy
       - ./reports/security:/reports
     command: >
-      image --severity HIGH,CRITICAL --no-progress
+      image --severity HIGH,CRITICAL --no-progress --format table
+      --output /reports/trivy-report.txt
       smq_ged-backend
     networks:
       - smq_network
@@ -198,6 +253,14 @@ volumes:
     name: smq_clamav_db
   trivy-cache:
     name: smq_trivy_cache
+  certbot-certs:
+    name: smq_certbot_certs
+  certbot-www:
+    name: smq_certbot_www
+  prometheus_data:
+    name: smq_prometheus_data
+  grafana_data:
+    name: smq_grafana_data
   # backups/ is a bind-mount (./backups) — not a named volume,
   # so files are directly accessible on the host for archiving/transfer
 
