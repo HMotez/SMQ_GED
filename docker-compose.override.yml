@@ -1,0 +1,11 @@
+# ============================================================
+# docker-compose.override.yml — Dev/Test only
+# Exposes backend port 4000 to the host so tests can run
+# from the local machine without going through nginx.
+# Docker Compose merges this automatically with docker-compose.yml
+# ============================================================
+
+services:
+  backend:
+    ports:
+      - "4000:4000"

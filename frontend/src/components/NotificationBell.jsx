@@ -249,7 +249,7 @@ function timeAgo(dateStr) {
 
 /* ════════════════════════════════════════════════════════════ */
 export default function NotificationBell() {
-  const { token } = useUser();
+  const { token, currentUser } = useUser();
   const navigate = useNavigate();
   const [open,          setOpen]          = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -338,6 +338,9 @@ export default function NotificationBell() {
   };
 
   const badgeCount = unread > 9 ? "9+" : unread;
+  
+  // Check if user is a visitor (not authenticated or has Visiteur/Lecteur role)
+  const isVisitor = !currentUser || currentUser.role === "Visiteur" || currentUser.role === "Lecteur";
 
   return (
     <>
@@ -377,7 +380,7 @@ export default function NotificationBell() {
         <LuBell size={16} style={{ color: open ? "#4ab83f" : "rgba(168,191,212,0.75)" }} />
 
         {/* Badge */}
-        {unread > 0 && (
+        {!isVisitor && unread > 0 && (
           <span style={{
             position:       "absolute",
             top:            -5,
@@ -436,7 +439,7 @@ export default function NotificationBell() {
               <span style={{ color: "white", fontSize: 13, fontWeight: 700 }}>
                 Notifications
               </span>
-              {unread > 0 && (
+              {!isVisitor && unread > 0 && (
                 <span style={{
                   background:  "rgba(248,113,113,0.14)",
                   color:       "#f87171",

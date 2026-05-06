@@ -152,9 +152,9 @@ const BRUTE_LOCK_MINUTES = 15;
 const GENERIC_AUTH_ERROR = "Email ou mot de passe incorrect.";
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
 
-  if (!email || !password) {
+  if (!email || !password || typeof email !== "string" || typeof password !== "string") {
     return res.status(400).json({
       error: "Email et mot de passe requis.",
       code:  "MISSING_CREDENTIALS",

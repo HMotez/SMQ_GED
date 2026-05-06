@@ -74,7 +74,11 @@ const upload = multer({
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/vnd.ms-excel",
     ];
-    if (!allowed.includes(file.mimetype)) return cb(new Error("Only PDF/DOCX/XLSX"));
+    if (!allowed.includes(file.mimetype)) {
+      const err = new Error("Type de fichier non autorisé. Seuls PDF, DOCX et XLSX sont acceptés.");
+      err.statusCode = 415;
+      return cb(err);
+    }
     cb(null, true);
   },
 });

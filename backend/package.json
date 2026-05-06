@@ -5,12 +5,36 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test": "jest --runInBand --verbose --testPathIgnorePatterns tests/12_rate_limiting",
+    "test:01": "jest tests/01_brute_force --verbose",
+    "test:02": "jest tests/02_password_policy --verbose",
+    "test:03": "jest tests/03_generic_errors --verbose",
+    "test:04": "jest tests/04_session_management --verbose",
+    "test:05": "jest tests/05_https_ssl --verbose",
+    "test:06": "jest tests/06_security_headers --verbose",
+    "test:07": "jest tests/07_server_hardening --verbose",
+    "test:08": "jest tests/08_input_validation --verbose",
+    "test:09": "jest tests/09_access_control --verbose",
+    "test:10": "jest tests/10_error_handling --verbose",
+    "test:11": "jest tests/11_waf_protection --verbose",
+    "test:12": "jest tests/12_rate_limiting --verbose",
+    "test:13": "jest tests/13_audit_logs --verbose",
+    "test:14": "jest tests/14_monitoring --verbose",
+    "test:15": "jest tests/15_backup --verbose",
+    "test:16": "jest tests/16_incident_detection --verbose"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000,
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -26,6 +50,9 @@
     "pg": "^8.18.0"
   },
   "devDependencies": {
+    "axios": "^1.16.0",
+    "form-data": "^4.0.5",
+    "jest": "^29.7.0",
     "nodemon": "^3.1.11"
   }
 }

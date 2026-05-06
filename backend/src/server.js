@@ -18,6 +18,7 @@ const PYTHON = process.env.PYTHON_PATH || "python3";
 const SCRIPTS_DIR = path.join(__dirname, "scripts");
 
 const app = express();
+app.set("trust proxy", 1); // Indispensable pour express-rate-limit derrière Nginx/Docker
 const securityHeaders = require("./middleware/securityHeaders");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 const { metricsMiddleware, metricsHandler } = require("./middleware/metrics");
@@ -44,16 +45,21 @@ const globalLimiter = rateLimit({
 });
 
 // ── Rate limiting strict sur les routes d'authentification ───────────────────
+// AUTH_RATE_LIMIT_MAX=1000 in dev/test to avoid blocking test suites
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX || "20", 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Trop de tentatives d'authentification. Réessayez dans 15 minutes.", code: "AUTH_RATE_LIMIT_EXCEEDED" },
 });
 
 app.use("/api", globalLimiter);
-app.use("/api/auth", authLimiter);
+// Apply strict rate limit only to sensitive auth endpoints (not /me or /logout)
+app.use("/api/auth/login",          authLimiter);
+app.use("/api/auth/register",       authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+app.use("/api/auth/reset-password",  authLimiter);
 
 console.log("PORT =", process.env.PORT);
 

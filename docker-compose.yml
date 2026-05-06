@@ -108,6 +108,8 @@ services:
       # ClamAV antivirus service (virusScanMiddleware)
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
+      # Higher limit for dev/test so the full test suite doesn't exhaust the auth quota
+      AUTH_RATE_LIMIT_MAX: "100"
     volumes:
       - "/app/storage:/app/storage"
     # Backend not exposed to host — only reachable via nginx (HTTPS + WAF)

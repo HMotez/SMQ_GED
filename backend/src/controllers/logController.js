@@ -54,10 +54,13 @@ const getLogs = async (req, res) => {
   const params     = [];
   let   idx        = 1;
 
-  // Exclure les actions sécurité/auth pour tous les rôles
-  const placeholders = SECURITY_ACTIONS.map(() => `$${idx++}`).join(", ");
-  SECURITY_ACTIONS.forEach(a => params.push(a));
-  conditions.push(`l.action NOT IN (${placeholders})`);
+  // Exclure les actions sécurité/auth pour Ing. Qualité (Admin voit tout)
+  const isAdmin = req.currentUser?.role === "Admin";
+  if (!isAdmin) {
+    const placeholders = SECURITY_ACTIONS.map(() => `$${idx++}`).join(", ");
+    SECURITY_ACTIONS.forEach(a => params.push(a));
+    conditions.push(`l.action NOT IN (${placeholders})`);
+  }
 
   if (action) {
     conditions.push(`l.action ILIKE $${idx++}`);
