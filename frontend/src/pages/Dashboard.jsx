@@ -731,12 +731,12 @@ function TypeAreaChart({ data }) {
     scales: {
       x: {
         grid:   { color:"rgba(255,255,255,0.04)", borderDash:[4,6], drawTicks:false },
-        ticks:  { color:"var(--ged-tx2)", font:{ size:11, weight:"600" }, maxRotation:0, padding:8 },
+        ticks:  { color:"rgba(168,191,212,0.65)", font:{ size:11, weight:"600" }, maxRotation:0, padding:8 },
         border: { display:false },
       },
       y: {
         grid:        { color:"rgba(255,255,255,0.04)", drawTicks:false },
-        ticks:       { color:"var(--ged-tx3)", font:{ size:10 }, stepSize:1, padding:10 },
+        ticks:       { color:"rgba(168,191,212,0.38)", font:{ size:10 }, stepSize:1, padding:10 },
         border:      { display:false },
         beginAtZero: true,
       },
@@ -828,14 +828,14 @@ function ProcessHBarChart({ data }) {
     scales: {
       x: {
         grid:        { color:"rgba(255,255,255,0.04)", borderDash:[4,6], drawTicks:false },
-        ticks:       { color:"var(--ged-tx3)", font:{ size:10 }, stepSize:1, padding:6 },
+        ticks:       { color:"rgba(168,191,212,0.38)", font:{ size:10 }, stepSize:1, padding:6 },
         border:      { display:false },
         beginAtZero: true,
         max:         maxVal + 1,
       },
       y: {
         grid:   { display:false },
-        ticks:  { color:"var(--ged-tx1)", font:{ size:12, weight:"700" }, padding:10 },
+        ticks:  { color:"rgba(220,235,248,0.92)", font:{ size:12, weight:"700" }, padding:10 },
         border: { display:false },
       },
     },

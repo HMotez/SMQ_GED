@@ -22,7 +22,9 @@
     "test:13": "jest tests/13_audit_logs --verbose",
     "test:14": "jest tests/14_monitoring --verbose",
     "test:15": "jest tests/15_backup --verbose",
-    "test:16": "jest tests/16_incident_detection --verbose"
+    "test:16": "jest tests/16_incident_detection --verbose",
+    "test:17": "jest tests/17_db_monitoring --verbose",
+    "test:18": "jest tests/18_patch_audit --verbose"
   },
   "keywords": [],
   "author": "",

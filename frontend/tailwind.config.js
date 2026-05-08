@@ -33,6 +33,7 @@ export default {
         "spin-fast":   "spin 0.7s linear infinite",
         "badge-pop":   "badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
         "pulse-dot":   "pulseDot 2s ease-in-out infinite",
+        "tw-blink":    "twBlink 0.75s step-end infinite",
       },
       keyframes: {
         fadeInUp: {
@@ -64,6 +65,10 @@ export default {
         pulseDot: {
           "0%,100%": { opacity: "1" },
           "50%":     { opacity: "0.4" },
+        },
+        twBlink: {
+          "0%,49%":   { opacity: "1" },
+          "50%,100%": { opacity: "0" },
         },
       },
       boxShadow: {

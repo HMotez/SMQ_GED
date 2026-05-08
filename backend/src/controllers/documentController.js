@@ -163,14 +163,14 @@ const createDocument = async (req, res) => {
           process_id, created_by,
           origin, context, project_ref, keywords,
           file_path, file_name, file_size, mime_type,
-          reviewer_emails, validator_emails)
+          reviewer_emails, validator_emails, sharepoint_link)
        VALUES
          ($1,$2,$3,$4,
           $5,$6,$7,$8,
           $9,$10,
           $11,$12,$13,$14,
           $15,$16,$17,$18,
-          $19,$20)
+          $19,$20,$21)
        RETURNING *`,
       [
         docCode, title, responsible, nextReviewDate,
@@ -180,6 +180,7 @@ const createDocument = async (req, res) => {
         req.file.relativePath, req.file.originalname, req.file.size, req.file.mimetype,
         reviewerEmails.length ? reviewerEmails : null,
         validatorEmails.length ? validatorEmails : null,
+        sharepoint_link || null,
       ]
     );
     const document = docInsert.rows[0];
@@ -319,7 +320,7 @@ const getDocuments = async (req, res) => {
       `SELECT
          d.id, d.doc_code, d.title, d.responsible,
          d.current_version, d.next_review_date, d.created_at,
-         d.origin, d.context, d.keywords, d.file_name, d.file_path,
+         d.origin, d.context, d.keywords, d.file_name, d.file_path, d.sharepoint_link,
          f.name  AS folder_name,   f.code  AS folder_code,
          dt.code AS type_code,     dt.label AS type_label,
          s.name  AS status_name,   s.id    AS status_id,

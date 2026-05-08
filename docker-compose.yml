@@ -111,7 +111,7 @@ services:
       # Higher limit for dev/test so the full test suite doesn't exhaust the auth quota
       AUTH_RATE_LIMIT_MAX: "100"
     volumes:
-      - "/app/storage:/app/storage"
+      - "${STORAGE_PATH:-/app/storage}:/app/storage"
     # Backend not exposed to host — only reachable via nginx (HTTPS + WAF)
     expose:
       - "4000"
@@ -225,6 +225,36 @@ services:
     depends_on:
       - prometheus
     restart: unless-stopped
+
+  # ── Patch Monitor — Veille npm audit automatique (profile audit) ─
+  # Utilisation : docker compose --profile audit run --rm patch-monitor
+  # Lance npm audit sur backend + frontend et sauvegarde dans reports/security/
+  patch-monitor:
+    image: node:20-slim
+    container_name: smq_patch_monitor
+    profiles: ["audit"]
+    volumes:
+      - ./backend/package.json:/workspace/backend/package.json:ro
+      - ./backend/package-lock.json:/workspace/backend/package-lock.json:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - ./frontend/package-lock.json:/workspace/frontend/package-lock.json:ro
+      - ./reports/security:/reports
+    entrypoint:
+      - sh
+      - -c
+      - |
+        REPORT="/reports/npm-audit-$(date +%Y%m%d_%H%M%S).txt"
+        echo "SMQ_GED — NPM Audit $(date)" > $$REPORT
+        echo "================================================" >> $$REPORT
+        echo "--- [1/2] Backend ---" >> $$REPORT
+        cd /workspace/backend && npm audit --audit-level=high 2>&1 | tee -a $$REPORT || true
+        echo "" >> $$REPORT
+        echo "--- [2/2] Frontend ---" >> $$REPORT
+        cd /workspace/frontend && npm audit --audit-level=high 2>&1 | tee -a $$REPORT || true
+        echo "" >> $$REPORT
+        echo "Rapport sauvegardé : $$REPORT"
+    networks:
+      - smq_network
 
   # ── Trivy — Scanner de vulnérabilités (profile audit) ────────
   # Utilisation : docker compose --profile audit run --rm trivy

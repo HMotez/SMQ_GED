@@ -2,12 +2,11 @@
 // controllers/logController.js — Journaux d'audit (Admin + Ing. Qualité)
 // ============================================================
 
-// Actions exclues pour Ing. Qualité (sécurité/auth — réservées Admin)
+// Actions exclues du journal documentaire (toujours, pour tous les rôles)
 const SECURITY_ACTIONS = [
   "LOGIN_SUCCESS", "LOGIN_FAILURE", "LOGIN_NEW_IP",
   "LOGOUT", "ACCOUNT_LOCKED",
   "ACCESS_DENIED_401", "ACCESS_DENIED_403",
-  "AUTO_ARCHIVE",
 ];
 
 const pool = require("../db");
@@ -54,9 +53,8 @@ const getLogs = async (req, res) => {
   const params     = [];
   let   idx        = 1;
 
-  // Exclure les actions sécurité/auth pour Ing. Qualité (Admin voit tout)
-  const isAdmin = req.currentUser?.role === "Admin";
-  if (!isAdmin) {
+  // Exclure les actions sécurité/auth du journal documentaire (tous rôles)
+  {
     const placeholders = SECURITY_ACTIONS.map(() => `$${idx++}`).join(", ");
     SECURITY_ACTIONS.forEach(a => params.push(a));
     conditions.push(`l.action NOT IN (${placeholders})`);

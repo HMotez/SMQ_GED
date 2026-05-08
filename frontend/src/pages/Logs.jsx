@@ -23,6 +23,14 @@ const ACTION_LABEL_MAP = {
   VALIDATION_DELETE_ATTEMPT_BLOCKED:  "Suppression validation bloquée",
 };
 
+// ── Hardcoded dropdown options (always available, independent of DB) ──
+const DROPDOWN_ACTIONS = [
+  "CREATE_DOCUMENT",
+  "NEW_VERSION",
+  "VERSION_SUPERSEDED",
+  "STATUS_CHANGE",
+];
+
 // ── Helpers ──────────────────────────────────────────────────
 function fmtDate(iso) {
   if (!iso) return "-";
@@ -135,9 +143,33 @@ function ActionDetails({ action, details }) {
     </>);
   }
 
-  // Fallback: flat readable sentence
+  if (action === "LOGIN_SUCCESS") {
+    return wrap(<><B color="#4ab83f">Connexion réussie</B>{d.user_role && <> — rôle <B color="#a5b4fc">{d.user_role}</B></>}</>);
+  }
+  if (action === "LOGIN_FAILURE") {
+    return wrap(<><B color="#f87171">Échec de connexion</B>{d.reason && <> — <Em>{d.reason}</Em></>}</>);
+  }
+  if (action === "LOGIN_NEW_IP") {
+    return wrap(<><B color="#fbbf24">Connexion depuis une nouvelle adresse IP détectée</B></>);
+  }
+  if (action === "LOGOUT") {
+    return wrap(<><B color="#94a3b8">Déconnexion</B></>);
+  }
+  if (action === "ACCOUNT_LOCKED") {
+    return wrap(<><B color="#f87171">Compte verrouillé</B>{d.reason && <> — <Em>{d.reason}</Em></>}</>);
+  }
+  if (action === "ACCESS_DENIED_401") {
+    return wrap(<><B color="#f87171">Session expirée</B> — authentification requise</>);
+  }
+  if (action === "ACCESS_DENIED_403") {
+    return wrap(<><B color="#f87171">Accès refusé</B> — permissions insuffisantes</>);
+  }
+
+  // Fallback: flat readable sentence — skip all technical/backend keys
+  const SKIP_KEYS = ["doc_code", "timestamp", "ISO_transition", "ip", "ip_address",
+    "user_agent", "path", "method", "email", "current_ip", "previous_ip", "role"];
   const entries = Object.entries(d)
-    .filter(([k]) => !["doc_code", "timestamp", "ISO_transition"].includes(k))
+    .filter(([k]) => !SKIP_KEYS.includes(k))
     .slice(0, 4);
   if (!entries.length) return <span style={TXD}>—</span>;
   return wrap(<>
@@ -525,11 +557,10 @@ export default function Logs() {
   const { token, userRole, currentUser } = useUser();
   const navigate = useNavigate();
 
-  const [logs,             setLogs]             = useState([]);
-  const [total,            setTotal]            = useState(0);
-  const [loading,          setLoading]          = useState(true);
-  const [error,            setError]            = useState(null);
-  const [availableActions, setAvailableActions] = useState([]);
+  const [logs,    setLogs]    = useState([]);
+  const [total,   setTotal]   = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
 
   // Filters
   const [filterAction, setFilterAction] = useState("");
@@ -538,20 +569,13 @@ export default function Logs() {
   const [filterFrom,   setFilterFrom]   = useState("");
   const [filterTo,     setFilterTo]     = useState("");
 
+  const availableActions = DROPDOWN_ACTIONS;
+
   // Redirect if rôle non autorisé
   useEffect(() => {
     if (userRole && userRole !== "Admin" && userRole !== "Ing. Qualité")
       navigate("/", { replace: true });
   }, [userRole, navigate]);
-
-  // Fetch available action types from DB
-  useEffect(() => {
-    if (!token) return;
-    fetch(`${API}/logs/actions`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : [])
-      .then(setAvailableActions)
-      .catch(() => {});
-  }, [token]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);

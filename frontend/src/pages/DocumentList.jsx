@@ -768,6 +768,16 @@ export default function DocumentList() {
                     <p className="m-0 text-sm font-medium text-white">{v}</p>
                   </div>
                 ))}
+                {selected.sharepoint_link && (
+                  <div className="rounded-lg px-3.5 py-2.5 border" style={{ background:"var(--ged-header)", borderColor:"rgba(255,255,255,0.07)" }}>
+                    <p className="m-0 mb-0.5 text-xs uppercase tracking-[0.8px]" style={{ color:"var(--ged-tx3)" }}>SharePoint</p>
+                    <a href={selected.sharepoint_link} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium"
+                      style={{ color:"#60a5fa", textDecoration:"none" }}>
+                      <LuShare2 size={11} /> SharePoint
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Keywords */}
@@ -781,6 +791,7 @@ export default function DocumentList() {
                   </div>
                 </div>
               )}
+
 
               {/* File */}
               {selected.file_name && (

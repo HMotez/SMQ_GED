@@ -28,6 +28,8 @@ npm run test:13   # Règle 31 — Journaux d'audit
 npm run test:14   # Règle 29 — Supervision / Métriques
 npm run test:15   # Règle 25 — Sauvegardes
 npm run test:16   # Règle 36 — Détection d'incidents
+npm run test:17   # Gestion BD — Surveillance accès non autorisés (pool error handler)
+npm run test:18   # Gestion de mise à jour — Veille patchs & audit npm
 ```
 
 ---
@@ -52,6 +54,61 @@ docker compose restart backend   # ← obligatoire avant tout autre test
 npm test
 ```
 
+> `test:12` est exclu du `npm test` automatique. Lance-le séparément.
+
+---
+
+## Détail des nouveaux tests
+
+### test:17 — Surveillance accès non autorisés à la BD
+
+Vérifie que le pool PostgreSQL intercepte les erreurs d'authentification et les
+journalise comme événements `SECURITY` dans `backend/logs/errors.log`.
+
+| Ce qui est testé | Méthode |
+|---|---|
+| `pool.on("error")` enregistré dans db.js | Inspection du code source |
+| Codes d'erreur auth PostgreSQL détectés (28P01, 28000) | Inspection du code source |
+| Appel à `logger.security("DB_UNAUTHORIZED_ACCESS")` | Inspection du code source |
+| Répertoire `backend/logs/` accessible en écriture | Système de fichiers |
+| DB connectée et opérationnelle | `GET /api/health` |
+| Logs visibles par l'Admin | `GET /api/logs` |
+| L'écouteur ne relance pas l'erreur (pas de crash) | Inspection du code source |
+
+```powershell
+npm run test:17
+```
+
+---
+
+### test:18 — Veille patchs & audit npm
+
+Vérifie que l'infrastructure d'audit de vulnérabilités est en place et opérationnelle.
+
+| Ce qui est testé | Méthode |
+|---|---|
+| `scripts/patch-check.sh` existe | Système de fichiers |
+| `scripts/security-audit.sh` existe | Système de fichiers |
+| `patch-check.sh` contient npm audit + Trivy | Inspection du contenu |
+| `package-lock.json` backend présent | Système de fichiers |
+| `package-lock.json` frontend présent | Système de fichiers |
+| Service `patch-monitor` déclaré dans docker-compose | Inspection YAML |
+| `patch-monitor` dans le profile `audit` (pas par défaut) | Inspection YAML |
+| `patch-monitor` monte les lock files en `:ro` | Inspection YAML |
+| Répertoire `reports/security/` accessible | Système de fichiers |
+| npm audit backend → 0 vulnérabilité CRITIQUE | Exécution npm audit |
+
+```powershell
+npm run test:18
+```
+
+**Pour lancer le scan Docker complet (Trivy) :**
+
+```powershell
+docker compose --profile audit run --rm patch-monitor
+docker compose --profile audit run --rm trivy
+```
+
 ---
 
 ## Si un test échoue
@@ -65,3 +122,12 @@ docker exec smq_db psql -U postgres -d smq_db -c "UPDATE users SET login_attempt
 ```powershell
 docker compose restart backend
 ```
+
+**test:17 — logs/ introuvable :**
+```powershell
+mkdir backend\logs
+```
+
+**test:18 — npm audit réseau indisponible :**
+> Le test est ignoré automatiquement si npm registry est inaccessible.
+> Relancez avec connexion internet active.

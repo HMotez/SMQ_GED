@@ -22,6 +22,45 @@ import { API } from "../config";
 import LoginModal from "../components/LoginModal";
 import DocDetailModal from "../components/DocDetailModal";
 
+/* ── Hero typewriter hook ────────────────────────────────── */
+function useHeroTypewriter() {
+  const LINE1 = "Gestion Électronique";
+  const LINE2 = "des Documents";
+  const [t1, setT1] = useState("");
+  const [t2, setT2] = useState("");
+  // phase: 0=typing line1  1=pause  2=typing line2  3=hold then instant reset
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (phase === 0) {
+      if (t1.length < LINE1.length) {
+        timer = setTimeout(() => setT1(LINE1.slice(0, t1.length + 1)), 52);
+      } else {
+        timer = setTimeout(() => setPhase(1), 200);
+      }
+    } else if (phase === 1) {
+      timer = setTimeout(() => setPhase(2), 100);
+    } else if (phase === 2) {
+      if (t2.length < LINE2.length) {
+        timer = setTimeout(() => setT2(LINE2.slice(0, t2.length + 1)), 62);
+      } else {
+        timer = setTimeout(() => setPhase(3), 2200);
+      }
+    } else if (phase === 3) {
+      setT1("");
+      setT2("");
+      timer = setTimeout(() => setPhase(0), 500);
+    }
+    return () => clearTimeout(timer);
+  }, [phase, t1, t2]);
+
+  const typingLine1 = phase === 0;
+  const typingLine2 = phase === 2;
+
+  return { t1, t2, typingLine1, typingLine2 };
+}
+
 /* ── Status & Role config ────────────────────────────────── */
 const STATUS_CFG = {
   "Brouillon":         { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon: LuPencil         },
@@ -1079,6 +1118,8 @@ export default function Home() {
   const canValidate = role === "Admin" || role === "Ing. Qualité" || role === "Reviewer";
   const canArchive  = role === "Admin" || role === "Ing. Qualité";
 
+  const { t1: heroT1, t2: heroT2, typingLine1, typingLine2 } = useHeroTypewriter();
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [demoLoading,    setDemoLoading]    = useState(null);
 
@@ -1182,17 +1223,27 @@ export default function Home() {
               className="hero-fade-1 m-0 mb-5 font-black text-white"
               style={{
                 fontSize: "clamp(28px, 4.5vw, 52px)",
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 letterSpacing: -1.5,
                 textShadow: "0 4px 30px rgba(0,0,0,0.4)",
+                minHeight: "calc(clamp(28px, 4.5vw, 52px) * 1.15 * 2)",
               }}
             >
-              Gestion Électronique{" "}
-              <span
-                className="hero-glow inline-block"
-                style={{ color: "#4ab83f" }}
-              >
-                des Documents
+              <span className="block" style={{ minHeight: "1.15em" }}>
+                {heroT1}
+                <span className={
+                  typingLine1
+                    ? "inline-block font-thin ml-px text-white/80 animate-tw-blink"
+                    : "hidden"
+                }>|</span>
+              </span>
+              <span className="hero-glow block" style={{ color: "#4ab83f", minHeight: "1.15em" }}>
+                {heroT2}
+                <span className={
+                  typingLine2
+                    ? "inline-block font-thin ml-px text-actia-green animate-tw-blink"
+                    : "hidden"
+                }>|</span>
               </span>
             </h1>
 

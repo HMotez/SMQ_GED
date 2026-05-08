@@ -9,7 +9,7 @@ import {
   LuCalendar, LuTag, LuFolder, LuFile, LuFileText,
   LuUser, LuEye, LuArchive, LuLock,
   LuPencil, LuPenLine, LuClipboardCheck, LuShare2,
-  LuTriangleAlert, LuCircleCheckBig,
+  LuTriangleAlert, LuCircleCheckBig, LuExternalLink,
 } from "react-icons/lu";
 import { API, BACKEND } from "../config";
 import DownloadMenu from "./DownloadMenu";
@@ -225,6 +225,21 @@ export default function DocDetailModal({ docId, onClose }) {
                           </span>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {doc.sharepoint_link && (
+                    <div key="sharepoint" className="rounded-xl px-4 py-3 border"
+                      style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <LuExternalLink size={11} style={{ color:"var(--ged-tx3)" }} />
+                        <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"var(--ged-tx3)" }}>SharePoint</p>
+                      </div>
+                      <a href={doc.sharepoint_link} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium"
+                        style={{ color:"#60a5fa", textDecoration:"none" }}>
+                        <LuExternalLink size={11} /> SharePoint
+                      </a>
                     </div>
                   )}
                 </div>
