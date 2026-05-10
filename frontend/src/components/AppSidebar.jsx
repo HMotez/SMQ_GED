@@ -258,7 +258,7 @@ export function SidebarNav({ badges = {}, user }) {
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
                 isActive
-                  ? "text-actia-green font-semibold"
+                  ? "text-white font-bold"
                   : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
               }`
             }
@@ -302,7 +302,7 @@ export function SidebarNav({ badges = {}, user }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
                   isActive
-                    ? "text-teal-400 font-semibold"
+                    ? "text-white font-bold"
                     : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
                 }`
               }
@@ -337,7 +337,7 @@ export function SidebarNav({ badges = {}, user }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
                   isActive
-                    ? "text-red-400 font-semibold"
+                    ? "text-white font-bold"
                     : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
                 }`
               }
@@ -365,7 +365,7 @@ export function SidebarNav({ badges = {}, user }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-3 py-2 rounded-lg no-underline text-[13px] transition-all duration-200 relative overflow-hidden ${
                   isActive
-                    ? "text-red-400 font-semibold"
+                    ? "text-white font-bold"
                     : "text-[#a8bfd4]/70 font-normal hover:bg-white/[0.045] hover:text-white/90"
                 }`
               }
