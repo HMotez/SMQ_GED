@@ -60,7 +60,14 @@ const loadUser = async (req, _res, next) => {
     const token = authHeader.slice(7);
     try {
       // Rejeter les tokens invalidés après déconnexion
-      if (await isTokenBlacklisted(token)) {
+      // Blacklist check is isolated: a DB error must not reject a valid token
+      let blacklisted = false;
+      try {
+        blacklisted = await isTokenBlacklisted(token);
+      } catch (dbErr) {
+        console.error("[loadUser] blacklist check error (proceeding):", dbErr.message);
+      }
+      if (blacklisted) {
         req.currentUser = null;
         return next();
       }

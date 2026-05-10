@@ -176,7 +176,7 @@ async function login(req, res) {
     // Utilisateur introuvable — même message que mot de passe incorrect (anti-énumération)
     if (!user || !user.password_hash) {
       await bcrypt.compare(password, "$2b$10$invalidhashplaceholderXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-      auditLog({ action: "LOGIN_FAILURE", severity: "warning", details: { email, reason: "user_not_found" }, req });
+      await auditLog({ action: "LOGIN_FAILURE", severity: "warning", details: { email, reason: "user_not_found" }, req });
       return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
     }
 
@@ -205,7 +205,7 @@ async function login(req, res) {
       const ldapUser = await ldapService.authenticateLdap(email.trim(), password).catch(() => null);
       if (ldapUser) {
         authenticated = true;
-        auditLog({ action: "LOGIN_SUCCESS_LDAP", userId: user.id, severity: "info",
+        await auditLog({ action: "LOGIN_SUCCESS_LDAP", userId: user.id, severity: "info",
           details: { email: user.email, role: user.role, ip: clientIp, method: "LDAP" }, req });
       }
     }
@@ -237,7 +237,7 @@ async function login(req, res) {
           "UPDATE users SET login_attempts = $1 WHERE id = $2",
           [newAttempts, user.id]
         );
-        auditLog({ action: "LOGIN_FAILURE", userId: user.id, severity: "warning",
+        await auditLog({ action: "LOGIN_FAILURE", userId: user.id, severity: "warning",
           details: { email: user.email, attempt: newAttempts, reason: "wrong_password" }, req });
         recordAuthFailure();
         return res.status(401).json({ error: GENERIC_AUTH_ERROR, code: "INVALID_CREDENTIALS" });
@@ -264,7 +264,7 @@ async function login(req, res) {
       [clientIp, user.id]
     );
 
-    auditLog({ action: "LOGIN_SUCCESS", userId: user.id, severity: "info",
+    await auditLog({ action: "LOGIN_SUCCESS", userId: user.id, severity: "info",
       details: { email: user.email, role: user.role, ip: clientIp }, req });
     recordAuthSuccess();
 

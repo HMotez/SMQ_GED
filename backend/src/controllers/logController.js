@@ -53,8 +53,8 @@ const getLogs = async (req, res) => {
   const params     = [];
   let   idx        = 1;
 
-  // Exclure les actions sécurité/auth du journal documentaire (tous rôles)
-  {
+  // Admin voit tous les logs ; les autres rôles voient uniquement les logs documentaires
+  if (req.currentUser?.role !== "Admin") {
     const placeholders = SECURITY_ACTIONS.map(() => `$${idx++}`).join(", ");
     SECURITY_ACTIONS.forEach(a => params.push(a));
     conditions.push(`l.action NOT IN (${placeholders})`);
