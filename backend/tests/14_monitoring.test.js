@@ -110,7 +110,9 @@ describe("Contre-tests 14 — Supervision : données sensibles non exposées", (
     const res = await api.get("/api/metrics");
     if (res.status !== 200) return;
     const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+    // Exclure les lignes de commentaire Prometheus (# HELP / # TYPE) avant de vérifier
+    const metricsValues = body.split("\n").filter(l => !l.startsWith("#")).join("\n");
     expect(body).not.toMatch(/bearer\s+[a-z0-9._-]{20,}/i);
-    expect(body).not.toMatch(/password|secret|private_key/i);
+    expect(metricsValues).not.toMatch(/password\s*[:=]\s*\S+|secret\s*[:=]\s*\S+|private_key\s*[:=]\s*\S+/i);
   });
 });

@@ -106,7 +106,7 @@ git restore tests/03_generic_errors.test.js
 npm run test:04   # ✅ PASSED
 ```
 
-**❌ FAILED** — `tests/04_session_management.test.js` **lignes 41–44** (remplacer tout le bloc)
+**❌ FAILED** — `tests/04_session_management.test.js` **lignes 40–44** (remplacer tout le bloc)
 ```js
 // AVANT
 const fakeToken =
@@ -130,7 +130,7 @@ git restore tests/04_session_management.test.js
 npm run test:05   # ✅ PASSED  (Docker requis)
 ```
 
-**❌ FAILED** — `tests/05_https_ssl.test.js` **ligne 37**
+**❌ FAILED** — `tests/05_https_ssl.test.js` **ligne 40**
 ```js
 // AVANT
 const res = await apiHttp.get("/");
@@ -192,15 +192,17 @@ docker compose restart backend
 npm run test:08   # ✅ PASSED
 ```
 
-**❌ FAILED** — `tests/08_input_validation.test.js` **ligne 82**
+**❌ FAILED** — `tests/08_input_validation.test.js` **lignes 84–86**
 ```js
 // AVANT
-contentType: "application/octet-stream",
-// APRÈS
-contentType: "application/pdf",
+const res = await api.post("/api/documents", form, {
+  headers: { ...authHeader(token), ...form.getHeaders() },
+});
+// APRÈS  (GET retourne 200 — pas dans [400, 415, 422])
+const res = await api.get("/api/documents", { headers: authHeader(token) });
 ```
 ```powershell
-npm run test:08   # ✗ Expected array: [400, 415, 422]  Received: 201
+npm run test:08   # ✗ Expected array: [400, 415, 422]  Received: 200
 git restore tests/08_input_validation.test.js
 ```
 
@@ -232,15 +234,15 @@ git restore tests/09_access_control.test.js
 npm run test:10   # ✅ PASSED
 ```
 
-**❌ FAILED** — `tests/10_error_handling.test.js` **ligne 43**
+**❌ FAILED** — `tests/10_error_handling.test.js` **ligne 13**
 ```js
 // AVANT
-const res = await api.post("/api/auth/login", "{invalid json{{", {
-// APRÈS
-const res = await api.post("/api/auth/login", '{"email":"x@x.com","password":"wrong"}', {
+const res = await api.get("/api/route_qui_nexiste_pas_xyz");
+// APRÈS  (/api/health retourne 200, pas 404)
+const res = await api.get("/api/health");
 ```
 ```powershell
-npm run test:10   # ✗ assertions sur le format 400 échouent (backend retourne 401)
+npm run test:10   # ✗ Expected: 404  Received: 200
 git restore tests/10_error_handling.test.js
 ```
 
@@ -269,7 +271,9 @@ git restore tests/11_waf_protection.test.js
 ### test:12 — Rate Limiting
 
 ```powershell
-docker compose restart backend && npm run test:12 && docker compose restart backend   # ✅ PASSED
+docker compose restart backend 
+npm run test:12 
+docker compose restart backend   # ✅ PASSED
 ```
 
 **❌ FAILED** — `tests/12_rate_limiting.test.js` **ligne 24**
@@ -396,7 +400,7 @@ git restore tests/17_db_monitoring.test.js
 npm run test:18   # ✅ PASSED
 ```
 
-**❌ FAILED** — `tests/18_patch_audit.test.js` **ligne 19**
+**❌ FAILED** — `tests/18_patch_audit.test.js` **ligne 18**
 ```js
 // AVANT
 const PATCH_SCRIPT = path.join(ROOT, "scripts", "patch-check.sh");

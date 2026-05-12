@@ -84,11 +84,13 @@ describe("Contre-tests 06 — Security Headers : headers dangereux absents", () 
     expect(server).not.toMatch(/node\.js\/\d+/i);
   });
 
-  test("CSP ne contient pas 'unsafe-inline' ni 'unsafe-eval' (scripts non-autorisés)", () => {
+  test("CSP script-src ne contient pas 'unsafe-inline' ni 'unsafe-eval' (scripts non-autorisés)", () => {
     const csp = headers["content-security-policy"];
     if (!csp) return;
-    expect(csp).not.toMatch(/unsafe-inline/i);
-    expect(csp).not.toMatch(/unsafe-eval/i);
+    // Extraire uniquement la directive script-src (unsafe-inline acceptable dans style-src pour CSS)
+    const scriptSrc = csp.match(/script-src\s+([^;]+)/i)?.[1] || "";
+    expect(scriptSrc).not.toMatch(/unsafe-inline/i);
+    expect(scriptSrc).not.toMatch(/unsafe-eval/i);
   });
 
   test("X-Frame-Options n'est pas ALLOWALL (clickjacking non autorisé)", () => {

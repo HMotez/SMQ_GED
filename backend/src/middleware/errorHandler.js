@@ -26,8 +26,10 @@ const errorHandler = (err, req, res, next) => {
     ip: req.ip,
   });
 
-  // Determine HTTP status code
-  const statusCode = err.statusCode || err.status || 500;
+  // Determine HTTP status code — Multer errors have a code but no status
+  let statusCode = err.statusCode || err.status || 500;
+  if (err.code === "LIMIT_FILE_SIZE") statusCode = 413;
+  if (err.code === "LIMIT_UNEXPECTED_FILE") statusCode = 415;
   
   // Generic error message for client (never expose internal details)
   const clientMessage = getGenericErrorMessage(statusCode, err);

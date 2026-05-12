@@ -44,13 +44,21 @@ async function login(credentials) {
   return api.post("/api/auth/login", credentials);
 }
 
+// Token cache — avoids exhausting the auth rate limit across test suites
+const _tokenCache = {};
+
 async function getToken(credentials) {
+  const key = credentials.email;
+  if (_tokenCache[key]) return _tokenCache[key];
   const res = await login(credentials);
   if (!res.data?.token) {
     throw new Error(`Login failed (${res.status}): ${JSON.stringify(res.data)}`);
   }
-  return res.data.token;
+  _tokenCache[key] = res.data.token;
+  return _tokenCache[key];
 }
+
+function clearTokenCache() { Object.keys(_tokenCache).forEach(k => delete _tokenCache[k]); }
 
 async function getAdminToken()    { return getToken(config.ADMIN); }
 async function getUserToken()     { return getToken(config.USER); }
@@ -71,5 +79,5 @@ function skipIfMissing(val, label) {
 module.exports = {
   api, apiHttps, apiHttp,
   login, getToken, getAdminToken, getUserToken, getReviewerToken,
-  authHeader, skipIfMissing,
+  clearTokenCache, authHeader, skipIfMissing,
 };

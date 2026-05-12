@@ -79,7 +79,8 @@ describe("Règle 11 — Validation des fichiers soumis à l'application", () => 
     const form = new FormData();
     form.append("file", Buffer.from("MZ\x90\x00 fake executable"), {
       filename:    "virus.exe",
-      contentType: "application/octet-stream",
+      contentType: "application/pdf",
+
     });
     const res = await api.post("/api/documents", form, {
       headers: { ...authHeader(token), ...form.getHeaders() },

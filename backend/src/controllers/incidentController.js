@@ -90,7 +90,14 @@ const updateIncident = async (req, res) => {
     return res.status(400).json({ error: `Statut invalide. Valeurs : ${validStatuses.join(", ")}` });
   }
 
+  const numId = parseInt(id, 10);
+  if (isNaN(numId)) return res.status(400).json({ error: "ID invalide." });
+
   try {
+    const exists = await pool.query("SELECT id FROM security_incidents WHERE id = $1", [numId]);
+    if (!exists.rows.length)
+      return res.status(404).json({ error: "Incident introuvable." });
+
     const result = await pool.query(
       `UPDATE security_incidents
        SET status      = $1,
@@ -99,10 +106,8 @@ const updateIncident = async (req, res) => {
            resolved_at = CASE WHEN $1 = 'resolved' THEN NOW() ELSE resolved_at END
        WHERE id = $4
        RETURNING *`,
-      [status, notes || null, userId, parseInt(id)]
+      [status, notes || null, userId, numId]
     );
-    if (!result.rows.length)
-      return res.status(404).json({ error: "Incident introuvable." });
 
     return res.json(result.rows[0]);
   } catch (err) {

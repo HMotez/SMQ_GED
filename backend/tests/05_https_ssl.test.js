@@ -13,6 +13,9 @@ const { apiHttp, apiHttps } = require("./helpers");
 const https  = require("https");
 const config = require("./config");
 
+// url défini au niveau module pour être accessible dans tous les describe
+const url = new URL(config.NGINX_HTTPS);
+
 // Helper : vérifie si nginx répond sur port 80
 async function nginxAvailable() {
   try {
@@ -84,8 +87,6 @@ describe("Règle 8 — HTTPS fonctionnel", () => {
 
 // ─── Règle 9 : Certificat TLS ────────────────────────────────────────────────
 describe("Règle 9 — Connexion TLS / Certificat SSL", () => {
-  const url = new URL(config.NGINX_HTTPS);
-
   test("Connexion TLS s'établit (port 443 répond)", (done) => {
     const req = https.request({
       hostname:             url.hostname,

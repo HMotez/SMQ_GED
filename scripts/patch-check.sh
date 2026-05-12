@@ -63,3 +63,5 @@ log "=============================================="
 log " RÉSUMÉ : $PASS vérification(s) OK / $FAIL avertissement(s)"
 log " Rapport : $REPORT_FILE"
 log "=============================================="
+
+if [ $FAIL -gt 0 ]; then exit 1; fi

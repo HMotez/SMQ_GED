@@ -66,7 +66,9 @@ describe("Règle 6 — Session invalidée après déconnexion (blacklist)", () =
 
   beforeAll(async () => {
     if (skipIfMissing(config.ADMIN.email, "TEST_ADMIN_EMAIL")) return;
-    token = await getAdminToken();
+    // Token dédié hors cache — le logout le blackliste, le cache doit rester valide
+    const res = await api.post("/api/auth/login", config.ADMIN);
+    token = res.data?.token || null;
   });
 
   test("Token fonctionne avant logout (200 sur /api/auth/me)", async () => {
@@ -105,7 +107,9 @@ describe("Règle 7 — Endpoint de déconnexion", () => {
 
   test("POST /api/auth/logout avec token valide → 200", async () => {
     if (!config.ADMIN.email) return;
-    const tok = await getAdminToken();
+    const r = await api.post("/api/auth/login", config.ADMIN);
+    const tok = r.data?.token;
+    if (!tok) return;
     const res = await api.post("/api/auth/logout", {}, { headers: authHeader(tok) });
     expect(res.status).toBe(200);
   });
@@ -143,7 +147,9 @@ describe("Contre-tests 04 — Sessions : cas d'échec attendus", () => {
 
   test("Double logout avec le même token → toujours 200 (idempotent)", async () => {
     if (!config.ADMIN.email) return;
-    const tok = await getAdminToken();
+    const r = await api.post("/api/auth/login", config.ADMIN);
+    const tok = r.data?.token;
+    if (!tok) return;
     await api.post("/api/auth/logout", {}, { headers: authHeader(tok) });
     const res = await api.post("/api/auth/logout", {}, { headers: authHeader(tok) });
     expect(res.status).toBe(200);

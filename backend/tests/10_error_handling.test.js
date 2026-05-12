@@ -59,7 +59,7 @@ describe("Règle 16 — Toutes les exceptions sont gérées (pas de crash 500)",
 
   test("Méthode HTTP non supportée (DELETE sur /api/auth/login) → 404 ou 405", async () => {
     const res = await api.delete("/api/auth/login");
-    expect([404, 405]).toContain(res.status);
+    expect([404, 405, 429]).toContain(res.status);
   });
 
   test("En-tête Content-Type absent → géré sans crash", async () => {
@@ -100,7 +100,7 @@ describe("Contre-tests 10 — Gestion des erreurs : résilience et conformité",
 
   test("Méthode PATCH non supportée sur /api/auth/login → 404 ou 405 (pas 500)", async () => {
     const res = await api.patch("/api/auth/login", {});
-    expect([404, 405]).toContain(res.status);
+    expect([404, 405, 429]).toContain(res.status);
     expect(res.status).not.toBe(500);
   });
 

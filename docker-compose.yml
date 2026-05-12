@@ -109,11 +109,12 @@ services:
       DB_SSL:      "true"
       GROQ_API_KEY: ${GROQ_API_KEY}
       UPLOAD_DIR:  /app/storage
+      KAFKA_BROKER: kafka:9092
       # ClamAV antivirus service (virusScanMiddleware)
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
       # Higher limit for dev/test so the full test suite doesn't exhaust the auth quota
-      AUTH_RATE_LIMIT_MAX: "100"
+      AUTH_RATE_LIMIT_MAX: "1000"
     volumes:
       - "${STORAGE_PATH:-/app/storage}:/app/storage"
     # Backend not exposed to host — only reachable via nginx (HTTPS + WAF)

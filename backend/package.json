@@ -35,7 +35,8 @@
     "testTimeout": 30000,
     "testMatch": [
       "**/tests/**/*.test.js"
-    ]
+    ],
+    "globalSetup": "./tests/globalSetup.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
