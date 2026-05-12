@@ -1,3 +1,10 @@
+// ============================================================
+// db.js — Pool de connexions PostgreSQL (pg)
+// Un seul pool partagé dans toute l'application.
+// Toutes les requêtes passent par pool.query() ou pool.connect().
+// La variable DB_SSL=true active le TLS entre l'app et la DB
+// (indispensable en production Docker).
+// ============================================================
 const { Pool } = require("pg");
 require("dotenv").config();
 const logger = require("./utils/logger");

@@ -1,10 +1,17 @@
 // ============================================================
-// controllers/userController.js
-// Extrait de server.js — aucune logique changée
+// controllers/userController.js — Gestion des utilisateurs
+// Fournit la liste des comptes et le compteur d'inscriptions
+// en attente pour le badge "Utilisateurs" du sidebar Admin.
 // ============================================================
 
 const pool = require("../db");
 
+// ─────────────────────────────────────────────────────────────
+// GET /api/users
+// Retourne tous les utilisateurs avec leur rôle.
+// Utilisé par la page UserManagement et le sélecteur de validateur.
+// Résultat : [{ id, name, email, role }]
+// ─────────────────────────────────────────────────────────────
 const getUsers = async (req, res) => {
   try {
     const result = await pool.query(
@@ -19,8 +26,12 @@ const getUsers = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────
 // GET /api/users/pending-count
-// Retourne le nombre d'inscriptions en attente d'activation (Admin GED only)
+// Nombre de comptes créés via /register mais pas encore activés.
+// Un compte est "en attente" si : is_active=false ET requested_role IS NOT NULL.
+// Utilisé pour afficher le badge rouge sur "Utilisateurs" dans le sidebar Admin.
+// ─────────────────────────────────────────────────────────────
 const getPendingCount = async (req, res) => {
   try {
     const result = await pool.query(

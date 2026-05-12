@@ -1,5 +1,17 @@
 // ============================================================
-// controllers/incidentController.js — Détection des incidents
+// controllers/incidentController.js — Incidents de sécurité
+//
+// Gère la table security_incidents créée par ensureIncidentsTable().
+// Les incidents sont générés automatiquement par incidentDetector.js
+// (ex: brute force, accès abusifs) et peuvent aussi être créés
+// manuellement par l'Admin via POST /api/incidents.
+//
+// Sévérité : info | warning | critical
+// Statut   : open → in_progress → resolved
+//   Quand resolved : resolved_by = Admin, resolved_at = NOW()
+//
+// Colonnes indexées : status, severity, detected_at DESC
+// Jointures : user_id → users (victime), resolved_by → users (admin)
 // ============================================================
 
 const pool = require("../db");

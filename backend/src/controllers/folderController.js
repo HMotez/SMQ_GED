@@ -1,10 +1,20 @@
 // ============================================================
-// controllers/folderController.js
-// Extrait de server.js — aucune logique changée
+// controllers/folderController.js — Arborescence documentaire ACTIA ES
+// La structure des dossiers est hiérarchique sur 4 niveaux :
+//   Niveau 1 : Processus stratégique   (ex: CDP — Concevoir/Développer)
+//   Niveau 2 : Processus principal     (ex: Faire_Evoluer_Securiser_SI)
+//   Niveau 3 : Sous-dossier type       (ex: PR_Procedures, IN_Instructions)
+//   Niveau 4 : Sous-dossier spécifique (ex: MA_Manuel — migration 006)
 // ============================================================
 
 const pool = require("../db");
 
+// ─────────────────────────────────────────────────────────────
+// GET /api/folders/level/:level
+// Retourne tous les dossiers d'un niveau donné (1, 2, 3 ou 4).
+// Utilisé par le formulaire de création pour afficher les niveaux
+// de l'arborescence successivement (drill-down).
+// ─────────────────────────────────────────────────────────────
 const getFoldersByLevel = async (req, res) => {
   try {
     const { level } = req.params;
@@ -19,6 +29,12 @@ const getFoldersByLevel = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────
+// GET /api/folders/:parentId/children
+// Retourne les enfants directs d'un dossier (pour le drill-down).
+// Utilisé quand l'utilisateur sélectionne un dossier de niveau N
+// pour afficher les sous-dossiers de niveau N+1.
+// ─────────────────────────────────────────────────────────────
 const getFolderChildren = async (req, res) => {
   try {
     const { parentId } = req.params;

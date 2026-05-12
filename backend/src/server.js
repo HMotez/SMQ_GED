@@ -1,3 +1,21 @@
+// ============================================================
+// server.js — Point d'entrée Express (backend GED ACTIA ES)
+//
+// Responsabilités :
+//   • Charge les middlewares globaux (CORS, JSON, sécurité, métriques)
+//   • Définit deux niveaux de rate-limiting :
+//       - Global : 1 000 req/heure par IP sur /api/*
+//       - Auth   : 20 req / 15 min sur /api/auth/login|register|…
+//         (AUTH_RATE_LIMIT_MAX=1000 en mode test pour ne pas bloquer les suites)
+//   • Expose /files, /preview, /download pour les fichiers stockés sur disque
+//   • Expose /convert pour la conversion de documents (LibreOffice + Python)
+//   • Monte tous les routeurs REST sous /api/…
+//   • Exécute les migrations à chaud (ALTER TABLE IF NOT EXISTS) au démarrage
+//     pour éviter les divergences entre la DB et le code (pattern idempotent)
+//   • Démarre les CRON jobs : auto-archive (24 h), notifications expiration (24 h),
+//     nettoyage token_blacklist (6 h)
+//   • Connecte Kafka producer + consumer si KAFKA_BROKER est défini
+// ============================================================
 const express       = require("express");
 const cors          = require("cors");
 const path          = require("path");

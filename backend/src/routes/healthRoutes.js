@@ -1,3 +1,13 @@
+// ============================================================
+// routes/healthRoutes.js — Supervision des performances
+// GET /api/health — répond avec un snapshot système :
+//   • uptime process + OS
+//   • CPU load average (1m / 5m / 15m) et nombre de cœurs
+//   • Mémoire système (total / libre / %) + heap Node.js
+//   • Latence PostgreSQL (SELECT 1) et statut DB (ok / error)
+// Utilisé par le tableau de bord Admin et les outils de monitoring
+// (Prometheus, Grafana, healthcheck Docker).
+// ============================================================
 const express = require("express");
 const os      = require("os");
 const pool = require("../db");

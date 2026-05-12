@@ -1,3 +1,10 @@
+// ============================================================
+// components/ThemeToggle.jsx — Bouton bascule clair / sombre
+// Lit isDark et toggleTheme depuis ThemeContext (stocké dans
+// localStorage sous la clé "ged_theme").
+// Props : compact=true → affiche seulement l'icône (usage sidebar),
+//         compact=false (défaut) → icône + libellé "Mode clair/sombre".
+// ============================================================
 import { LuSun, LuMoon } from "react-icons/lu";
 import { useTheme } from "../context/ThemeContext";
 

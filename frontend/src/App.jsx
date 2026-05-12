@@ -1,3 +1,12 @@
+// ============================================================
+// App.jsx — Racine de l'application React
+// Définit le routage global et les gardes d'accès par rôle.
+// Structure :
+//   PublicRoute      → accessible uniquement si NON connecté (login/register)
+//   ProtectedRoute   → accessible uniquement si connecté
+//   AdminRoute       → accessible uniquement si rôle = Admin
+//   AdminOrQualite   → accessible si Admin ou Ing. Qualité
+// ============================================================
 import { Navigate, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { UserProvider, useUser } from "./context/UserContext";
@@ -18,6 +27,8 @@ import Notifications  from "./pages/Notifications";
 import AIAssistant    from "./pages/AIAssistant";
 import Workflow       from "./pages/Workflow";
 
+// Bloque l'accès si non connecté — redirige vers /login.
+// Affiche un spinner pendant la vérification du token stocké.
 function ProtectedRoute({ children }) {
   const { isAuthenticated, authLoading } = useUser();
   if (authLoading) {
@@ -35,6 +46,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// Bloque l'accès si rôle ≠ Admin — redirige vers /.
 function AdminRoute({ children }) {
   const { isAuthenticated, authLoading, userRole } = useUser();
   if (authLoading) return null;
@@ -43,6 +55,7 @@ function AdminRoute({ children }) {
   return children;
 }
 
+// Bloque l'accès si rôle ≠ Admin et ≠ Ing. Qualité.
 function AdminOrQualiteRoute({ children }) {
   const { isAuthenticated, authLoading, userRole } = useUser();
   if (authLoading) return null;
@@ -51,6 +64,7 @@ function AdminOrQualiteRoute({ children }) {
   return children;
 }
 
+// Redirige vers / si l'utilisateur est déjà connecté (empêche d'accéder au login).
 function PublicRoute({ children }) {
   const { isAuthenticated, authLoading } = useUser();
   if (authLoading) return null;

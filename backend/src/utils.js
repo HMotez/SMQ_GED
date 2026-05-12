@@ -1,3 +1,15 @@
+// ============================================================
+// utils.js — Génération du code documentaire
+//
+// generateDocCode(typeCode, folderId) produit un identifiant unique
+// au format :  {typeCode}-{folderCode}-{NNNN}
+//   Ex: PR-PS-0001  (Procédure n°1 dans le dossier Processus)
+//
+// Algorithme :
+//   1. Lit le code du dossier cible (colonne "code" de la table folders)
+//   2. Compte les documents existants dans ce dossier pour ce type
+//   3. N = count + 1, formaté sur 4 chiffres avec zéro gauche
+// ============================================================
 const pool = require("./db");
 
 async function generateDocCode(typeCode, folderId) {

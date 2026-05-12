@@ -1,3 +1,22 @@
+// ============================================================
+// upload.js — Configuration Multer pour l'upload de fichiers
+//
+// Stratégie de stockage (diskStorage) :
+//   • Destination : résout le chemin réel à partir de folder_id en
+//     remontant la hiérarchie "folders" (parent_id → root).
+//     Si typeCode est fourni, cherche un sous-dossier {TYPE}_ sous le
+//     dossier sélectionné (ex: folderId=Manager_SST + typeCode=TR → TR_Trames/).
+//   • Nom du fichier : timestamp Unix + nom original sans espaces
+//     (ex: 1712345678_Procedure_Qualite.pdf)
+//
+// Sécurité :
+//   • Limite à 50 Mo par fichier (fileSize)
+//   • Types MIME autorisés : PDF, DOCX, DOC, XLSX, XLS uniquement
+//     (reject → HTTP 415 Unsupported Media Type)
+//
+// Exports : upload (middleware multer), baseDir (chemin racine du stockage),
+//           resolveFolderPath (utilitaire réutilisé par documentController)
+// ============================================================
 const multer = require("multer");
 const fs     = require("fs");
 const path   = require("path");
