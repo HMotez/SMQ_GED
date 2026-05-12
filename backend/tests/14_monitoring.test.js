@@ -77,3 +77,40 @@ describe("Règle 29 — Supervision : Health checks des services", () => {
     expect(res.status).not.toBe(500);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 14 — Supervision : données sensibles non exposées", () => {
+  test("GET /api/health ne révèle pas les credentials de la base de données", async () => {
+    const res = await api.get("/api/health");
+    const body = JSON.stringify(res.data).toLowerCase();
+    expect(body).not.toMatch(/password|db_pass|db_user.*:.*[a-z]/i);
+    expect(body).not.toMatch(/postgresql:\/\/\w+:\w+@/i);
+  });
+
+  test("GET /api/health ne révèle pas les clés secrètes (JWT_SECRET, etc.)", async () => {
+    const res = await api.get("/api/health");
+    const body = JSON.stringify(res.data);
+    expect(body).not.toMatch(/jwt_secret|secret_key|api_key/i);
+  });
+
+  test("GET /api/health répond en moins de 500ms (pas de timeout DB)", async () => {
+    const start = Date.now();
+    await api.get("/api/health");
+    expect(Date.now() - start).toBeLessThan(500);
+  });
+
+  test("GET /api/health retourne un objet structuré (pas une chaîne brute)", async () => {
+    const res = await api.get("/api/health");
+    expect(typeof res.data).toBe("object");
+    expect(res.data).not.toBeNull();
+    expect(typeof res.data).not.toBe("string");
+  });
+
+  test("GET /api/metrics ne retourne pas de credentials ou tokens actifs", async () => {
+    const res = await api.get("/api/metrics");
+    if (res.status !== 200) return;
+    const body = typeof res.data === "string" ? res.data : JSON.stringify(res.data);
+    expect(body).not.toMatch(/bearer\s+[a-z0-9._-]{20,}/i);
+    expect(body).not.toMatch(/password|secret|private_key/i);
+  });
+});

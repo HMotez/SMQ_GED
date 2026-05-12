@@ -71,3 +71,38 @@ describe("Règle 12 — En-têtes de sécurité HTTP", () => {
     }
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 06 — Security Headers : headers dangereux absents", () => {
+  test("X-Powered-By absent (Express ne se révèle pas)", () => {
+    expect(headers["x-powered-by"]).toBeUndefined();
+  });
+
+  test("Header Server ne révèle pas la version Express ou Node.js", () => {
+    const server = headers["server"] || "";
+    expect(server).not.toMatch(/express\/\d+/i);
+    expect(server).not.toMatch(/node\.js\/\d+/i);
+  });
+
+  test("CSP ne contient pas 'unsafe-inline' ni 'unsafe-eval' (scripts non-autorisés)", () => {
+    const csp = headers["content-security-policy"];
+    if (!csp) return;
+    expect(csp).not.toMatch(/unsafe-inline/i);
+    expect(csp).not.toMatch(/unsafe-eval/i);
+  });
+
+  test("X-Frame-Options n'est pas ALLOWALL (clickjacking non autorisé)", () => {
+    const xfo = headers["x-frame-options"];
+    expect(xfo).not.toMatch(/allowall/i);
+    expect(xfo).not.toBe("ALLOW-FROM *");
+  });
+
+  test("HSTS max-age n'est pas inférieur à 1 an (31536000)", () => {
+    const hsts = headers["strict-transport-security"];
+    if (!hsts) return;
+    const match = hsts.match(/max-age=(\d+)/);
+    if (match) {
+      expect(parseInt(match[1])).toBeGreaterThanOrEqual(31536000);
+    }
+  });
+});

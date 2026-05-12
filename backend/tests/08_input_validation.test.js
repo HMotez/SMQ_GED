@@ -141,3 +141,59 @@ describe("Règle 11 — Validation des fichiers soumis à l'application", () => 
     expect(allowedMimes).not.toContain("application/javascript");
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 08 — Validation des entrées : cas d'échec attendus", () => {
+  let token;
+
+  beforeAll(async () => {
+    if (skipIfMissing(config.ADMIN.email, "TEST_ADMIN_EMAIL")) return;
+    token = await getAdminToken();
+  });
+
+  test("Injection SQL dans le titre du document → géré proprement (pas 500)", async () => {
+    if (!token) return;
+    const form = new FormData();
+    form.append("title", "'; DROP TABLE documents; --");
+    form.append("file", Buffer.from("%PDF-1.4 fake"), {
+      filename: "test.pdf", contentType: "application/pdf",
+    });
+    const res = await api.post("/api/documents", form, {
+      headers: { ...authHeader(token), ...form.getHeaders() },
+    });
+    expect(res.status).not.toBe(500);
+    const body = JSON.stringify(res.data).toLowerCase();
+    expect(body).not.toMatch(/syntax error|pg error|column|relation/i);
+  });
+
+  test("Upload fichier dépassant 50 Mo → rejeté (413 ou 400)", async () => {
+    if (!token) return;
+    const bigBuffer = Buffer.alloc(51 * 1024 * 1024, "A"); // 51 MB
+    const form = new FormData();
+    form.append("file", bigBuffer, { filename: "big.pdf", contentType: "application/pdf" });
+    const res = await api.post("/api/documents", form, {
+      headers: { ...authHeader(token), ...form.getHeaders() },
+      maxContentLength: Infinity,
+      maxBodyLength:    Infinity,
+    });
+    expect([400, 413, 422]).toContain(res.status);
+  });
+
+  test("Nom de fichier avec path traversal (../../etc/passwd.pdf) → fichier stocké sans traversal", async () => {
+    if (!token) return;
+    const form = new FormData();
+    form.append("file", Buffer.from("%PDF-1.4 safe"), {
+      filename:    "../../etc/passwd.pdf",
+      contentType: "application/pdf",
+    });
+    const res = await api.post("/api/documents", form, {
+      headers: { ...authHeader(token), ...form.getHeaders() },
+    });
+    // Doit être accepté (ou rejeté pour autre raison) mais JAMAIS stocker à /etc/passwd
+    if (res.status === 201 || res.status === 200) {
+      const storedFilename = res.data?.filename || res.data?.file || "";
+      expect(storedFilename).not.toMatch(/\.\.\//);
+      expect(storedFilename).not.toMatch(/etc\/passwd/);
+    }
+  });
+});

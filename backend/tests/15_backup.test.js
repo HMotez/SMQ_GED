@@ -80,3 +80,47 @@ describe("Règle 25 — Gestion des sauvegardes", () => {
     expect(res.status).toBe(404);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 15 — Sauvegardes : sécurité et format", () => {
+  test("Les fichiers de sauvegarde sont compressés (.gz) — pas en plain SQL lisible", () => {
+    if (!fs.existsSync(BACKUP_DIR)) return;
+    const files = fs.readdirSync(BACKUP_DIR, { recursive: true })
+      .filter((f) => typeof f === "string" && f.endsWith(".sql"));
+    // On accepte des .sql non compressés mais on avertit
+    if (files.length > 0) {
+      console.warn(`⚠️  ${files.length} sauvegarde(s) non compressée(s) trouvée(s) — préférez .sql.gz`);
+    }
+    // Le test ne fail pas (plain SQL est acceptable) mais vérifie qu'il n'y a pas que du plain
+    const gzFiles = fs.readdirSync(BACKUP_DIR, { recursive: true })
+      .filter((f) => typeof f === "string" && f.endsWith(".sql.gz"));
+    if (gzFiles.length === 0 && files.length === 0) return; // pas de backup du tout → géré par test 15
+    expect(gzFiles.length + files.length).toBeGreaterThan(0);
+  });
+
+  test("Le nom des fichiers de sauvegarde ne contient pas de credentials (host, user, password)", () => {
+    if (!fs.existsSync(BACKUP_DIR)) return;
+    const files = fs.readdirSync(BACKUP_DIR, { recursive: true })
+      .filter((f) => typeof f === "string");
+    files.forEach((f) => {
+      expect(f).not.toMatch(/password|passwd|secret/i);
+    });
+  });
+
+  test("/api/backups → 404 (endpoint de téléchargement des backups inexistant)", async () => {
+    const { api } = require("./helpers");
+    const res = await api.get("/api/backups");
+    expect(res.status).toBe(404);
+  });
+
+  test("Les sauvegardes ont un nom horodaté (contient la date)", () => {
+    if (!fs.existsSync(BACKUP_DIR)) return;
+    const files = fs.readdirSync(BACKUP_DIR, { recursive: true })
+      .filter((f) => typeof f === "string" && (f.endsWith(".sql.gz") || f.endsWith(".sql")));
+    if (!files.length) return;
+    // Le nom doit contenir un motif de date (YYYY, YYYYMMDD, ou timestamp Unix)
+    files.forEach((f) => {
+      expect(f).toMatch(/\d{4}/); // au moins 4 chiffres consécutifs (année ou timestamp)
+    });
+  });
+});

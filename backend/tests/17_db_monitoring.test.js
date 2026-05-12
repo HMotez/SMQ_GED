@@ -114,3 +114,43 @@ describe("Surveillance accès non autorisés à la BD", () => {
     expect(handlerBody).not.toContain("throw ");
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 17 — Surveillance BD : credentials non exposés", () => {
+  test("db.js ne contient pas de mot de passe hardcodé", () => {
+    const src = fs.readFileSync(DB_JS, "utf8");
+    // Ne doit pas contenir de mot de passe en clair (hors variables d'env)
+    expect(src).not.toMatch(/password\s*:\s*["'][^"']{4,}["']/i);
+    expect(src).not.toMatch(/pwd\s*=\s*["'][^"']{4,}["']/i);
+  });
+
+  test("db.js utilise des variables d'environnement pour tous les paramètres de connexion", () => {
+    const src = fs.readFileSync(DB_JS, "utf8");
+    expect(src).toContain("process.env.DB_HOST");
+    expect(src).toContain("process.env.DB_USER");
+    expect(src).toContain("process.env.DB_PASSWORD");
+    expect(src).toContain("process.env.DB_NAME");
+  });
+
+  test("db.js ne contient pas d'adresse IP hardcodée pour le host", () => {
+    const src = fs.readFileSync(DB_JS, "utf8");
+    // Ne doit pas contenir d'IP en dur du type "192.168.x.x" ou "10.x.x.x"
+    expect(src).not.toMatch(/host\s*:\s*["']\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}["']/);
+  });
+
+  test("GET /api/health retourne database.status (BD connectée)", async () => {
+    const res = await api.get("/api/health");
+    expect(res.status).toBe(200);
+    expect(res.data?.database?.status).toBe("ok");
+  });
+
+  test("logger.js n'écrit pas les credentials dans les logs (pas de DB_PASSWORD dans errors.log)", () => {
+    if (!fs.existsSync(ERROR_LOG)) return;
+    const content = fs.readFileSync(ERROR_LOG, "utf8");
+    // Le log peut contenir le host/user pour le diagnostic mais pas le mot de passe
+    const lines = content.split("\n").slice(-50); // 50 dernières lignes
+    lines.forEach((line) => {
+      expect(line).not.toMatch(/"password"\s*:\s*"[^"]{3,}"/i);
+    });
+  });
+});

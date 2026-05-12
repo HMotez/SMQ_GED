@@ -81,3 +81,42 @@ describe("Règle 16 — Toutes les exceptions sont gérées (pas de crash 500)",
     expect(res.status).toBe(200);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 10 — Gestion des erreurs : résilience et conformité", () => {
+  test("Toutes les réponses d'erreur sont en JSON (pas de HTML d'erreur Express)", async () => {
+    const res = await api.get("/api/route_inexistante_xyz");
+    const ct = res.headers["content-type"] || "";
+    expect(ct).toMatch(/application\/json/i);
+    expect(ct).not.toMatch(/text\/html/i);
+  });
+
+  test("Réponse d'erreur 404 contient un champ 'error' lisible", async () => {
+    const res = await api.get("/api/route_inexistante_abc");
+    expect(res.status).toBe(404);
+    expect(res.data).toHaveProperty("error");
+    expect(typeof res.data.error).toBe("string");
+  });
+
+  test("Méthode PATCH non supportée sur /api/auth/login → 404 ou 405 (pas 500)", async () => {
+    const res = await api.patch("/api/auth/login", {});
+    expect([404, 405]).toContain(res.status);
+    expect(res.status).not.toBe(500);
+  });
+
+  test("Requête valide après une rafale d'erreurs → serveur toujours opérationnel", async () => {
+    await Promise.all(
+      Array.from({ length: 10 }, () => api.post("/api/auth/login", "{{{bad json", {
+        headers: { "Content-Type": "application/json" },
+      }))
+    );
+    const res = await api.get("/api/health");
+    expect(res.status).toBe(200);
+  });
+
+  test("Corps de réponse d'erreur ne dépasse pas 1 Ko (pas de verbosité excessive)", async () => {
+    const res = await api.get("/api/route_xyz_inexistante");
+    const bodySize = JSON.stringify(res.data).length;
+    expect(bodySize).toBeLessThan(1024);
+  });
+});

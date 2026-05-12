@@ -54,3 +54,40 @@ describe(`Rate Limiting — Limite d'authentification (${AUTH_RATE_LIMIT_MAX} re
     expect(GLOBAL_LIMIT).toBeGreaterThan(AUTH_RATE_LIMIT_MAX);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 12 — Rate Limiting : cas d'échec attendus", () => {
+  test("Une seule requête ne déclenche pas le rate limit (pas de 429 immédiat)", async () => {
+    const res = await api.post("/api/auth/login", {
+      email: "single_req_test@nowhere.invalid",
+      password: "Test@12345!",
+    });
+    // Une seule requête ne doit jamais retourner 429
+    expect(res.status).not.toBe(429);
+    expect([400, 401]).toContain(res.status);
+  });
+
+  test("Réponse 429 contient un message d'erreur structuré (pas de body vide)", async () => {
+    const fakeCredentials = { email: "ratelimit_msg_test@nowhere.invalid", password: "Test@12345!" };
+    let rateLimitRes = null;
+    for (let i = 0; i < AUTH_RATE_LIMIT_MAX + 5; i++) {
+      const res = await api.post("/api/auth/login", fakeCredentials);
+      if (res.status === 429) { rateLimitRes = res; break; }
+    }
+    if (!rateLimitRes) return;
+    expect(rateLimitRes.data).toHaveProperty("error");
+    expect(typeof rateLimitRes.data.error).toBe("string");
+    expect(rateLimitRes.data.error.length).toBeGreaterThan(0);
+  }, 120000);
+
+  test("Réponse 429 contient un code d'erreur identifiable (RATE_LIMIT_EXCEEDED ou AUTH_RATE_LIMIT_EXCEEDED)", async () => {
+    const fakeCredentials = { email: "ratelimit_code_test@nowhere.invalid", password: "Test@12345!" };
+    let rateLimitRes = null;
+    for (let i = 0; i < AUTH_RATE_LIMIT_MAX + 5; i++) {
+      const res = await api.post("/api/auth/login", fakeCredentials);
+      if (res.status === 429) { rateLimitRes = res; break; }
+    }
+    if (!rateLimitRes) return;
+    expect(rateLimitRes.data.code).toMatch(/RATE_LIMIT/i);
+  }, 120000);
+});

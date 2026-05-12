@@ -60,3 +60,31 @@ describe("Règle 19 — Masquage des technologies et versions serveur", () => {
     }
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 07 — Server Hardening : fichiers sensibles non exposés", () => {
+  test("/.env → 404 (fichier d'environnement non exposé)", async () => {
+    const res = await api.get("/.env");
+    expect(res.status).toBe(404);
+  });
+
+  test("/.git/config → 404 (dépôt Git non exposé)", async () => {
+    const res = await api.get("/.git/config");
+    expect(res.status).toBe(404);
+  });
+
+  test("/api/package.json → 404 (dépendances non exposées)", async () => {
+    const res = await api.get("/api/package.json");
+    expect(res.status).toBe(404);
+  });
+
+  test("/api/node_modules/ → 404 (modules non exposés)", async () => {
+    const res = await api.get("/api/node_modules/express/package.json");
+    expect(res.status).toBe(404);
+  });
+
+  test("Réponse API est toujours en JSON (Content-Type: application/json)", async () => {
+    const res = await api.get("/api/health");
+    expect(res.headers["content-type"]).toMatch(/application\/json/i);
+  });
+});

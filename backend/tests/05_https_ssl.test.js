@@ -125,3 +125,55 @@ describe("Règle 9 — Connexion TLS / Certificat SSL", () => {
     req.end();
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 05 — HTTPS/SSL : cas d'échec attendus", () => {
+  test("HTTP (port 80) ne sert PAS directement le contenu API (redirection ou refus)", async () => {
+    let res;
+    try {
+      res = await apiHttp.get("/api/health", { timeout: 3000 });
+    } catch {
+      return; // nginx absent — test ignoré
+    }
+    // HTTP NE doit PAS retourner 200 avec le contenu API en clair
+    // Doit rediriger (301/302) ou refuser (404/403)
+    expect([301, 302, 403, 404]).toContain(res.status);
+  });
+
+  test("TLS 1.0 et TLS 1.1 ne doivent pas être utilisés (protocoles obsolètes)", (done) => {
+    const req = https.request({
+      hostname:           url.hostname,
+      port:               url.port || 443,
+      path:               "/",
+      method:             "GET",
+      rejectUnauthorized: false,
+      timeout:            5000,
+    }, (res) => {
+      const tls = res.socket.getProtocol?.();
+      if (tls) {
+        expect(tls).not.toBe("TLSv1");
+        expect(tls).not.toBe("TLSv1.1");
+      }
+      res.destroy();
+      done();
+    });
+    req.on("timeout", () => { req.destroy(); done(); });
+    req.on("error", () => done());
+    req.end();
+  });
+
+  test("HSTS header absent sur HTTP (ne doit exister que sur HTTPS)", async () => {
+    let res;
+    try {
+      res = await apiHttp.get("/", { timeout: 3000 });
+    } catch {
+      return;
+    }
+    // Sur HTTP, la réponse est une redirection — pas de HSTS
+    if ([301, 302].includes(res.status)) {
+      // HSTS sur HTTP serait ignoré par les navigateurs — pas d'exigence stricte ici
+      // On vérifie juste que la réponse est une redirection
+      expect(res.headers.location).toMatch(/^https:\/\//i);
+    }
+  });
+});

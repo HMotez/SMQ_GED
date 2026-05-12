@@ -103,3 +103,60 @@ describe("Règle 36 — Détection des incidents de sécurité", () => {
     expect(res.status).toBe(200);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 16 — Détection d'incidents : cas d'échec attendus", () => {
+  let adminToken;
+
+  beforeAll(async () => {
+    if (skipIfMissing(config.ADMIN.email, "TEST_ADMIN_EMAIL")) return;
+    adminToken = await getAdminToken();
+  });
+
+  test("Mise à jour d'un incident avec statut invalide → 400", async () => {
+    if (!adminToken) return;
+    // Créer un incident de test d'abord
+    const created = await api.post("/api/incidents", {
+      type: "TEST_CONTRE", severity: "info", description: "contre-test statut invalide",
+    }, { headers: authHeader(adminToken) });
+    if (created.status !== 201) return;
+
+    const id = created.data.id;
+    const res = await api.put(`/api/incidents/${id}`, { status: "statut_invalide_xyz" }, {
+      headers: authHeader(adminToken),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  test("Mise à jour d'un incident inexistant → 404", async () => {
+    if (!adminToken) return;
+    const res = await api.put("/api/incidents/999999", { status: "resolved" }, {
+      headers: authHeader(adminToken),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  test("Création d'un incident sans champs obligatoires (type manquant) → 400", async () => {
+    if (!adminToken) return;
+    const res = await api.post("/api/incidents", {
+      severity: "warning",
+      // description et type manquants
+    }, { headers: authHeader(adminToken) });
+    expect(res.status).toBe(400);
+  });
+
+  test("Un seul login réussi ne crée pas d'incident BRUTE_FORCE", async () => {
+    if (!adminToken) return;
+    const before = new Date().toISOString();
+    await api.post("/api/auth/login", config.ADMIN); // login normal
+
+    await new Promise((r) => setTimeout(r, 500));
+
+    const res = await api.get("/api/incidents", { headers: authHeader(adminToken) });
+    const data = Array.isArray(res.data) ? res.data : res.data?.incidents || [];
+    const newBF = data.filter(
+      (i) => (i.type === "BRUTE_FORCE") && new Date(i.detected_at) >= new Date(before)
+    );
+    expect(newBF.length).toBe(0);
+  });
+});

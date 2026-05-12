@@ -103,3 +103,53 @@ describe("Règle 13 — Principe du moindre privilège (RBAC)", () => {
     expect(body).not.toMatch(/sql|query|database|table|column/i);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 09 — Contrôle d'accès : cas d'échec attendus", () => {
+  let reviewerToken;
+  let adminToken;
+
+  beforeAll(async () => {
+    if (!config.REVIEWER.email || !config.ADMIN.email) return;
+    try {
+      reviewerToken = await getReviewerToken();
+      adminToken    = await getAdminToken();
+    } catch {}
+  });
+
+  test("Visiteur non connecté → toutes les routes protégées retournent 401", async () => {
+    const routes = ["/api/users", "/api/logs", "/api/incidents", "/api/notifications", "/api/dashboard/overview"];
+    for (const route of routes) {
+      const res = await api.get(route);
+      expect(res.status).toBe(401);
+    }
+  });
+
+  test("Reviewer ne peut pas accéder aux incidents (Admin seulement)", async () => {
+    if (!reviewerToken) return;
+    const res = await api.get("/api/incidents", { headers: authHeader(reviewerToken) });
+    expect(res.status).toBe(403);
+  });
+
+  test("Reviewer ne peut pas créer un incident manuellement (Admin seulement)", async () => {
+    if (!reviewerToken) return;
+    const res = await api.post("/api/incidents", {
+      type: "TEST", severity: "info", description: "test",
+    }, { headers: authHeader(reviewerToken) });
+    expect(res.status).toBe(403);
+  });
+
+  test("Token valide d'un rôle ne peut pas escalader vers Admin (PATCH /api/roles/users/:id)", async () => {
+    if (!reviewerToken) return;
+    const res = await api.patch("/api/roles/users/1", { role: "Admin" }, {
+      headers: authHeader(reviewerToken),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test("Admin authentifié peut accéder aux routes Admin (pas de faux positif 403)", async () => {
+    if (!adminToken) return;
+    const res = await api.get("/api/incidents", { headers: authHeader(adminToken) });
+    expect(res.status).toBe(200);
+  });
+});

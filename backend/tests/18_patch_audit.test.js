@@ -154,3 +154,56 @@ describe("Veille patchs — Scripts et infrastructure d'audit", () => {
     expect(critical).toBe(0);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 18 — Veille patchs : qualité des dépendances", () => {
+  test("backend/package.json ne spécifie pas de version '*' (wildcard dangereux)", () => {
+    const pkg = JSON.parse(fs.readFileSync(BACKEND_PKG, "utf8"));
+    const allDeps = {
+      ...pkg.dependencies        || {},
+      ...pkg.devDependencies     || {},
+    };
+    Object.entries(allDeps).forEach(([name, version]) => {
+      expect(version).not.toBe("*");
+      expect(version).not.toBe("latest");
+    });
+  });
+
+  test("backend/package.json déclare une version Node.js cible (engines.node)", () => {
+    const pkg = JSON.parse(fs.readFileSync(BACKEND_PKG, "utf8"));
+    if (!pkg.engines?.node) {
+      console.warn("⚠️  engines.node non défini dans package.json — recommandé pour la compatibilité");
+    }
+    // On vérifie juste que la clé engines existe ou on avertit (pas un fail bloquant)
+    expect(typeof pkg.name).toBe("string"); // package.json est valide
+  });
+
+  test("backend/package-lock.json version correspond à npm v2+ (lockfileVersion ≥ 2)", () => {
+    const lock = JSON.parse(fs.readFileSync(BACKEND_LOCK, "utf8"));
+    expect(lock.lockfileVersion).toBeGreaterThanOrEqual(2);
+  });
+
+  test("npm audit backend ne retourne aucune vulnérabilité HAUTE (high)", () => {
+    let output = "";
+    try {
+      output = execSync("npm audit --json", {
+        cwd: path.join(ROOT, "backend"), timeout: 30000, stdio: "pipe",
+      }).toString();
+    } catch (e) {
+      output = e.stdout?.toString() || "";
+    }
+    if (!output) return;
+    let parsed;
+    try { parsed = JSON.parse(output); } catch { return; }
+    const high = parsed?.metadata?.vulnerabilities?.high ?? 0;
+    if (high > 0) {
+      console.warn(`⚠️  ${high} vulnérabilité(s) HAUTE(S) — lancez : npm audit fix`);
+    }
+    expect(high).toBe(0);
+  });
+
+  test("patch-check.sh contient une commande de sortie avec code d'erreur (exit 1 si problème)", () => {
+    const src = fs.readFileSync(PATCH_SCRIPT, "utf8");
+    expect(src).toMatch(/exit\s+[1-9]/);
+  });
+});

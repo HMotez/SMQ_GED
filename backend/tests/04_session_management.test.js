@@ -110,3 +110,42 @@ describe("Règle 7 — Endpoint de déconnexion", () => {
     expect(res.status).toBe(200);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 04 — Sessions : cas d'échec attendus", () => {
+  test("Token avec algorithme 'none' (bypass JWT) → 401", async () => {
+    // Tentative de bypass alg:none : header.payload sans signature
+    const header  = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
+    const payload = Buffer.from(JSON.stringify({ id: 1, role: "Admin", exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url");
+    const noneToken = `${header}.${payload}.`;
+    const res = await api.get("/api/auth/me", { headers: authHeader(noneToken) });
+    expect(res.status).toBe(401);
+  });
+
+  test("Token avec payload modifié (rôle falsifié) → 401", async () => {
+    if (!config.ADMIN.email) return;
+    const tok = await getAdminToken();
+    const parts = tok.split(".");
+    // Modifier le payload pour s'attribuer un rôle différent
+    const fakePayload = Buffer.from(JSON.stringify({ id: 9999, role: "SuperAdmin", exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url");
+    const tamperedToken = `${parts[0]}.${fakePayload}.${parts[2]}`;
+    const res = await api.get("/api/auth/me", { headers: authHeader(tamperedToken) });
+    expect(res.status).toBe(401);
+  });
+
+  test("Token expiré (exp = 1 seconde passée) → 401", async () => {
+    const header  = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const payload = Buffer.from(JSON.stringify({ id: 1, exp: 1 })).toString("base64url"); // exp = epoch 1 = passé
+    const fakeExpired = `${header}.${payload}.invalidsignature`;
+    const res = await api.get("/api/auth/me", { headers: authHeader(fakeExpired) });
+    expect(res.status).toBe(401);
+  });
+
+  test("Double logout avec le même token → toujours 200 (idempotent)", async () => {
+    if (!config.ADMIN.email) return;
+    const tok = await getAdminToken();
+    await api.post("/api/auth/logout", {}, { headers: authHeader(tok) });
+    const res = await api.post("/api/auth/logout", {}, { headers: authHeader(tok) });
+    expect(res.status).toBe(200);
+  });
+});

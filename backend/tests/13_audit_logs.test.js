@@ -118,3 +118,47 @@ describe("Règle 31 — Journaux d'audit", () => {
     } catch {}
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 13 — Journaux d'audit : intégrité et conformité", () => {
+  let adminToken;
+
+  beforeAll(async () => {
+    if (skipIfMissing(config.ADMIN.email, "TEST_ADMIN_EMAIL")) return;
+    adminToken = await getAdminToken();
+  });
+
+  test("Les logs ne contiennent pas de mots de passe en clair", async () => {
+    if (!adminToken) return;
+    const res = await api.get("/api/logs?limit=50", { headers: authHeader(adminToken) });
+    expect(res.status).toBe(200);
+    const body = JSON.stringify(res.data).toLowerCase();
+    expect(body).not.toMatch(/"password"\s*:\s*"[^"]{3,}"/i);
+    expect(body).not.toMatch(/motdepasse|plaintext.*pwd/i);
+  });
+
+  test("DELETE /api/logs → 404 ou 405 (logs non supprimables via API)", async () => {
+    if (!adminToken) return;
+    const res = await api.delete("/api/logs", { headers: authHeader(adminToken) });
+    expect([404, 405]).toContain(res.status);
+  });
+
+  test("Les logs contiennent un timestamp valide (pas null ni 1970)", async () => {
+    if (!adminToken) return;
+    const res = await api.get("/api/logs?limit=5", { headers: authHeader(adminToken) });
+    const logs = Array.isArray(res.data) ? res.data : res.data?.logs || [];
+    if (!logs.length) return;
+    logs.forEach((log) => {
+      const ts = new Date(log.created_at).getTime();
+      expect(ts).toBeGreaterThan(new Date("2024-01-01").getTime());
+    });
+  });
+
+  test("Les logs ne contiennent pas de stack traces ou chemins internes", async () => {
+    if (!adminToken) return;
+    const res = await api.get("/api/logs?limit=20", { headers: authHeader(adminToken) });
+    const body = JSON.stringify(res.data);
+    expect(body).not.toMatch(/at\s+\w+\s*\(.*\.js:\d+/);
+    expect(body).not.toMatch(/node_modules|controllers\//);
+  });
+});

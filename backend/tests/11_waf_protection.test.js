@@ -142,3 +142,35 @@ describe("Règle 22 — WAF : Méthodes HTTP non autorisées", () => {
     expect(res.headers.location).toMatch(/^https:\/\//);
   });
 });
+
+// ─── Contre-tests ─────────────────────────────────────────────────────────────
+describe("Contre-tests 11 — WAF : trafic légitime non bloqué", () => {
+  test("Requête GET /api/health normale → WAF ne bloque pas (200, pas 403)", async () => {
+    if (!available) return;
+    const res = await apiHttps.get("/api/health");
+    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(200);
+  });
+
+  test("User-Agent navigateur standard → non bloqué par WAF", async () => {
+    if (!available) return;
+    const res = await apiHttps.get("/api/health", {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+    });
+    expect(res.status).not.toBe(403);
+  });
+
+  test("Paramètre de recherche normal (sans payload) → non bloqué", async () => {
+    if (!available) return;
+    const res = await apiHttps.get("/api/health?lang=fr&page=1");
+    expect(res.status).not.toBe(403);
+  });
+
+  test("Payload SQL bloqué retourne 403 (pas 200 ni 500)", async () => {
+    if (!available) return;
+    const res = await apiHttps.get("/api/test?q=" + encodeURIComponent("' OR '1'='1"));
+    expect(res.status).toBe(403);
+    expect(res.status).not.toBe(200);
+    expect(res.status).not.toBe(500);
+  });
+});
