@@ -24,7 +24,11 @@ services:
     entrypoint: ["/bin/bash", "/entrypoint-ssl.sh"]
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/init.sql:/docker-entrypoint-initdb.d/00_init.sql:ro
+      - ./backend/migrations/006_add_manuel_folder.sql:/docker-entrypoint-initdb.d/06_add_manuel_folder.sql:ro
+      - ./backend/migrations/007_versions_created_by.sql:/docker-entrypoint-initdb.d/07_versions_created_by.sql:ro
+      - ./backend/migrations/008_strip_v_prefix.sql:/docker-entrypoint-initdb.d/08_strip_v_prefix.sql:ro
+      - ./backend/migrations/009_least_privilege_user.sql:/docker-entrypoint-initdb.d/09_least_privilege_user.sql:ro
       - ./db/copy-ssl.sh:/docker-entrypoint-initdb.d/copy-ssl.sh:ro
       - ./db/entrypoint-ssl.sh:/entrypoint-ssl.sh:ro
       - ./db/certs/server.crt:/tmp/pg-ssl/server.crt:ro
