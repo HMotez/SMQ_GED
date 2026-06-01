@@ -1,6 +1,6 @@
 # =============================================================
 # SMQ_GED — Docker Compose  (ACTIA Engineering Services)
-# Sprint 42 — Endurcissement infrastructure
+# Endurcissement infrastructure
 # =============================================================
 
 services:
@@ -107,7 +107,6 @@ services:
     environment:
       DB_HOST:     postgres
       DB_SSL:      "true"
-      GROQ_API_KEY: ${GROQ_API_KEY}
       UPLOAD_DIR:  /app/storage
       KAFKA_BROKER: kafka:9092
       # ClamAV antivirus service (virusScanMiddleware)
@@ -123,7 +122,7 @@ services:
     networks:
       - smq_network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:4000/api/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
       interval: 30s
       timeout:  5s
       retries:  3

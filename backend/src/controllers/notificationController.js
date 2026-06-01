@@ -114,7 +114,7 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
   try {
     if (toStatus === "Appel en relecture") {
       await createNotificationsForRoles(
-        ["Admin", "Ing. Qualité", "Reviewer"],
+        ["Admin", "Ing. Qualité"],
         docId,
         `[${docCode}] "${docTitle}" — appel en relecture émis par ${actor}. Une nouvelle version est disponible pour relecture.`,
         "validation"
@@ -171,8 +171,10 @@ async function triggerStatusNotification(docId, docCode, docTitle, fromStatus, t
     // ── Direct email (no Kafka dependency) ───────────────────
     try {
       let emailTo = [];
-      if (toStatus === "En validation" || toStatus === "Appel en relecture") {
+      if (toStatus === "En validation") {
         emailTo = await emailsByRoles(["Admin", "Ing. Qualité", "Reviewer"]);
+      } else if (toStatus === "Appel en relecture") {
+        emailTo = await emailsByRoles(["Admin", "Ing. Qualité"]);
       } else if (toStatus === "En correction") {
         emailTo = await emailsByRoles(["Admin", "Ing. Qualité"]);
       } else if (toStatus === "Validé" || toStatus === "Obsolète") {
@@ -349,6 +351,42 @@ async function runExpirationNotificationsJob() {
         }, doc.id).catch(() => {});
       }
     }
+
+    // 3. Documents en retard de validation (En validation depuis > 3 jours)
+    const lateValidation = await pool.query(
+      `SELECT d.id, d.doc_code, d.title, d.updated_at
+       FROM documents d
+       JOIN status s ON s.id = d.status_id
+       WHERE s.name = 'En validation'
+         AND d.updated_at < NOW() - INTERVAL '3 days'`
+    );
+
+    for (const doc of lateValidation.rows) {
+      const daysLate = Math.floor(
+        (Date.now() - new Date(doc.updated_at).getTime()) / 86400000
+      );
+      await createNotificationsForRoles(
+        ["Admin", "Ing. Qualité", "Reviewer"],
+        doc.id,
+        `[${doc.doc_code}] "${doc.title}" — en attente de validation depuis ${daysLate} jour(s). Validation requise.`,
+        "validation"
+      );
+    }
+
+    if (lateValidation.rows.length) {
+      const reviewerEmails = await emailsByRoles(["Admin", "Ing. Qualité", "Reviewer"]);
+      await emailService.sendLateValidationDigestEmail({
+        to: reviewerEmails,
+        docs: lateValidation.rows.map(d => ({
+          docCode:   d.doc_code,
+          title:     d.title,
+          daysLate:  Math.floor((Date.now() - new Date(d.updated_at).getTime()) / 86400000),
+          since:     fmtDate(d.updated_at),
+        })),
+      }).catch(err => console.error("[Notif-CRON] Digest email retard validation failed:", err.message));
+
+      console.log(`[Notif-CRON] ${lateValidation.rows.length} document(s) en retard de validation — emails envoyés.`);
+    }
   } catch (err) {
     console.error("[Notif-CRON] error:", err.message);
   }
@@ -364,9 +402,11 @@ async function getUserNotifications(req, res) {
   try {
     const result = await pool.query(
       `SELECT n.id, n.message, n.type, n.is_read, n.created_at,
-              n.document_id, d.doc_code, d.title AS doc_title
+              n.document_id, d.doc_code, d.title AS doc_title,
+              s.name AS doc_status
        FROM notifications n
        LEFT JOIN documents d ON d.id = n.document_id
+       LEFT JOIN status s ON s.id = d.status_id
        WHERE n.user_id = $1
        ORDER BY n.created_at DESC
        LIMIT 50`,
@@ -383,16 +423,43 @@ async function getUserNotifications(req, res) {
 // GET /api/notifications/unread-count
 // ─────────────────────────────────────────────────────────────
 async function getUnreadCount(req, res) {
-  const userId = req.currentUser?.id;
+  const userId   = req.currentUser?.id;
+  const userRole = req.currentUser?.role;
   if (!userId) return res.status(401).json({ error: "Non authentifié.", code: "NO_USER" });
 
   try {
-    const result = await pool.query(
-      `SELECT COUNT(*) AS count FROM notifications
-       WHERE user_id = $1 AND is_read = false`,
-      [userId]
-    );
-    return res.json({ count: parseInt(result.rows[0].count, 10) });
+    let count;
+
+    if (userRole === "Reviewer") {
+      // Reviewer : designation (all unread) + validation unread per distinct doc currently "En validation"
+      const result = await pool.query(
+        `SELECT
+           (SELECT COUNT(*)
+            FROM notifications
+            WHERE user_id = $1 AND is_read = false AND type = 'designation')
+           +
+           (SELECT COUNT(DISTINCT n.document_id)
+            FROM notifications n
+            JOIN documents d ON d.id = n.document_id
+            JOIN status s    ON s.id = d.status_id
+            WHERE n.user_id = $1
+              AND n.is_read = false
+              AND n.type = 'validation'
+              AND s.name = 'En validation')
+           AS count`,
+        [userId]
+      );
+      count = parseInt(result.rows[0].count, 10);
+    } else {
+      const result = await pool.query(
+        `SELECT COUNT(*) AS count FROM notifications
+         WHERE user_id = $1 AND is_read = false`,
+        [userId]
+      );
+      count = parseInt(result.rows[0].count, 10);
+    }
+
+    return res.json({ count });
   } catch (err) {
     return res.status(500).json({ error: "Erreur serveur." });
   }
@@ -452,8 +519,57 @@ async function triggerExpirationJob(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// backfillDesignationNotifications — appelé au démarrage
+// Crée les notifs "designation" manquantes pour les reviewers
+// déjà assignés avant que cette logique soit introduite.
+// ─────────────────────────────────────────────────────────────
+async function backfillDesignationNotifications() {
+  try {
+    // All documents with at least one reviewer email
+    const docs = await pool.query(
+      `SELECT d.id, d.doc_code, d.title, d.reviewer_emails,
+              u.name AS creator_name
+       FROM documents d
+       LEFT JOIN users u ON u.id = d.created_by
+       WHERE d.reviewer_emails IS NOT NULL
+         AND array_length(d.reviewer_emails, 1) > 0`
+    );
+
+    let created = 0;
+    for (const doc of docs.rows) {
+      const reviewerUsers = await pool.query(
+        `SELECT id FROM users WHERE email = ANY($1) AND is_active = true`,
+        [doc.reviewer_emails]
+      );
+      for (const { id: uid } of reviewerUsers.rows) {
+        // Skip if a designation notification already exists for this user+doc
+        const exists = await pool.query(
+          `SELECT id FROM notifications
+           WHERE user_id = $1 AND document_id = $2 AND type = 'designation'`,
+          [uid, doc.id]
+        );
+        if (exists.rows.length > 0) continue;
+
+        await createNotification(
+          uid, doc.id,
+          `[${doc.doc_code}] "${doc.title}" — vous avez été désigné(e) Reviewer${doc.creator_name ? ` par ${doc.creator_name}` : ""}. Votre examen est requis.`,
+          "designation"
+        );
+        created++;
+      }
+    }
+    if (created > 0) {
+      console.log(`[Notif] Backfill designation : ${created} notification(s) créée(s).`);
+    }
+  } catch (err) {
+    console.error("[Notif] backfillDesignationNotifications error:", err.message);
+  }
+}
+
 module.exports = {
   ensureNotificationsTable,
+  backfillDesignationNotifications,
   createNotification,
   createNotificationsForRoles,
   triggerStatusNotification,

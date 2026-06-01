@@ -20,7 +20,11 @@ npm run test:01   # un par un
 ## test:12 — Rate Limiting (isolé)
 
 ```powershell
-docker compose restart backend && npm run test:12 && docker compose restart backend
+
+
+
+
+ && npm run test:12 && docker compose restart backend
 ```
 
 ---

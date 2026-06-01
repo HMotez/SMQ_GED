@@ -8,7 +8,7 @@
 import { useUser } from '../context/UserContext';
 import { useCallback } from 'react';
 
-const LOCKED_STATUSES = ['Validé', 'Approuvé', 'Diffusé', 'Obsolète', 'Archivé'];
+const LOCKED_STATUSES = ['Validé', 'Diffusé', 'Obsolète', 'Archivé'];
 
 export function useRoleCheck() {
   const { userRole, currentUser } = useUser();
@@ -160,8 +160,7 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Approuvé"],
-      "Approuvé":            ["Diffusé"],
+      "Validé":              ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],
@@ -180,8 +179,7 @@ export function useRoleCheck() {
       "En relecture→En validation":                ["Admin", "Ing. Qualité", "Reviewer"],
       "En correction→Appel en relecture":          ["Admin", "Ing. Qualité"],
       "En validation→Validé":                      ["Admin", "Ing. Qualité", "Reviewer"],
-      "Validé→Approuvé":                           ["Admin", "Ing. Qualité"],
-      "Approuvé→Diffusé":                          ["Admin", "Ing. Qualité"],
+      "Validé→Diffusé":                             ["Admin", "Ing. Qualité"],
       "Diffusé→Obsolète":                          ["Admin", "Ing. Qualité"],
       "Obsolète→Archivé":                          ["Admin", "Ing. Qualité"],
     };
@@ -204,8 +202,7 @@ export function useRoleCheck() {
       "En relecture":        ["En correction", "En validation"],
       "En correction":       ["Appel en relecture"],
       "En validation":       ["Validé"],
-      "Validé":              ["Approuvé"],
-      "Approuvé":            ["Diffusé"],
+      "Validé":              ["Diffusé"],
       "Diffusé":             ["Obsolète"],
       "Obsolète":            ["Archivé"],
       "Archivé":             [],

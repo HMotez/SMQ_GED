@@ -18,10 +18,10 @@ router.get(  "/archive-candidates", ctrl.getArchiveCandidates);
 router.get(  "/archive-history",    ctrl.getArchiveHistory);
 router.get(  "/archived",           ctrl.getArchivedDocuments);
 
-// Carte 6 — Archivage automatique (Admin uniquement)
+// Carte 6 — Archivage manuel (Admin + Ing. Qualité)
 router.post( "/archive-expired",
   loadUser,
-  requireRole("Admin"),
+  requireRole("Admin", "Ing. Qualité"),
   ctrl.archiveExpired
 );
 
@@ -63,6 +63,13 @@ router.patch("/:id/status",
   loadUser,
   requireRole("Admin", "Ing. Qualité", "Reviewer"),
   ctrl.changeStatus
+);
+
+// Suppression définitive (Admin uniquement)
+router.delete("/:id",
+  loadUser,
+  requireRole("Admin"),
+  ctrl.deleteDocument
 );
 
 module.exports = router;

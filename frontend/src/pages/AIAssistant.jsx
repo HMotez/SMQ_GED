@@ -17,10 +17,11 @@ import {
   Chart as ChartJS,
   ArcElement, Tooltip, Legend,
   CategoryScale, LinearScale, BarElement,
+  PointElement, LineElement, Filler,
 } from "chart.js";
-import { Doughnut, Bar } from "react-chartjs-2";
+import { Doughnut, Bar, Line } from "react-chartjs-2";
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Filler);
 import {
   LuBot, LuSend, LuRefreshCw, LuUser, LuSparkles,
   LuTriangleAlert, LuClock, LuEye, LuLayers,
@@ -159,7 +160,7 @@ function ScoreGauge({ score, color, label }) {
         }}>
           {animated}
         </div>
-        <div style={{ fontSize: 11, color: "var(--ged-tx3)", fontWeight: 600, marginTop: 2 }}>/100</div>
+        <div style={{ fontSize: 11, color: "rgba(168,191,212,0.4)", fontWeight: 600, marginTop: 2 }}>/100</div>
       </div>
     </div>
   );
@@ -190,7 +191,7 @@ function KpiStatCard({ label, value, color, maxValue, onClick }) {
         position: "absolute", bottom: -24, right: -16, width: 80, height: 80,
         borderRadius: "50%", background: `${color}18`, filter: "blur(22px)", pointerEvents: "none",
       }} />
-      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "var(--ged-tx3)" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "rgba(168,191,212,0.4)" }}>
         {label}
       </div>
       <div style={{
@@ -260,7 +261,7 @@ function DistributionChart({ kpis }) {
   const chartRef = useRef(null);
 
   if (active.length === 0) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--ged-tx3)", fontSize: 13 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "rgba(168,191,212,0.3)", fontSize: 13 }}>
       Aucune donnée
     </div>
   );
@@ -321,7 +322,7 @@ function DistributionChart({ kpis }) {
           {animTotal}
         </div>
         <div style={{
-          fontSize: 10, fontWeight: 700, color: "var(--ged-tx3)",
+          fontSize: 10, fontWeight: 700, color: "rgba(168,191,212,0.4)",
           textTransform: "uppercase", letterSpacing: "0.8px", marginTop: 3,
         }}>
           Total
@@ -392,10 +393,20 @@ const QUICK_QUESTIONS_VISITOR = [
     cat: "Documents archivés",
     color: "#94a3b8",
     items: [
-      { icon: LuArchive,   label: "Tous les archivés",     q: "Donne-moi la liste des documents archivés" },
-      { icon: LuCalendar,  label: "Récemment archivés",    q: "Quels sont les documents récemment archivés ?" },
-      { icon: LuChartBar,  label: "Répartition par type",  q: "Combien de documents archivés par type ?" },
-      { icon: LuFileText,  label: "Combien archivés ?",    q: "Combien de documents sont archivés au total ?" },
+      { icon: LuArchive,    label: "Liste des archivés",     q: "Donne-moi la liste complète des documents archivés" },
+      { icon: LuCalendar,   label: "Archivés récemment",     q: "Quels documents ont été archivés récemment ?" },
+      { icon: LuChartBar,   label: "Par type documentaire",  q: "Combien de documents archivés par type documentaire ?" },
+      { icon: LuFileText,   label: "Total archivés",         q: "Combien de documents sont archivés au total ?" },
+    ],
+  },
+  {
+    cat: "Détails & Recherche",
+    color: "#60a5fa",
+    items: [
+      { icon: LuFolderOpen, label: "Par dossier",            q: "Combien de documents archivés par dossier ?" },
+      { icon: LuNetwork,    label: "Par processus",          q: "Combien de documents archivés par processus ?" },
+      { icon: LuCalendar,   label: "Dates d'archivage",      q: "Quelles sont les dates d'archivage des documents ?" },
+      { icon: LuSearch,     label: "Les plus anciens",       q: "Quels sont les documents archivés les plus anciens ?" },
     ],
   },
 ];
@@ -490,8 +501,8 @@ function inlineFormat(text) {
 
 const INITIAL_MESSAGE = {
   id: 0, from: "bot",
-  text: "Bonjour ! Je suis votre assistant qualité GED. Posez-moi une question sur vos documents, les statuts, les révisions ou les processus ISO 9001 — je consulte directement la base de données pour vous répondre.",
-  intent: null, docs: [], stats: null, llm: false, suggestions: [],
+  text: "Bonjour ! Je suis votre assistant IA. Posez-moi n'importe quelle question — sur vos documents, l'ISO 9001, la qualité, ou n'importe quel autre sujet. Je suis là pour vous aider !",
+  intent: null, docs: [], stats: null, llm: true, suggestions: [],
 };
 
 const LS_KEY = "smq_chat_history";
@@ -501,16 +512,13 @@ function loadSavedConvs() {
   catch { return []; }
 }
 
-const INITIAL_MESSAGE_VISITOR = {
-  id: 0, from: "bot",
-  text: "Bonjour ! En tant que Visiteur, vous pouvez interroger l'assistant sur les **documents archivés** de la GED. Posez votre question ci-dessous.",
-  intent: null, docs: [], stats: null, llm: false, suggestions: [],
-};
-
-function ChatbotSection({ token }) {
-  const { currentUser, authLoading } = useUser();
-  const isVisitor = !authLoading && (!currentUser || currentUser?.role === "Visiteur");
-  const [messages, setMessages]     = useState([INITIAL_MESSAGE]);
+function ChatbotSection({ token, isVisitor }) {
+  const VISITOR_INITIAL = {
+    id: 0, from: "bot",
+    text: "Bonjour ! En tant que Visiteur, vous avez accès aux **documents archivés** de la GED ACTIA ES.\n\nVous pouvez me demander :\n- La liste des documents archivés\n- Leur répartition par type, dossier ou processus\n- Les documents archivés récemment ou les plus anciens\n- Le nombre total de documents archivés\n\nUtilisez les raccourcis ci-dessus ou posez votre question directement.",
+    intent: null, docs: [], stats: null, llm: false, suggestions: [],
+  };
+  const [messages, setMessages]     = useState(isVisitor ? [VISITOR_INITIAL] : [INITIAL_MESSAGE]);
   const [history, setHistory]       = useState([]);
   const [input, setInput]           = useState("");
   const [loading, setLoading]       = useState(false);
@@ -523,12 +531,6 @@ function ChatbotSection({ token }) {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Set correct initial message once auth resolves
-  useEffect(() => {
-    if (authLoading) return;
-    setMessages([isVisitor ? INITIAL_MESSAGE_VISITOR : INITIAL_MESSAGE]);
-  }, [authLoading, isVisitor]);
 
   function persistConvs(convs) {
     setSavedConvs(convs);
@@ -569,6 +571,13 @@ function ChatbotSection({ token }) {
     });
   }
 
+  function parseSuggestions(text) {
+    try {
+      const m = text.match(/SUGGESTIONS:(\{.*?\})/);
+      return m ? JSON.parse(m[1]).q || [] : [];
+    } catch { return []; }
+  }
+
   async function sendMessage(text) {
     const query = (text || input).trim();
     if (!query || loading) return;
@@ -578,38 +587,77 @@ function ChatbotSection({ token }) {
     setMessages(prev => [...prev, { id: userMsgId, from: "user", text: query }]);
     setLoading(true);
 
-    try {
-      const { data } = await axios.post(
-        `${API}/ai/query`,
-        { query, history },
-        { headers: authHeaders(token) }
-      );
+    // Streaming via SSE
+    const botPlaceholder = {
+      id: botMsgId, from: "bot", text: "", streaming: true,
+      intent: null, intentKey: null, docs: [], stats: null,
+      statsLabel: "Statut", count: 0, llm: true, suggestions: [],
+    };
+    setMessages(prev => [...prev, botPlaceholder]);
 
-      const botMsg = {
-        id:         botMsgId,
-        from:       "bot",
-        text:       data.message || "",
-        streaming:  false,
-        intent:     data.intent_label || null,
-        intentKey:  data.intent       || null,
-        docs:       data.documents    || [],
-        stats:      data.statistics   || null,
-        statsLabel: data.stats_label  || "Statut",
-        count:      (data.documents   || []).length,
-        llm:        false,
-        suggestions: [],
-      };
-      setMessages(prev => [...prev, botMsg]);
+    try {
+      const resp = await fetch(`${API}/ai/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders(token) },
+        body: JSON.stringify({ query, history }),
+      });
+
+      if (!resp.ok) throw new Error("Erreur serveur");
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer  = "";
+      let   fullText = "";
+      let   meta     = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (raw === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.type === "meta") {
+              meta = parsed;
+              setMessages(prev => prev.map(m => m.id === botMsgId ? {
+                ...m,
+                intent:     meta.intent_label,
+                intentKey:  meta.intent,
+                docs:       meta.documents || [],
+                stats:      meta.statistics || null,
+                statsLabel: meta.stats_label || "Statut",
+                count:      (meta.documents || []).length,
+                llm:        meta.llm_powered || false,
+              } : m));
+            } else if (parsed.token) {
+              fullText += parsed.token;
+              setMessages(prev => prev.map(m =>
+                m.id === botMsgId ? { ...m, text: fullText } : m
+              ));
+            }
+          } catch {}
+        }
+      }
+
+      const suggestions = parseSuggestions(fullText);
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId ? { ...m, streaming: false, suggestions } : m
+      ));
       setHistory(prev => [
         ...prev,
         { role: "user",      content: query },
-        { role: "assistant", content: data.message || "" },
+        { role: "assistant", content: fullText.replace(/SUGGESTIONS:\{.*?\}$/m, "").trim() },
       ]);
     } catch (err) {
-      setMessages(prev => [...prev, {
-        id: botMsgId, from: "bot-error",
-        text: "Erreur lors du traitement.", streaming: false,
-      }]);
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId ? { ...m, from: "bot-error", text: "Erreur lors du traitement.", streaming: false } : m
+      ));
     } finally {
       setLoading(false);
     }
@@ -617,19 +665,6 @@ function ChatbotSection({ token }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 16 }}>
-      {/* Visitor access notice */}
-      {isVisitor && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.2)",
-          borderRadius: 10, padding: "10px 14px",
-        }}>
-          <LuArchive size={14} style={{ color: "#94a3b8", flexShrink: 0 }} />
-          <span style={{ fontSize: 12.5, color: "rgba(168,191,212,0.7)" }}>
-            Accès Visiteur — consultation des <strong style={{ color: "#94a3b8" }}>documents archivés</strong> uniquement
-          </span>
-        </div>
-      )}
       {/* Quick questions — grouped by category */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {(isVisitor ? QUICK_QUESTIONS_VISITOR : QUICK_QUESTIONS).map(({ cat, color, items }) => (
@@ -649,7 +684,7 @@ function ChatbotSection({ token }) {
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
                     background: `${color}08`, border: `1px solid ${color}20`,
-                    color: "var(--ged-tx2)", borderRadius: 20,
+                    color: "rgba(168,191,212,0.65)", borderRadius: 20,
                     padding: "5px 13px", fontSize: 12.5, cursor: "pointer", transition: "all 0.15s",
                   }}
                   onMouseEnter={e => {
@@ -706,32 +741,20 @@ function ChatbotSection({ token }) {
                   color: msg.from === "bot-error" ? "#f87171" : "rgba(220,235,248,0.9)",
                   fontSize: 13.5, lineHeight: 1.55,
                 }}>
-                  {msg.intent && (
-                    <div style={{
-                      display: "inline-flex", alignItems: "center", gap: 5,
-                      background: "rgba(74,184,63,0.1)",
-                      border: "1px solid rgba(74,184,63,0.2)",
-                      borderRadius: 6, padding: "2px 8px", fontSize: 11,
-                      color: GREEN, fontWeight: 600, marginBottom: 6,
-                    }}>
-                      <LuZap size={10} />
-                      {msg.intent}
-                    </div>
-                  )}
                   <div>{msg.from === "bot" ? renderMarkdown(msg.text) : msg.text}</div>
                 </div>
 
                 {/* Stats table */}
                 {msg.stats && msg.stats.length > 0 && (
                   <div style={{
-                    background: "var(--ged-header)", border: `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`,
                     borderRadius: 10, overflow: "hidden",
                   }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
                         <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                          <th style={{ padding: "8px 12px", fontSize: 11, color: "var(--ged-tx2)", fontWeight: 600, textAlign: "left" }}>{msg.statsLabel || "Statut"}</th>
-                          <th style={{ padding: "8px 12px", fontSize: 11, color: "var(--ged-tx2)", fontWeight: 600, textAlign: "right" }}>Nb</th>
+                          <th style={{ padding: "8px 12px", fontSize: 11, color: "rgba(168,191,212,0.5)", fontWeight: 600, textAlign: "left" }}>{msg.statsLabel || "Statut"}</th>
+                          <th style={{ padding: "8px 12px", fontSize: 11, color: "rgba(168,191,212,0.5)", fontWeight: 600, textAlign: "right" }}>Nb</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -781,7 +804,7 @@ function ChatbotSection({ token }) {
                 {msg.from === "bot" && (
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: -4 }}>
                     {msg.streaming && (
-                      <span style={{ fontSize: 11, color: "var(--ged-tx3)", fontStyle: "italic" }}>
+                      <span style={{ fontSize: 11, color: "rgba(168,191,212,0.4)", fontStyle: "italic" }}>
                         l'assistant écrit…
                       </span>
                     )}
@@ -838,11 +861,11 @@ function ChatbotSection({ token }) {
                 {/* Documents list */}
                 {msg.docs && msg.docs.length > 0 && (
                   <div style={{
-                    background: "var(--ged-header)", border: `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`,
                     borderRadius: 10, overflow: "hidden",
                   }}>
                     <div style={{ padding: "8px 12px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, color: "var(--ged-tx2)", fontWeight: 600 }}>RÉSULTATS</span>
+                      <span style={{ fontSize: 11, color: "rgba(168,191,212,0.5)", fontWeight: 600 }}>RÉSULTATS</span>
                       <span style={{ fontSize: 11, color: GREEN, fontWeight: 700 }}>{msg.count} doc(s)</span>
                     </div>
                     <div style={{ maxHeight: 260, overflowY: "auto" }}>
@@ -867,10 +890,10 @@ function ChatbotSection({ token }) {
                             <div style={{ fontSize: 12, color: "rgba(220,235,248,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240, marginBottom: 2 }}>{doc.title}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                               {doc.responsible && (
-                                <span style={{ fontSize: 10.5, color: "var(--ged-tx2)" }}>{doc.responsible}</span>
+                                <span style={{ fontSize: 10.5, color: "rgba(168,191,212,0.5)" }}>{doc.responsible}</span>
                               )}
                               {doc.next_review_date && (
-                                <span style={{ fontSize: 10.5, color: "var(--ged-tx3)" }}>
+                                <span style={{ fontSize: 10.5, color: "rgba(168,191,212,0.45)" }}>
                                   Rev. {new Date(doc.next_review_date).toLocaleDateString("fr-FR")}
                                 </span>
                               )}
@@ -922,14 +945,14 @@ function ChatbotSection({ token }) {
           <div style={{ display: "flex", gap: 8 }}>
             {/* New conversation */}
             <button onClick={clearConversation} title="Nouvelle conversation"
-              style={{ background: "var(--ged-card)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "var(--ged-tx2)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(248,113,113,0.1)"; e.currentTarget.style.color = "#f87171"; e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
             ><LuPlus size={15} /></button>
 
             {/* Save conversation */}
             <button onClick={saveCurrentConversation} title="Sauvegarder la conversation"
-              style={{ background: "var(--ged-card)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "var(--ged-tx2)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", color: "rgba(168,191,212,0.5)", display: "flex", alignItems: "center", transition: "all 0.2s", flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,184,63,0.1)"; e.currentTarget.style.color = GREEN; e.currentTarget.style.borderColor = "rgba(74,184,63,0.3)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(168,191,212,0.5)"; e.currentTarget.style.borderColor = BORDER; }}
             ><LuMessageSquare size={15} /></button>
@@ -947,7 +970,7 @@ function ChatbotSection({ token }) {
           </div>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {history.length > 0 && (
-              <span style={{ fontSize: 11, color: "var(--ged-tx3)", display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ fontSize: 11, color: "rgba(168,191,212,0.3)", display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} />
                 {Math.floor(history.length / 2)} échange(s) en mémoire
               </span>
@@ -1043,6 +1066,204 @@ function ChatbotSection({ token }) {
 }
 
 
+// ── External tooltip helpers (mirrors Dashboard style) ──
+function getOrCreateStatusTooltipEl(chart) {
+  let el = chart.canvas.parentNode.querySelector(".ged-tooltip");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "ged-tooltip";
+    el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;transition:opacity 0.12s ease,transform 0.12s ease;opacity:0;transform:translateY(6px);";
+    chart.canvas.parentNode.style.position = "relative";
+    chart.canvas.parentNode.appendChild(el);
+  }
+  return el;
+}
+
+function makeStatusExternalTooltip(kpis) {
+  return function({ chart, tooltip }) {
+    const el = getOrCreateStatusTooltipEl(chart);
+    if (tooltip.opacity === 0) { el.style.opacity = "0"; el.style.transform = "translateY(6px)"; return; }
+    const dp = tooltip.dataPoints?.[0];
+    if (!dp) return;
+    const kpi   = kpis[dp.dataIndex];
+    const color = kpi?.color || "#4ab83f";
+    const val   = dp.parsed?.y ?? 0;
+    const title = kpi?.label || dp.label || "";
+    el.innerHTML = `
+      <div style="background:linear-gradient(160deg,rgba(4,10,22,0.99),rgba(8,18,34,0.99));border:1px solid ${color}45;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.75),0 0 0 1px rgba(255,255,255,0.04),0 0 28px ${color}18;overflow:hidden;font-family:inherit;min-width:160px;">
+        <div style="height:3px;background:linear-gradient(90deg,${color},${color}55,transparent);"></div>
+        <div style="padding:14px 18px 16px;">
+          <p style="margin:0 0 12px;font-size:10px;font-weight:800;color:rgba(168,191,212,0.55);text-transform:uppercase;letter-spacing:1.2px;">${title}</p>
+          <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
+            <span style="font-size:42px;font-weight:900;color:${color};line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 24px ${color}90;">${val}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:${color};box-shadow:0 0 8px ${color};"></div>
+            <span style="font-size:12px;font-weight:600;color:rgba(168,191,212,0.55);">document${val !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+      </div>`;
+    const { offsetLeft: posX, offsetTop: posY } = chart.canvas;
+    el.style.opacity   = "1";
+    el.style.transform = "translateY(0)";
+    el.style.left      = (posX + tooltip.caretX - el.offsetWidth / 2) + "px";
+    el.style.top       = (posY + tooltip.caretY - el.offsetHeight - 14) + "px";
+  };
+}
+
+const statusCrosshairPlugin = {
+  id: "statusCrosshair",
+  afterDraw(chart) {
+    const active = chart.tooltip?._active ?? [];
+    if (!active.length) return;
+    const { ctx, chartArea } = chart;
+    const x = active[0].element.x;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, chartArea.top);
+    ctx.lineTo(x, chartArea.bottom);
+    ctx.lineWidth   = 1;
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
+const statusLineGlowPlugin = {
+  id: "statusLineGlow",
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.data.datasets.forEach((ds, di) => {
+      const meta = chart.getDatasetMeta(di);
+      if (meta.hidden || !meta.data.length) return;
+      ctx.save();
+      ctx.shadowColor = "#4ab83f";
+      ctx.shadowBlur  = 14;
+      ctx.strokeStyle = "#4ab83f";
+      ctx.lineWidth   = 2.5;
+      ctx.lineJoin    = "round";
+      ctx.lineCap     = "round";
+      const path = new Path2D();
+      meta.data.forEach((pt, j) => { j === 0 ? path.moveTo(pt.x, pt.y) : path.lineTo(pt.x, pt.y); });
+      ctx.stroke(path);
+      ctx.restore();
+    });
+  },
+};
+
+const statusAreaGradPlugin = {
+  id: "statusAreaGrad",
+  beforeDatasetsDraw(chart) {
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    const meta = chart.getDatasetMeta(0);
+    if (!meta?.data?.length) return;
+    const pts = meta.data;
+    const yScale = chart.scales.y;
+    if (!yScale) return;
+    const baseline = Math.min(yScale.getPixelForValue(0), chartArea.bottom);
+
+    const grad = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    grad.addColorStop(0,   "rgba(74,184,63,0.55)");
+    grad.addColorStop(0.6, "rgba(74,184,63,0.08)");
+    grad.addColorStop(1,   "rgba(74,184,63,0)");
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i - 1];
+      const curr = pts[i];
+      ctx.bezierCurveTo(
+        prev.cp2x ?? prev.x, prev.cp2y ?? prev.y,
+        curr.cp1x ?? curr.x, curr.cp1y ?? curr.y,
+        curr.x, curr.y
+      );
+    }
+    ctx.lineTo(pts[pts.length - 1].x, baseline);
+    ctx.lineTo(pts[0].x, baseline);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+  },
+};
+
+// ── StatusLineChart — area line chart for Distribution par statut ──
+function StatusLineChart({ kpis }) {
+  const total = kpis.reduce((s, k) => s + k.value, 0);
+  const externalTooltip = makeStatusExternalTooltip(kpis);
+
+  const chartData = {
+    labels: kpis.map(k => k.label),
+    datasets: [{
+      data:                     kpis.map(k => k.value),
+      borderColor:              "#4ab83f",
+      backgroundColor:          "transparent",
+      fill:                     false,
+      tension:                  0.42,
+      borderWidth:              2.5,
+      pointBackgroundColor:     "#0f1e30",
+      pointBorderColor:         kpis.map(k => k.color),
+      pointBorderWidth:         2.5,
+      pointRadius:              5,
+      pointHoverRadius:         8,
+      pointHoverBackgroundColor: kpis.map(k => k.color),
+      pointHoverBorderColor:    "#fff",
+      pointHoverBorderWidth:    2,
+    }],
+  };
+
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 1400, easing: "easeOutQuart" },
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: false, external: externalTooltip, mode: "index", intersect: false },
+    },
+    scales: {
+      x: {
+        grid:   { color: "rgba(255,255,255,0.04)", borderDash: [4, 6], drawTicks: false },
+        ticks:  { color: "rgba(168,191,212,0.65)", font: { size: 11, weight: "600" }, maxRotation: 0, padding: 8 },
+        border: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        grid:   { color: "rgba(255,255,255,0.04)", drawTicks: false },
+        ticks:  { color: "rgba(168,191,212,0.38)", font: { size: 10 }, stepSize: 1, padding: 10 },
+        border: { display: false },
+      },
+    },
+  };
+
+  return (
+    <div>
+      <div style={{ height: 200, marginTop: 8 }}>
+        <Line data={chartData} options={opts} plugins={[statusAreaGradPlugin, statusCrosshairPlugin]} />
+      </div>
+      <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "rgba(168,191,212,0.45)" }}>
+        Total <strong style={{ color: "#4ab83f" }}>{total}</strong> documents
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14, justifyContent: "center" }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: `${k.color}12`, border: `1px solid ${k.color}30`,
+            borderRadius: 20, padding: "4px 12px",
+          }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: k.color }} />
+            <span style={{ fontSize: 12, color: "rgba(220,235,248,0.75)", fontWeight: 600 }}>{k.label}</span>
+            <span style={{ fontSize: 12, color: k.color, fontWeight: 800, fontFamily: "monospace" }}>{k.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════
 // SECTION 4 — ANALYSE AMÉLIORATION CONTINUE
 // ═══════════════════════════════════════════════════════════
@@ -1105,7 +1326,7 @@ function ImprovementsSection({ token }) {
         <Card style={{ padding: "22px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
           {/* Background glow */}
           <div style={{ position: "absolute", top: -40, left: "50%", transform: "translateX(-50%)", width: 180, height: 180, borderRadius: "50%", background: `${healthColor}10`, filter: "blur(40px)", pointerEvents: "none" }} />
-          <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "var(--ged-tx3)" }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", color: "rgba(168,191,212,0.4)" }}>
             Score Qualité
           </div>
           <ScoreGauge score={data.health_score} color={healthColor} label={data.health_label} />
@@ -1142,333 +1363,110 @@ function ImprovementsSection({ token }) {
         </div>
       </div>
 
-      {/* ── Row 2 : Distribution doughnut + legend ─────────── */}
+      {/* ── Row 2 : Distribution line chart ─────────────────── */}
       <Card style={{ padding: "20px 24px" }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "var(--ged-tx3)", marginBottom: 18 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.9px", color: "rgba(168,191,212,0.4)", marginBottom: 18 }}>
           Distribution par statut
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-          {/* Doughnut */}
-          <div style={{ width: 200, height: 200, flexShrink: 0 }}>
-            <DistributionChart kpis={KPIS.slice(1)} />
-          </div>
-          {/* Legend + detail */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 7 }}>
-            {KPIS.slice(1).map(kpi => {
-              const total = KPIS.slice(1).reduce((s, k) => s + k.value, 0);
-              const pct = total > 0 ? ((kpi.value / total) * 100).toFixed(1) : "0.0";
-              const rowBg    = `${kpi.color}0d`;
-              const rowBgHov = `${kpi.color}1c`;
-              return (
-                <div
-                  key={kpi.label}
-                  onClick={kpi.onClick || undefined}
-                  style={{
-                    position: "relative",
-                    display: "flex", alignItems: "center", gap: 12,
-                    cursor: kpi.onClick ? "pointer" : "default",
-                    borderRadius: 10,
-                    padding: "9px 12px 9px 16px",
-                    background: rowBg,
-                    border: `1px solid ${kpi.color}22`,
-                    overflow: "hidden",
-                    transition: "background 0.2s, border-color 0.2s, transform 0.2s",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = rowBgHov;
-                    e.currentTarget.style.borderColor = `${kpi.color}44`;
-                    if (kpi.onClick) e.currentTarget.style.transform = "translateX(2px)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = rowBg;
-                    e.currentTarget.style.borderColor = `${kpi.color}22`;
-                    e.currentTarget.style.transform = "none";
-                  }}
-                >
-                  <div style={{
-                    position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
-                    background: `linear-gradient(to bottom, ${kpi.color}, ${kpi.color}55)`,
-                  }} />
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "rgba(220,235,248,0.85)", minWidth: 100, flexShrink: 0 }}>{kpi.label}</span>
-                  <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{
-                      width: `${pct}%`, height: "100%",
-                      background: `linear-gradient(90deg, ${kpi.color}55, ${kpi.color})`,
-                      borderRadius: 3, boxShadow: `0 0 8px ${kpi.color}70`,
-                      transition: "width 1.3s cubic-bezier(0.4,0,0.2,1)",
-                    }} />
-                  </div>
-                  <span style={{
-                    fontSize: 14, fontWeight: 800, color: kpi.color, fontFamily: "monospace",
-                    minWidth: 28, textAlign: "right",
-                    textShadow: kpi.value > 0 ? `0 0 14px ${kpi.color}60` : "none",
-                  }}>{kpi.value}</span>
-                  <span style={{ fontSize: 11, color: "rgba(168,191,212,0.38)", minWidth: 44, textAlign: "right" }}>{pct}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <StatusLineChart kpis={KPIS.slice(1)} />
       </Card>
 
       {/* ── AI Synthesis Block ─────────────────────────────────── */}
       {data.ai_synthesis && (
-        <>
-          <style>{`
-            @keyframes rptFadeUp {
-              from { opacity: 0; transform: translateY(16px); }
-              to   { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes rptShimmer {
-              0%   { background-position: -200% center; }
-              100% { background-position: 200% center; }
-            }
-            @keyframes rptGlowPulse {
-              0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.45), 0 0 12px rgba(139,92,246,0.2); }
-              50%       { box-shadow: 0 0 0 6px rgba(139,92,246,0),  0 0 20px rgba(139,92,246,0.35); }
-            }
-            @keyframes rptBlobFloat {
-              0%, 100% { transform: translateY(0) scale(1); }
-              50%       { transform: translateY(-6px) scale(1.05); }
-            }
-            .rpt-card {
-              animation: rptFadeUp 0.5s cubic-bezier(.22,.68,0,1.2) both;
-            }
-            .rpt-icon-glow {
-              animation: rptGlowPulse 2.8s ease-in-out infinite;
-            }
-            .rpt-shimmer {
-              background: linear-gradient(90deg, #c4b5fd 0%, #e9d5ff 40%, #a78bfa 60%, #c4b5fd 100%);
-              background-size: 250% auto;
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              background-clip: text;
-              animation: rptShimmer 4s linear infinite;
-            }
-            .rpt-axe-row {
-              animation: rptFadeUp 0.45s cubic-bezier(.22,.68,0,1.2) both;
-              transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-              cursor: default;
-            }
-            .rpt-axe-row:hover {
-              transform: translateX(4px);
-              box-shadow: -3px 0 16px rgba(139,92,246,0.18), 0 2px 12px rgba(0,0,0,0.18);
-              border-left-color: rgba(139,92,246,0.7) !important;
-            }
-            .rpt-blob {
-              animation: rptBlobFloat 6s ease-in-out infinite;
-            }
-          `}</style>
-
-          <Card className="rpt-card" style={{
-            padding: 0, overflow: "hidden",
-            border: "1px solid rgba(139,92,246,0.28)",
-            boxShadow: "0 8px 40px rgba(139,92,246,0.10), 0 1px 0 rgba(255,255,255,0.04) inset",
+        <Card style={{ padding: 0, overflow: "hidden", border: "1px solid rgba(139,92,246,0.22)" }}>
+          {/* Header */}
+          <div style={{
+            padding: "13px 20px",
+            background: "linear-gradient(90deg, rgba(139,92,246,0.12), rgba(139,92,246,0.04))",
+            borderBottom: "1px solid rgba(139,92,246,0.15)",
+            display: "flex", alignItems: "center", gap: 10,
           }}>
-
-            {/* ── Header ───────────────────────────────────── */}
             <div style={{
-              padding: "16px 22px",
-              background: "linear-gradient(135deg, rgba(109,40,217,0.22) 0%, rgba(139,92,246,0.14) 40%, rgba(99,102,241,0.08) 100%)",
-              borderBottom: "1px solid rgba(139,92,246,0.18)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              position: "relative", overflow: "hidden",
+              width: 28, height: 28, borderRadius: 8,
+              background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
             }}>
-              {/* Decorative blobs */}
-              <div className="rpt-blob" style={{
-                position: "absolute", top: -30, right: 80, width: 160, height: 100,
-                background: "radial-gradient(ellipse, rgba(139,92,246,0.22), transparent 70%)",
-                pointerEvents: "none",
-              }} />
-              <div style={{
-                position: "absolute", bottom: -20, left: 120, width: 80, height: 60,
-                background: "radial-gradient(ellipse, rgba(99,102,241,0.15), transparent 70%)",
-                pointerEvents: "none",
-              }} />
+              <LuSparkles size={14} color="#a78bfa" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#a78bfa" }}>Rapport IA — Amélioration Continue</div>
+              <div style={{ fontSize: 11, color: "rgba(167,139,250,0.5)" }}>Rapport IA · ISO 9001</div>
+            </div>
+          </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 13, zIndex: 1 }}>
-                <div className="rpt-icon-glow" style={{
-                  width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                  background: "linear-gradient(135deg, rgba(139,92,246,0.45), rgba(99,102,241,0.3))",
-                  border: "1px solid rgba(167,139,250,0.5)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <LuSparkles size={18} color="#e9d5ff" />
+          <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+            {/* Synthèse */}
+            {data.ai_synthesis.synthese && (
+              <div style={{
+                background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.12)",
+                borderRadius: 10, padding: "13px 16px",
+              }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(167,139,250,0.6)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 7 }}>
+                  Synthèse exécutive
                 </div>
-                <div>
-                  <div className="rpt-shimmer" style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: "0.15px" }}>
-                    Rapport — Amélioration Continue
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: "rgba(196,181,253,0.5)" }}>Analyse automatique</span>
-                    <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(139,92,246,0.5)", display: "inline-block" }} />
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, letterSpacing: "0.6px",
-                      color: "#c4b5fd",
-                      background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.4)",
-                      borderRadius: 5, padding: "1.5px 7px",
-                    }}>ISO 9001</span>
-                  </div>
+                <p style={{ margin: 0, fontSize: 13.5, color: "rgba(220,235,248,0.88)", lineHeight: 1.65 }}>
+                  {data.ai_synthesis.synthese}
+                </p>
+              </div>
+            )}
+
+            {/* Axes prioritaires */}
+            {data.ai_synthesis.axes?.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(167,139,250,0.6)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>
+                  Axes prioritaires d'amélioration
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {data.ai_synthesis.axes.map((axe, i) => (
+                    <div key={i} style={{
+                      display: "flex", alignItems: "flex-start", gap: 12, padding: "11px 14px",
+                      background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                      borderRadius: 9,
+                    }}>
+                      <div style={{
+                        minWidth: 24, height: 24, borderRadius: 6,
+                        background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.28)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 800, color: "#a78bfa", flexShrink: 0,
+                      }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(220,235,248,0.9)" }}>{axe.titre}</span>
+                          {axe.clause && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 700, color: "#a78bfa",
+                              background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)",
+                              borderRadius: 5, padding: "1px 7px",
+                            }}>
+                              {axe.clause}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ margin: 0, fontSize: 12.5, color: "rgba(168,191,212,0.72)", lineHeight: 1.55 }}>{axe.action}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Score pill */}
-              {data.health_score !== undefined && (
-                <div style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1,
-                  background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.35)",
-                  borderRadius: 14, padding: "7px 16px",
-                  backdropFilter: "blur(8px)",
-                }}>
-                  <span style={{
-                    fontSize: 24, fontWeight: 900, lineHeight: 1,
-                    background: "linear-gradient(135deg, #e9d5ff, #a78bfa)",
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  }}>
-                    {data.health_score}
-                  </span>
-                  <span style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(196,181,253,0.5)", letterSpacing: "0.5px", marginTop: 1 }}>
-                    / 100
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div style={{ padding: "22px 22px", display: "flex", flexDirection: "column", gap: 22 }}>
-
-              {/* ── Synthèse exécutive ────────────────────── */}
-              {data.ai_synthesis.synthese && (
-                <div style={{ animation: "rptFadeUp 0.5s 0.08s cubic-bezier(.22,.68,0,1.2) both" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 11 }}>
-                    <div style={{
-                      width: 3, height: 16, borderRadius: 2,
-                      background: "linear-gradient(180deg, #c4b5fd, #6366f1)",
-                    }} />
-                    <span style={{
-                      fontSize: 10, fontWeight: 800, letterSpacing: "1.1px",
-                      color: "rgba(196,181,253,0.65)", textTransform: "uppercase",
-                    }}>Synthèse exécutive</span>
-                  </div>
-                  <div style={{
-                    background: "rgba(139,92,246,0.06)",
-                    border: "1px solid rgba(139,92,246,0.13)",
-                    borderLeft: "3px solid rgba(139,92,246,0.55)",
-                    borderRadius: "0 12px 12px 0",
-                    padding: "15px 18px",
-                  }}>
-                    <p style={{ margin: 0, fontSize: 13.5, color: "rgba(220,235,248,0.88)", lineHeight: 1.72 }}>
-                      {data.ai_synthesis.synthese}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Axes prioritaires ─────────────────────── */}
-              {data.ai_synthesis.axes?.length > 0 && (
-                <div style={{ animation: "rptFadeUp 0.5s 0.16s cubic-bezier(.22,.68,0,1.2) both" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14 }}>
-                    <div style={{
-                      width: 3, height: 16, borderRadius: 2,
-                      background: "linear-gradient(180deg, #c4b5fd, #6366f1)",
-                    }} />
-                    <span style={{
-                      fontSize: 10, fontWeight: 800, letterSpacing: "1.1px",
-                      color: "rgba(196,181,253,0.65)", textTransform: "uppercase",
-                    }}>Axes prioritaires d'amélioration</span>
-                    <span style={{
-                      marginLeft: "auto", fontSize: 10.5, fontWeight: 700, color: "#a78bfa",
-                      background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.28)",
-                      borderRadius: 20, padding: "2px 10px",
-                    }}>
-                      {data.ai_synthesis.axes.length} axe{data.ai_synthesis.axes.length > 1 ? "s" : ""}
-                    </span>
-                  </div>
-
-                  {/* Timeline */}
-                  <div style={{ position: "relative", paddingLeft: 8 }}>
-                    <div style={{
-                      position: "absolute", left: 21, top: 28, bottom: 28,
-                      width: 1,
-                      background: "linear-gradient(180deg, rgba(139,92,246,0.5), rgba(99,102,241,0.1))",
-                    }} />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                      {data.ai_synthesis.axes.map((axe, i) => (
-                        <div
-                          key={i}
-                          className="rpt-axe-row"
-                          style={{
-                            animationDelay: `${0.22 + i * 0.09}s`,
-                            display: "flex", alignItems: "flex-start", gap: 14,
-                            padding: "13px 16px",
-                            background: "rgba(139,92,246,0.04)",
-                            border: "1px solid rgba(139,92,246,0.10)",
-                            borderLeft: "2px solid rgba(139,92,246,0.38)",
-                            borderRadius: "0 12px 12px 0",
-                          }}
-                        >
-                          {/* Numbered badge */}
-                          <div style={{
-                            minWidth: 28, height: 28, borderRadius: 9, flexShrink: 0,
-                            background: "linear-gradient(135deg, rgba(139,92,246,0.40), rgba(99,102,241,0.22))",
-                            border: "1px solid rgba(167,139,250,0.42)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 12, fontWeight: 900, color: "#e9d5ff",
-                            boxShadow: "0 0 10px rgba(139,92,246,0.25)",
-                          }}>
-                            {i + 1}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
-                              <span style={{ fontSize: 13.5, fontWeight: 700, color: "rgba(220,235,248,0.93)" }}>
-                                {axe.titre}
-                              </span>
-                              {axe.clause && (
-                                <span style={{
-                                  fontSize: 9.5, fontWeight: 700, letterSpacing: "0.3px",
-                                  color: "#c4b5fd",
-                                  background: "rgba(139,92,246,0.18)", border: "1px solid rgba(139,92,246,0.35)",
-                                  borderRadius: 5, padding: "2px 8px", whiteSpace: "nowrap",
-                                }}>
-                                  {axe.clause}
-                                </span>
-                              )}
-                            </div>
-                            <p style={{ margin: 0, fontSize: 12.5, color: "rgba(168,191,212,0.72)", lineHeight: 1.62 }}>
-                              {axe.action}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Conclusion ──────────────────────────────── */}
-              {data.ai_synthesis.conclusion && (
-                <div style={{
-                  display: "flex", alignItems: "flex-start", gap: 13,
-                  padding: "14px 18px",
-                  background: "rgba(74,184,63,0.07)",
-                  border: "1px solid rgba(74,184,63,0.2)",
-                  borderRadius: 12,
-                  animation: "rptFadeUp 0.5s 0.38s cubic-bezier(.22,.68,0,1.2) both",
-                }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                    background: "rgba(74,184,63,0.15)", border: "1px solid rgba(74,184,63,0.28)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <LuCircleCheck size={16} color={GREEN} />
-                  </div>
-                  <p style={{ margin: 0, paddingTop: 5, fontSize: 13, color: "rgba(220,235,248,0.78)", fontStyle: "italic", lineHeight: 1.65 }}>
-                    {data.ai_synthesis.conclusion}
-                  </p>
-                </div>
-              )}
-            </div>
-          </Card>
-        </>
+            {/* Conclusion */}
+            {data.ai_synthesis.conclusion && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                background: `rgba(74,184,63,0.06)`, border: `1px solid rgba(74,184,63,0.15)`,
+                borderRadius: 9,
+              }}>
+                <LuCircleCheck size={15} color={GREEN} style={{ flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 12.5, color: "rgba(220,235,248,0.75)", fontStyle: "italic", lineHeight: 1.5 }}>
+                  {data.ai_synthesis.conclusion}
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
       )}
 
       {/* Recommendations */}
@@ -1493,7 +1491,7 @@ function ImprovementsSection({ token }) {
             <LuCircleCheck size={40} color={GREEN} />
             <div>
               <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: GREEN }}>Excellent état documentaire !</p>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--ged-tx2)" }}>
+              <p style={{ margin: 0, fontSize: 13, color: "rgba(168,191,212,0.5)" }}>
                 Aucune anomalie détectée. Continuez ainsi.
               </p>
             </div>
@@ -1531,7 +1529,7 @@ function ImprovementsSection({ token }) {
                         <PriorityBadge priority={rec.priority} />
                         <span style={{
                           fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px",
-                          color: "var(--ged-tx3)", background: "var(--ged-card)",
+                          color: "rgba(168,191,212,0.4)", background: "rgba(255,255,255,0.04)",
                           border: `1px solid ${BORDER}`, borderRadius: 5, padding: "2px 6px",
                         }}>
                           {rec.category}
@@ -1545,7 +1543,7 @@ function ImprovementsSection({ token }) {
                           <div style={{ fontSize: 20, fontWeight: 900, color: pcfg.color, lineHeight: 1, fontFamily: "monospace" }}>
                             {rec.metric.value}
                           </div>
-                          <div style={{ fontSize: 10, color: "var(--ged-tx3)", fontWeight: 600 }}>
+                          <div style={{ fontSize: 10, color: "rgba(168,191,212,0.45)", fontWeight: 600 }}>
                             {rec.metric.unit}
                           </div>
                         </div>
@@ -1580,7 +1578,7 @@ function ImprovementsSection({ token }) {
                       {/* Documents list if any */}
                       {rec.documents && rec.documents.length > 0 && (
                         <div style={{ marginTop: 12 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--ged-tx2)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(168,191,212,0.5)", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
                             Documents concernés ({rec.documents.length})
                           </div>
                           <div style={{
@@ -1630,7 +1628,7 @@ function ImprovementsSection({ token }) {
         )}
       </div>
 
-      <div style={{ textAlign: "right", fontSize: 11, color: "var(--ged-tx3)" }}>
+      <div style={{ textAlign: "right", fontSize: 11, color: "rgba(168,191,212,0.3)" }}>
         Analyse générée le {new Date(data.generated_at).toLocaleString("fr-FR")}
       </div>
     </div>
@@ -1641,16 +1639,15 @@ function ImprovementsSection({ token }) {
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════
 const TABS = [
-  { id: "chatbot",      label: "Chatbot Qualité",       icon: LuBot,      roles: ["*"] },
-  { id: "improvements", label: "Amélioration Continue", icon: LuChartBar, roles: ["*"] },
+  { id: "chatbot",      label: "Chatbot Qualité",       icon: LuBot,      visitorAllowed: true  },
+  { id: "improvements", label: "Amélioration Continue", icon: LuChartBar, visitorAllowed: false },
 ];
 
 export default function AIAssistant() {
-  const { currentUser, token, authLoading } = useUser();
-  const userRole = currentUser?.role || null;
-  const isVisitor = !authLoading && (!currentUser || userRole === "Visiteur");
+  const { currentUser, token } = useUser();
+  const isVisitor = !currentUser || currentUser?.role === "Visiteur";
+  const visibleTabs = isVisitor ? TABS.filter(t => t.visitorAllowed) : TABS;
   const [activeTab, setActiveTab] = useState("chatbot");
-  const visibleTabs = isVisitor ? TABS.filter(t => t.id === "chatbot") : TABS;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(145deg,#0a1420 0%,#0d1f2d 50%,#0b1929 100%)" }}>
@@ -1677,13 +1674,15 @@ export default function AIAssistant() {
               }}>
                 <LuCpu size={22} color={GREEN} />
               </div>
-              {/* Title */}
+              {/* Title + badge */}
               <div>
-                <h1 style={{ margin: "0 0 3px", fontSize: 21, fontWeight: 800, color: "rgba(220,235,248,0.96)", letterSpacing: "-0.025em" }}>
-                  Assistant IA
-                </h1>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 3 }}>
+                  <h1 style={{ margin: 0, fontSize: 21, fontWeight: 800, color: "rgba(220,235,248,0.96)", letterSpacing: "-0.025em" }}>
+                    Assistant IA
+                  </h1>
+                </div>
                 <p style={{ margin: 0, fontSize: 12, color: "rgba(168,191,212,0.42)", letterSpacing: "0.1px" }}>
-                  Données ACTIA ES en temps réel · ISO 9001
+                  Streaming · Données ACTIA ES en temps réel
                 </p>
               </div>
             </div>
@@ -1698,47 +1697,49 @@ export default function AIAssistant() {
             </div>
           </div>
 
-          {/* ── Tabs (pill style) ── */}
-          <div style={{
-            display: "flex", gap: 4, padding: "4px",
-            background: "var(--ged-header)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 12, width: "fit-content",
-          }}>
-            {visibleTabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 7,
-                    padding: "8px 18px",
-                    borderRadius: 9,
-                    border: isActive ? `1.5px solid rgba(74,184,63,0.28)` : "1.5px solid transparent",
-                    background: isActive ? "rgba(74,184,63,0.13)" : "transparent",
-                    color: isActive ? GREEN : "rgba(168,191,212,0.58)",
-                    fontSize: 13, fontWeight: isActive ? 700 : 500,
-                    cursor: "pointer",
-                    transition: "all 0.18s ease",
-                    whiteSpace: "nowrap",
-                    boxShadow: isActive ? "0 2px 10px rgba(74,184,63,0.1)" : "none",
-                  }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(255,255,255,0.055)"; e.currentTarget.style.color = "rgba(220,235,248,0.9)"; }}}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(168,191,212,0.58)"; }}}
-                >
-                  <Icon size={14} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* ── Tabs (pill style) — hidden for visitor (single tab) ── */}
+          {visibleTabs.length > 1 && (
+            <div style={{
+              display: "flex", gap: 4, padding: "4px",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 12, width: "fit-content",
+            }}>
+              {visibleTabs.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 7,
+                      padding: "8px 18px",
+                      borderRadius: 9,
+                      border: isActive ? `1.5px solid rgba(74,184,63,0.28)` : "1.5px solid transparent",
+                      background: isActive ? "rgba(74,184,63,0.13)" : "transparent",
+                      color: isActive ? GREEN : "rgba(168,191,212,0.58)",
+                      fontSize: 13, fontWeight: isActive ? 700 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.18s ease",
+                      whiteSpace: "nowrap",
+                      boxShadow: isActive ? "0 2px 10px rgba(74,184,63,0.1)" : "none",
+                    }}
+                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(255,255,255,0.055)"; e.currentTarget.style.color = "rgba(220,235,248,0.9)"; }}}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(168,191,212,0.58)"; }}}
+                  >
+                    <Icon size={14} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Tab content */}
         <div>
-          {activeTab === "chatbot"      && <ChatbotSection      token={token} />}
+          {activeTab === "chatbot"      && <ChatbotSection      token={token} isVisitor={isVisitor} />}
           {activeTab === "improvements" && <ImprovementsSection token={token} />}
         </div>
       </main>

@@ -1,6 +1,6 @@
 # =============================================================
 # SMQ_GED — Docker Compose STAGING  (ACTIA Engineering Services)
-# Sprint 42 — Miroir complet de la production
+# Miroir complet de la production
 # Usage : docker compose -f docker-compose.staging.yml up --build -d
 # =============================================================
 # RÈGLE : toute mise à jour doit être validée ici AVANT prod

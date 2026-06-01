@@ -21,6 +21,14 @@ const ACTION_LABEL_MAP = {
   VALIDATION_CREATED:                 "Validation créée",
   VALIDATION_EDIT_ATTEMPT_BLOCKED:    "Modification validation bloquée",
   VALIDATION_DELETE_ATTEMPT_BLOCKED:  "Suppression validation bloquée",
+  // Security
+  LOGIN_SUCCESS:                      "Connexion réussie",
+  LOGIN_FAILURE:                      "Échec de connexion",
+  LOGIN_NEW_IP:                       "Nouvelle IP détectée",
+  LOGOUT:                             "Déconnexion",
+  ACCOUNT_LOCKED:                     "Compte verrouillé",
+  ACCESS_DENIED_401:                  "Accès refusé (401)",
+  ACCESS_DENIED_403:                  "Accès refusé (403)",
 };
 
 // ── Hardcoded dropdown options (always available, independent of DB) ──
@@ -45,12 +53,20 @@ function actionLabel(action) {
 }
 
 function actionColor(action) {
-  if (action?.includes("CREATE"))     return { color: "#4ab83f", bg: "rgba(74,184,63,0.12)",   border: "rgba(74,184,63,0.25)"   };
-  if (action?.includes("STATUS"))     return { color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.25)"  };
-  if (action?.includes("VERSION"))    return { color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.25)"  };
-  if (action?.includes("ARCHIVE"))    return { color: "#a78bfa", bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.25)" };
-  if (action?.includes("VALIDATION")) return { color: "#2dd4bf", bg: "rgba(45,212,191,0.12)",  border: "rgba(45,212,191,0.25)"  };
-  if (action?.includes("BLOCKED"))    return { color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.25)" };
+  if (action?.includes("CREATE"))              return { color: "#4ab83f", bg: "rgba(74,184,63,0.12)",   border: "rgba(74,184,63,0.25)"   };
+  if (action?.includes("STATUS"))              return { color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.25)"  };
+  if (action?.includes("VERSION"))             return { color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.25)"  };
+  if (action?.includes("ARCHIVE"))             return { color: "#a78bfa", bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.25)" };
+  if (action?.includes("VALIDATION"))          return { color: "#2dd4bf", bg: "rgba(45,212,191,0.12)",  border: "rgba(45,212,191,0.25)"  };
+  if (action?.includes("BLOCKED"))             return { color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.25)" };
+  // Security events
+  if (action === "LOGIN_SUCCESS")              return { color: "#4ab83f", bg: "rgba(74,184,63,0.12)",   border: "rgba(74,184,63,0.25)"   };
+  if (action === "LOGOUT")                     return { color: "#94a3b8", bg: "rgba(148,163,184,0.1)",  border: "rgba(148,163,184,0.2)"  };
+  if (action === "LOGIN_FAILURE")              return { color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.25)" };
+  if (action === "ACCOUNT_LOCKED")             return { color: "#ef4444", bg: "rgba(239,68,68,0.15)",   border: "rgba(239,68,68,0.35)"   };
+  if (action === "LOGIN_NEW_IP")               return { color: "#fbbf24", bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.25)"  };
+  if (action === "ACCESS_DENIED_401")          return { color: "#fb923c", bg: "rgba(251,146,60,0.12)",  border: "rgba(251,146,60,0.25)"  };
+  if (action === "ACCESS_DENIED_403")          return { color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.25)" };
   return { color: "#a8bfd4", bg: "rgba(168,191,212,0.08)", border: "rgba(168,191,212,0.15)" };
 }
 
@@ -144,25 +160,56 @@ function ActionDetails({ action, details }) {
   }
 
   if (action === "LOGIN_SUCCESS") {
-    return wrap(<><B color="#4ab83f">Connexion réussie</B>{d.user_role && <> — rôle <B color="#a5b4fc">{d.user_role}</B></>}</>);
+    return wrap(<>
+      <B color="#4ab83f">Connexion réussie</B>
+      {d.role && <> — rôle <B color="#a5b4fc">{d.role}</B></>}
+      {d.ip   && <> — IP <B color="#94a3b8">{d.ip}</B></>}
+      {d.email && <> — <Em>{d.email}</Em></>}
+    </>);
   }
   if (action === "LOGIN_FAILURE") {
-    return wrap(<><B color="#f87171">Échec de connexion</B>{d.reason && <> — <Em>{d.reason}</Em></>}</>);
+    return wrap(<>
+      <B color="#f87171">Échec de connexion</B>
+      {d.attempt != null && <> — tentative <B color="#f87171">#{d.attempt}</B></>}
+      {d.reason  && <> — <Em>{d.reason === "wrong_password" ? "mot de passe incorrect" : d.reason === "user_not_found" ? "utilisateur introuvable" : d.reason}</Em></>}
+      {d.email   && <> — <Em>{d.email}</Em></>}
+    </>);
   }
   if (action === "LOGIN_NEW_IP") {
-    return wrap(<><B color="#fbbf24">Connexion depuis une nouvelle adresse IP détectée</B></>);
+    return wrap(<>
+      <B color="#fbbf24">Connexion depuis une nouvelle IP</B>
+      {d.current_ip  && <> — nouvelle IP <B color="#fbbf24">{d.current_ip}</B></>}
+      {d.previous_ip && <> (habituelle : <Em>{d.previous_ip}</Em>)</>}
+      {d.email       && <> — <Em>{d.email}</Em></>}
+    </>);
   }
   if (action === "LOGOUT") {
-    return wrap(<><B color="#94a3b8">Déconnexion</B></>);
+    return wrap(<>
+      <B color="#94a3b8">Déconnexion</B>
+      {d.email && <> — <Em>{d.email}</Em></>}
+    </>);
   }
   if (action === "ACCOUNT_LOCKED") {
-    return wrap(<><B color="#f87171">Compte verrouillé</B>{d.reason && <> — <Em>{d.reason}</Em></>}</>);
+    return wrap(<>
+      <B color="#ef4444">Compte verrouillé</B>
+      {d.attempts    && <> après <B color="#ef4444">{d.attempts}</B> tentatives</>}
+      {d.email       && <> — <Em>{d.email}</Em></>}
+      {d.locked_until && <> — jusqu'à <B color="#fb923c">{new Date(d.locked_until).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</B></>}
+    </>);
   }
   if (action === "ACCESS_DENIED_401") {
-    return wrap(<><B color="#f87171">Session expirée</B> — authentification requise</>);
+    return wrap(<>
+      <B color="#fb923c">Session expirée</B> — authentification requise
+      {d.path   && <> — <Em>{d.method ? `${d.method} ` : ""}{d.path}</Em></>}
+      {d.ip     && <> — IP <B color="#94a3b8">{d.ip}</B></>}
+    </>);
   }
   if (action === "ACCESS_DENIED_403") {
-    return wrap(<><B color="#f87171">Accès refusé</B> — permissions insuffisantes</>);
+    return wrap(<>
+      <B color="#f87171">Accès refusé</B> — permissions insuffisantes
+      {d.path && <> — <Em>{d.method ? `${d.method} ` : ""}{d.path}</Em></>}
+      {d.role && <> — rôle <B color="#a5b4fc">{d.role}</B></>}
+    </>);
   }
 
   // Fallback: flat readable sentence — skip all technical/backend keys
@@ -219,6 +266,49 @@ function formatDetailsText(action, details) {
   }
   if (action?.includes("BLOCKED")) {
     return "Tentative d'operation non autorisee bloquee par le systeme";
+  }
+  if (action === "LOGIN_SUCCESS") {
+    let s = "Connexion reussie";
+    if (d.role)  s += ` | Role : ${d.role}`;
+    if (d.ip)    s += ` | IP : ${d.ip}`;
+    if (d.email) s += ` | ${d.email}`;
+    return s;
+  }
+  if (action === "LOGIN_FAILURE") {
+    let s = "Echec de connexion";
+    if (d.attempt != null) s += ` | Tentative #${d.attempt}`;
+    if (d.reason)          s += ` | ${d.reason}`;
+    if (d.email)           s += ` | ${d.email}`;
+    return s;
+  }
+  if (action === "LOGIN_NEW_IP") {
+    let s = "Connexion depuis une nouvelle IP";
+    if (d.current_ip)  s += ` | Nouvelle IP : ${d.current_ip}`;
+    if (d.previous_ip) s += ` | Habituelle : ${d.previous_ip}`;
+    if (d.email)       s += ` | ${d.email}`;
+    return s;
+  }
+  if (action === "LOGOUT") {
+    return `Deconnexion${d.email ? ` | ${d.email}` : ""}`;
+  }
+  if (action === "ACCOUNT_LOCKED") {
+    let s = "Compte verrouille";
+    if (d.attempts)     s += ` apres ${d.attempts} tentatives`;
+    if (d.email)        s += ` | ${d.email}`;
+    if (d.locked_until) s += ` | Jusqu'a : ${new Date(d.locked_until).toLocaleTimeString("fr-FR")}`;
+    return s;
+  }
+  if (action === "ACCESS_DENIED_401") {
+    let s = "Session expiree - authentification requise";
+    if (d.method && d.path) s += ` | ${d.method} ${d.path}`;
+    if (d.ip)               s += ` | IP : ${d.ip}`;
+    return s;
+  }
+  if (action === "ACCESS_DENIED_403") {
+    let s = "Acces refuse - permissions insuffisantes";
+    if (d.method && d.path) s += ` | ${d.method} ${d.path}`;
+    if (d.role)             s += ` | Role : ${d.role}`;
+    return s;
   }
   // Fallback
   return Object.entries(d)

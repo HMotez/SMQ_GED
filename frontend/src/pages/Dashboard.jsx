@@ -49,27 +49,31 @@ const ANIMATION_STYLES = `
 const GREEN      = "#4ab83f";
 
 const STATUS_COLORS = {
-  "Brouillon":     "#9ca3af",
-  "En rédaction":  "#4ade80",
-  "En relecture":  "#60a5fa",
-  "En validation": "#a5b4fc",
-  "Validé":        "#4ade80",
-  "Approuvé":      "#818cf8",
-  "Diffusé":       "#2dd4bf",
-  "Obsolète":      "#fb923c",
-  "Archivé":       "#94a3b8",
+  "Brouillon":          "#9ca3af",
+  "En rédaction":       "#4ade80",
+  "Appel en relecture": "#fbbf24",
+  "En relecture":       "#60a5fa",
+  "En correction":      "#fb923c",
+  "En validation":      "#a5b4fc",
+  "Validé":             "#4ade80",
+  "Approuvé":           "#34d399",
+  "Diffusé":            "#2dd4bf",
+  "Obsolète":           "#fb923c",
+  "Archivé":            "#94a3b8",
 };
 
 const STATUS_CFG = {
-  "Brouillon":     { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)" },
-  "En rédaction":  { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)" },
-  "En relecture":  { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)" },
-  "En validation": { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)" },
-  "Validé":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)"  },
-  "Approuvé":      { bg:"rgba(238,242,255,0.10)", text:"#818cf8", border:"rgba(165,180,252,0.3)"  },
-  "Diffusé":       { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)" },
-  "Obsolète":      { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)" },
-  "Archivé":       { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)" },
+  "Brouillon":          { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)" },
+  "En rédaction":       { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)" },
+  "Appel en relecture": { bg:"rgba(251,191,36,0.08)",  text:"#fbbf24", border:"rgba(251,191,36,0.2)"  },
+  "En relecture":       { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)" },
+  "En correction":      { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)" },
+  "En validation":      { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)" },
+  "Validé":             { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)"  },
+  "Approuvé":           { bg:"rgba(209,250,229,0.08)", text:"#34d399", border:"rgba(52,211,153,0.2)"  },
+  "Diffusé":            { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)" },
+  "Obsolète":           { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)" },
+  "Archivé":            { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)" },
 };
 const ROLE_COLOR = {
   "Admin":        "#f87171",
@@ -236,17 +240,19 @@ function Navbar() {
           {/* ── Right: Actions ── */}
           <div className="flex items-center gap-2 justify-end mr-3">
 
-            {/* + Nouveau button */}
-            <NavLink
-              to="/create"
-              className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-xl"
-              style={{
-                background: "linear-gradient(135deg,#4ab83f,#3da333)",
-                boxShadow: "0 4px 18px rgba(74,184,63,0.35)",
-              }}
-            >
-              <LuPlus size={14} /> Nouveau
-            </NavLink>
+            {/* + Nouveau button — Admin and Ing. Qualité only */}
+            {(userRole === "Admin" || userRole === "Ing. Qualité") && (
+              <NavLink
+                to="/create"
+                className="no-underline flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-xl"
+                style={{
+                  background: "linear-gradient(135deg,#4ab83f,#3da333)",
+                  boxShadow: "0 4px 18px rgba(74,184,63,0.35)",
+                }}
+              >
+                <LuPlus size={14} /> Nouveau
+              </NavLink>
+            )}
 
             {/* Divider */}
             <div style={{ width: 1, height: 26, background: "rgba(255,255,255,0.09)" }} />
@@ -426,7 +432,7 @@ function SectionLabel({ icon: Icon, title, accent = GREEN }) {
   );
 }
 
-/* ── Alert row ────────────────────────────────────────────── */
+/* ── Alert row — used by validation panel and overdue section ─ */
 function AlertRow({ doc, accent, onClick, index = 0 }) {
   const sc = STATUS_CFG[doc.status_name] || {};
   const rowAccent = sc.text || accent;
@@ -449,11 +455,10 @@ function AlertRow({ doc, accent, onClick, index = 0 }) {
         e.currentTarget.style.borderColor = `${rowAccent}25`;
       }}
     >
-      {/* Left colored bar — always visible */}
       <div className="absolute left-0 top-0 bottom-0 w-[3px]"
         style={{ background: `linear-gradient(to bottom, ${rowAccent}, ${rowAccent}55)` }} />
       <div className="flex-1 overflow-hidden min-w-0">
-        <p className="m-0 font-bold text-[12px] font-mono leading-tight" style={{ color: rowAccent }}>{doc.doc_code}</p>
+        <p className="m-0 font-bold text-[12px] font-mono leading-tight truncate" style={{ color: rowAccent }}>{doc.doc_code}</p>
         <p className="m-0 mt-0.5 text-sm truncate" style={{ color:"var(--ged-tx2)" }}>{doc.title}</p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -558,7 +563,6 @@ function StatusDoughnutChart({ data }) {
     dp => dp.parsed ?? 0,
     dp => dp.label
   );
-
   const opts = {
     animation: { duration: 1200, easing: "easeOutQuart" },
     plugins: {
@@ -664,13 +668,38 @@ function makeTypeGradPlugin(pairs) {
     beforeDatasetsDraw(chart) {
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
+      const yScale = chart.scales.y;
+      if (!yScale) return;
+      const baseline = Math.min(yScale.getPixelForValue(0), chartArea.bottom);
+
       chart.data.datasets.forEach((ds, i) => {
-        const [c1, c2] = pairs[i] || ["rgba(74,184,63,0.55)", "rgba(74,184,63,0)"];
+        const meta = chart.getDatasetMeta(i);
+        if (!meta?.data?.length) return;
+        const pts = meta.data;
+        const [c1] = pairs[i] || ["rgba(74,184,63,0.55)", "rgba(74,184,63,0)"];
         const grad = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        grad.addColorStop(0, c1);
-        grad.addColorStop(0.6, c2.replace("0)", "0.08)"));
-        grad.addColorStop(1, c2);
-        ds.backgroundColor = grad;
+        grad.addColorStop(0,   c1);
+        grad.addColorStop(0.6, "rgba(74,184,63,0.08)");
+        grad.addColorStop(1,   "rgba(74,184,63,0)");
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let j = 1; j < pts.length; j++) {
+          const prev = pts[j - 1];
+          const curr = pts[j];
+          ctx.bezierCurveTo(
+            prev.cp2x ?? prev.x, prev.cp2y ?? prev.y,
+            curr.cp1x ?? curr.x, curr.cp1y ?? curr.y,
+            curr.x, curr.y
+          );
+        }
+        ctx.lineTo(pts[pts.length - 1].x, baseline);
+        ctx.lineTo(pts[0].x, baseline);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.restore();
       });
     },
   };
@@ -698,7 +727,7 @@ function TypeAreaChart({ data }) {
       data:                     counts,
       borderColor:              "#4ab83f",
       backgroundColor:          "transparent",
-      fill:                     true,
+      fill:                     false,
       tension:                  0.42,
       borderWidth:              2.5,
       pointBackgroundColor:     "#0f1e30",
@@ -751,7 +780,7 @@ function TypeAreaChart({ data }) {
 
   return (
     <div style={{ height:240, marginTop:8, cursor:"pointer" }}>
-      <Line data={chartData} options={opts} plugins={[gradRef.current, crosshairPlugin, lineGlowPlugin]} />
+      <Line data={chartData} options={opts} plugins={[gradRef.current, crosshairPlugin]} />
     </div>
   );
 }
@@ -823,7 +852,7 @@ function ProcessHBarChart({ data }) {
     animation: { duration: 1300, easing: "easeOutQuart" },
     plugins: {
       legend: { display: false },
-      tooltip: { enabled: false, external: externalTooltip },
+      tooltip: { enabled: false, external: externalTooltip, mode:"nearest", intersect:true },
     },
     scales: {
       x: {
@@ -841,7 +870,7 @@ function ProcessHBarChart({ data }) {
     },
     responsive:          true,
     maintainAspectRatio: false,
-    interaction: { mode:"index", intersect:false },
+    interaction: { mode:"nearest", intersect:true },
     onClick: (_e, els) => {
       if (els.length > 0) navigate("/list?folderId=" + encodeURIComponent(sliced[els[0].index]?.id || ""));
     },
@@ -857,7 +886,7 @@ function ProcessHBarChart({ data }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userRole } = useUser();
+  const { userRole, currentUser } = useUser();
   const canValidate = userRole === "Admin" || userRole === "Ing. Qualité" || userRole === "Reviewer";
   const [overview,      setOverview]      = useState(null);
   const [stats,         setStats]         = useState(null);
@@ -879,11 +908,24 @@ export default function Dashboard() {
     setLastRefreshed(new Date());
   }, []);
 
+  const handleDeleteExpired = useCallback(async (docId, docCode) => {
+    if (!window.confirm(`Supprimer définitivement « ${docCode} » ? Cette action est irréversible.`)) return;
+    try {
+      await axios.delete(`${API}/documents/${docId}`);
+      setLoadingOv(true);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la suppression du document.");
+    }
+  }, [fetchData]);
+
   useEffect(() => {
+    if (!currentUser) { setLoadingOv(false); setLoadingSt(false); return; }
     setLoadingOv(true);
     setLoadingSt(true);
     fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const expired      = overview?.expired      || { count:0, list:[] };
   const inValidation = overview?.in_validation || { count:0, list:[] };
@@ -967,7 +1009,43 @@ export default function Dashboard() {
                 ? <div className="space-y-2">{[1,2,3].map(n=><div key={n} className="h-12 rounded-xl animate-pulse" style={{background:"var(--ged-card)"}}/>)}</div>
                 : expired.list.length === 0
                   ? <p className="text-sm text-center py-8" style={{ color:"var(--ged-tx2)" }}>Aucun document expiré ✓</p>
-                  : <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">{expired.list.map((doc,i) => <AlertRow key={doc.id} doc={doc} accent="#f87171" onClick={() => setSelectedDoc(doc.id)} index={i} />)}</div>
+                  : (
+                    <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-0.5">
+                      {expired.list.map((doc, i) => (
+                        <div key={doc.id}
+                          onClick={() => setSelectedDoc(doc.id)}
+                          className="row-slide-in group flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200"
+                          style={{
+                            padding: "9px 10px 9px 14px",
+                            background: "rgba(20,12,12,0.55)",
+                            border: "1px solid rgba(248,113,113,0.15)",
+                            animationDelay: `${i * 0.055}s`,
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.09)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.35)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background="rgba(20,12,12,0.55)"; e.currentTarget.style.borderColor="rgba(248,113,113,0.15)"; }}
+                        >
+                          <div className="w-[3px] self-stretch rounded-full flex-shrink-0" style={{ background:"#f87171", minHeight:32 }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="m-0 font-bold text-[12px] font-mono truncate leading-tight text-white">{doc.doc_code}</p>
+                            <p className="m-0 text-xs truncate mt-0.5" style={{ color:"var(--ged-tx3)" }}>{doc.title}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {doc.status_name && <StatusPill name={doc.status_name} />}
+                            {userRole === "Admin" && (
+                              <button
+                                onClick={e => { e.stopPropagation(); handleDeleteExpired(doc.id, doc.doc_code); }}
+                                title="Supprimer définitivement"
+                                className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md font-bold text-sm flex items-center justify-center transition-all duration-150"
+                                style={{ background:"rgba(248,113,113,0.15)", border:"1px solid rgba(248,113,113,0.3)", color:"#f87171", lineHeight:1 }}
+                                onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.3)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background="rgba(248,113,113,0.15)"; }}
+                              >×</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
               }
               <NavLink to="/list?overdue=true" className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
                 style={{ color:"#f87171", background:"rgba(248,113,113,0.1)", border:"1px solid rgba(248,113,113,0.2)" }}>
@@ -1001,7 +1079,7 @@ export default function Dashboard() {
               }
               <NavLink to="/validations" className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
                 style={{ color:"#a5b4fc", background:"rgba(165,180,252,0.1)", border:"1px solid rgba(165,180,252,0.2)" }}>
-                Gérer les validations <LuArrowRight size={11} />
+                {userRole === "Admin" || userRole === "Ing. Qualité" ? "Gérer les validations" : "Voir les validations"} <LuArrowRight size={11} />
               </NavLink>
             </div>
           </div>
@@ -1015,6 +1093,7 @@ export default function Dashboard() {
           }}>
             <div className="flex justify-between items-center mb-5">
               <div className="flex items-center gap-3">
+         
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:"rgba(96,165,250,0.15)", border:"1px solid rgba(96,165,250,0.3)" }}>
                   <LuClock size={13} style={{ color:"#60a5fa" }} />
                 </div>
@@ -1081,7 +1160,7 @@ export default function Dashboard() {
               <div className="flex-1 h-px ml-2" style={{ background:"linear-gradient(90deg,rgba(74,184,63,0.3),transparent)" }} />
             </div>
 
-            {/* Row 1 : Doughnut statut (1/3) + Area chart types (2/3) */}
+            {/* Row 1 : Curve statut (1/3) + Area chart types (2/3) */}
             <div className="grid gap-5 mb-5" style={{ gridTemplateColumns:"1fr 2fr" }}>
 
               <div className="rounded-2xl p-6 section-fade-in" style={{

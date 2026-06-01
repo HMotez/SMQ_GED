@@ -95,7 +95,11 @@ export default function DocDetailModal({ docId, onClose }) {
         style={{ background:"rgba(5,12,20,0.88)", backdropFilter:"blur(12px)" }}>
         <div onClick={e => e.stopPropagation()}
           className="rounded-2xl border w-[min(960px,96vw)] max-h-[90vh] flex flex-col overflow-hidden"
-          style={{ background:"var(--ged-modal-bg)", borderColor:"var(--ged-border-md)", boxShadow:"var(--ged-shadow)" }}>
+          style={{
+            background:"linear-gradient(160deg,rgba(18,32,58,0.99) 0%,rgba(12,22,40,0.99) 100%)",
+            borderColor:"rgba(255,255,255,0.14)",
+            boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)",
+          }}>
 
           {/* ── Header ────────────────────────────────────────── */}
           <div className="px-7 pt-6 pb-0 flex-shrink-0">
@@ -164,7 +168,7 @@ export default function DocDetailModal({ docId, onClose }) {
           </div>
 
           {/* Divider */}
-          <div style={{ height:1, background:"rgba(255,255,255,0.07)", flexShrink:0 }} />
+          <div style={{ height:1, background:"rgba(255,255,255,0.12)", flexShrink:0 }} />
 
           {/* ── Content ───────────────────────────────────────── */}
           {loading ? (
@@ -196,19 +200,19 @@ export default function DocDetailModal({ docId, onClose }) {
                       { Icon:LuUser,     label:"Créé par",               value:doc.created_by_name || "—" },
                     ].map(({ Icon, label, value }) => (
                       <div key={label} className="rounded-xl px-4 py-3 border"
-                        style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(255,255,255,0.07)" }}>
+                        style={{ background:"rgba(255,255,255,0.055)", borderColor:"rgba(255,255,255,0.13)" }}>
                         <div className="flex items-center gap-1.5 mb-1">
-                          <Icon size={11} style={{ color:"var(--ged-tx3)" }} />
-                          <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"var(--ged-tx3)" }}>{label}</p>
+                          <Icon size={11} style={{ color:"rgba(168,191,212,0.6)" }} />
+                          <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"rgba(168,191,212,0.6)" }}>{label}</p>
                         </div>
-                        <p className="m-0 text-sm font-medium text-white truncate" title={value}>{value}</p>
+                        <p className="m-0 text-sm font-semibold truncate" style={{ color:"rgba(220,235,248,0.95)" }} title={value}>{value}</p>
                       </div>
                     ))}
                   </div>
 
                   {(doc.context || doc.description) && (
                     <div className="rounded-xl px-4 py-3.5 border"
-                      style={{ background:"var(--ged-header)", borderColor:"var(--ged-border-sm)" }}>
+                      style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.11)" }}>
                       <p className="m-0 text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color:"var(--ged-tx3)" }}>Description / Contexte</p>
                       <p className="m-0 text-sm leading-relaxed" style={{ color:"var(--ged-tx2)" }}>{doc.context || doc.description}</p>
                     </div>
@@ -230,7 +234,7 @@ export default function DocDetailModal({ docId, onClose }) {
 
                   {doc.sharepoint_link && (
                     <div key="sharepoint" className="rounded-xl px-4 py-3 border"
-                      style={{ background:"rgba(255,255,255,0.025)", borderColor:"rgba(255,255,255,0.07)" }}>
+                      style={{ background:"rgba(255,255,255,0.055)", borderColor:"rgba(255,255,255,0.13)" }}>
                       <div className="flex items-center gap-1.5 mb-1">
                         <LuExternalLink size={11} style={{ color:"var(--ged-tx3)" }} />
                         <p className="m-0 text-[10px] uppercase tracking-wider font-bold" style={{ color:"var(--ged-tx3)" }}>SharePoint</p>

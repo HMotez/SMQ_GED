@@ -432,6 +432,60 @@ async function sendExpirationDigestEmail({ to, docs }) {
   ));
 }
 
+async function sendLateValidationDigestEmail({ to, docs }) {
+  // docs = [{ docCode, title, daysLate, since }]
+  if (!docs || docs.length === 0) return;
+  const accent  = "#dc2626";
+  const count   = docs.length;
+  const subject = `[SMQ GED] ⚠️ ${count} document${count > 1 ? "s" : ""} en retard de validation — ${new Date().toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" })}`;
+
+  const rows = docs.map(d => `
+    <tr style="border-bottom:1px solid #fecaca;">
+      <td style="padding:10px 12px;font-size:12px;">
+        <code style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:4px;padding:2px 6px;font-family:monospace;">${d.docCode}</code>
+      </td>
+      <td style="padding:10px 12px;font-size:12px;color:#1e3450;font-weight:600;">${d.title}</td>
+      <td style="padding:10px 12px;font-size:12px;color:#64748b;">${d.since}</td>
+      <td style="padding:10px 12px;font-size:12px;text-align:center;">
+        <span style="display:inline-block;background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;border-radius:20px;padding:2px 10px;font-weight:800;font-size:11px;">+${d.daysLate}j</span>
+      </td>
+    </tr>`).join("");
+
+  const content = `
+    ${sectionLabel("Rapport journalier — Validations en retard", accent)}
+    <p style="margin:8px 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+      ${count} document${count > 1 ? "s sont" : " est"} en attente de validation depuis plus de 3 jours.
+      Une action est requise pour assurer la continuité du processus <strong>ISO 9001</strong>.
+    </p>
+
+    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;overflow:hidden;margin:16px 0;">
+      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:linear-gradient(135deg,#7f1d1d,#dc2626);">
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Code</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Titre</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:left;">Soumis le</th>
+            <th style="padding:10px 12px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:1px;text-align:center;">Retard</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+
+    ${alertBox("Ces documents nécessitent votre validation ou un retour motivé. Rendez-vous sur la page <strong>Validations</strong>.", accent)}
+    ${ctaButton("Accéder aux validations", accent, "/validations")}`;
+
+  await sendMail(to, subject, baseHtml(
+    `${count} document${count > 1 ? "s" : ""} en retard de validation`,
+    accent,
+    "135deg,#7f1d1d 0%,#b91c1c 60%,#dc2626 100%",
+    "warning",
+    content
+  ));
+}
+
 async function sendInactiveDocumentEmail({ to, docId, docCode, title, docType, lastModified }) {
   const accent  = "#d97706";
   const subject = `[SMQ GED] Document inactif depuis 6 mois — ${docCode}`;
@@ -611,6 +665,7 @@ module.exports = {
   sendNewVersionEmail,
   sendExpiringDocumentEmail,
   sendExpirationDigestEmail,
+  sendLateValidationDigestEmail,
   sendInactiveDocumentEmail,
   sendPasswordResetEmail,
   sendSecurityAlert,

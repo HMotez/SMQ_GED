@@ -10,7 +10,7 @@ import {
   LuClipboardCheck, LuFileWarning, LuFilePlus, LuArchive,
   LuCircleCheckBig, LuCircleAlert,
   LuX, LuCalendar, LuFolder, LuTag, LuUser,
-  LuFileText, LuLayers, LuHistory, LuShieldCheck, LuTriangleAlert,
+  LuFileText, LuLayers, LuHistory, LuShieldCheck, LuTriangleAlert, LuEye,
 } from "react-icons/lu";
 
 import { API } from "../config";
@@ -45,6 +45,13 @@ const TYPE_CFG = {
     Icon:   LuArchive,
     label:  "Inactivité",
   },
+  designation: {
+    color:  "#a78bfa",
+    bg:     "rgba(167,139,250,0.1)",
+    border: "rgba(167,139,250,0.25)",
+    Icon:   LuEye,
+    label:  "Désignation",
+  },
 };
 
 const STATUS_STYLE = {
@@ -65,6 +72,27 @@ const FILTER_TABS = [
   { key: "version",    label: "Version"    },
   { key: "inactivite", label: "Inactivité" },
 ];
+
+const FILTER_TABS_REVIEWER = [
+  { key: "all",         label: "Toutes"      },
+  { key: "unread",      label: "Non lues"    },
+  { key: "validation",  label: "Validation"  },
+  { key: "designation", label: "Désignation" },
+];
+
+function filterForReviewer(notifications) {
+  const seen = new Set();
+  return notifications.filter(n => {
+    if (n.type === "designation") return true;
+    if (n.type === "validation" && n.doc_status === "En validation") {
+      // One notification per document (latest first — API returns DESC)
+      if (seen.has(n.document_id)) return false;
+      seen.add(n.document_id);
+      return true;
+    }
+    return false;
+  });
+}
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -300,7 +328,8 @@ function DocumentModal({ doc, loading, onClose }) {
 /* ════════════════════════════════════════════════════════════ */
 export default function Notifications() {
   const { currentUser, token, logout } = useUser();
-  const userRole = currentUser?.role;
+  const userRole  = currentUser?.role;
+  const isReviewer = userRole === "Reviewer";
 
   const [notifications, setNotifications] = useState([]);
   const [loading,       setLoading]       = useState(false);
@@ -308,10 +337,15 @@ export default function Notifications() {
   const [toast,         setToast]         = useState({ msg: "", type: "" });
   const [triggerLoading, setTriggerLoading] = useState(false);
 
-  // Expired documents section
+  // Expired documents section (Admin / Ing. Qualité)
   const [expiredDocs,      setExpiredDocs]      = useState([]);
   const [loadingExpired,   setLoadingExpired]   = useState(true);
   const [expiredExpanded,  setExpiredExpanded]  = useState(true);
+
+  // Documents en validation section (Reviewer)
+  const [validationDocs,     setValidationDocs]     = useState([]);
+  const [loadingValidation,  setLoadingValidation]  = useState(false);
+  const [validationExpanded, setValidationExpanded] = useState(true);
 
   // Document modal state
   const [selectedDoc,  setSelectedDoc]  = useState(null);
@@ -360,6 +394,26 @@ export default function Notifications() {
   }, [token]);
 
   useEffect(() => { fetchExpiredDocs(); }, [fetchExpiredDocs]);
+
+  /* ── Fetch documents en validation (Reviewer only) ──────── */
+  const fetchValidationDocs = useCallback(async () => {
+    if (!isReviewer) return;
+    setLoadingValidation(true);
+    try {
+      const res = await fetch(`${API}/documents?statusName=En%20validation&limit=50`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setValidationDocs(Array.isArray(data) ? data : (data.data || []));
+    } catch {
+      setValidationDocs([]);
+    } finally {
+      setLoadingValidation(false);
+    }
+  }, [token, isReviewer]);
+
+  useEffect(() => { fetchValidationDocs(); }, [fetchValidationDocs]);
 
   /* ── Trigger expiration job (Admin only) ────────────────── */
   const triggerExpirationJob = async () => {
@@ -433,19 +487,26 @@ export default function Notifications() {
     }
   };
 
+  /* ── Base list (filtered by role for Reviewer) ─────────── */
+  const baseNotifications = isReviewer
+    ? filterForReviewer(notifications)
+    : notifications;
+
   /* ── Filtered list ──────────────────────────────────────── */
-  const filtered = notifications.filter(n => {
+  const filtered = baseNotifications.filter(n => {
     if (filter === "all")    return true;
     if (filter === "unread") return !n.is_read;
     return n.type === filter;
   });
 
-  const unreadTotal = notifications.filter(n => !n.is_read).length;
+  const unreadTotal = baseNotifications.filter(n => !n.is_read).length;
+
+  const filterTabs = isReviewer ? FILTER_TABS_REVIEWER : FILTER_TABS;
 
   const tabCount = (key) => {
-    if (key === "all")    return notifications.length;
+    if (key === "all")    return baseNotifications.length;
     if (key === "unread") return unreadTotal;
-    return notifications.filter(n => n.type === key).length;
+    return baseNotifications.filter(n => n.type === key).length;
   };
 
   return (
@@ -485,7 +546,7 @@ export default function Notifications() {
               </button>
             )}
             <button
-              onClick={() => { fetchNotifications(); fetchExpiredDocs(); }}
+              onClick={() => { fetchNotifications(); fetchExpiredDocs(); fetchValidationDocs(); }}
               disabled={loading}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border cursor-pointer"
               style={{ background: "rgba(255,255,255,0.05)", color: "var(--ged-tx2)", border: "1px solid var(--ged-border-md)" }}>
@@ -506,12 +567,17 @@ export default function Notifications() {
 
         {/* ── Stats strip ────────────────────────────────── */}
         <div className="grid grid-cols-4 gap-3 mb-5">
-          {[
-            { label: "Total",      value: notifications.length, color: "#60a5fa" },
-            { label: "Non lues",   value: unreadTotal,          color: "#f87171", highlight: unreadTotal > 0 },
-            { label: "Validation", value: notifications.filter(n => n.type === "validation").length, color: "#4ade80" },
-            { label: "Expiration", value: notifications.filter(n => n.type === "expiration").length, color: "#fbbf24" },
-          ].map(stat => (
+          {(isReviewer ? [
+            { label: "Total",        value: baseNotifications.length,                                           color: "#60a5fa" },
+            { label: "Non lues",     value: unreadTotal,                                                        color: "#f87171", highlight: unreadTotal > 0 },
+            { label: "Validation",   value: baseNotifications.filter(n => n.type === "validation").length,      color: "#4ade80" },
+            { label: "Désignation",  value: baseNotifications.filter(n => n.type === "designation").length,     color: "#a78bfa" },
+          ] : [
+            { label: "Total",      value: baseNotifications.length,                                             color: "#60a5fa" },
+            { label: "Non lues",   value: unreadTotal,                                                          color: "#f87171", highlight: unreadTotal > 0 },
+            { label: "Validation", value: baseNotifications.filter(n => n.type === "validation").length,        color: "#4ade80" },
+            { label: "Expiration", value: baseNotifications.filter(n => n.type === "expiration").length,        color: "#fbbf24" },
+          ]).map(stat => (
             <div key={stat.label} className="px-4 py-3 rounded-xl border"
               style={{
                 background:  stat.highlight ? "rgba(248,113,113,0.07)" : "var(--ged-card)",
@@ -523,124 +589,203 @@ export default function Notifications() {
           ))}
         </div>
 
-        {/* ── Expired documents section ──────────────────── */}
-        <div className="mb-5 rounded-2xl overflow-hidden border"
-          style={{ border: "1px solid rgba(248,113,113,0.2)", background: "rgba(248,113,113,0.04)" }}>
-          {/* Section header */}
-          <button
-            className="w-full flex items-center justify-between px-5 py-3.5 cursor-pointer"
-            style={{ background: "transparent" }}
-            onClick={() => setExpiredExpanded(v => !v)}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)" }}>
-                <LuTriangleAlert size={14} style={{ color: "#f87171" }} />
-              </div>
-              <span className="text-[13px] font-bold" style={{ color: "#f87171" }}>
-                Documents expirés
-              </span>
-              {!loadingExpired && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
-                  {expiredDocs.length}
+        {/* ── Documents en validation (Reviewer) ─────────── */}
+        {isReviewer && (
+          <div className="mb-5 rounded-2xl overflow-hidden border"
+            style={{ border: "1px solid rgba(251,191,36,0.2)", background: "rgba(251,191,36,0.03)" }}>
+            <button
+              className="w-full flex items-center justify-between px-5 py-3.5 cursor-pointer"
+              style={{ background: "transparent" }}
+              onClick={() => setValidationExpanded(v => !v)}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                  style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)" }}>
+                  <LuClipboardCheck size={14} style={{ color: "#fbbf24" }} />
+                </div>
+                <span className="text-[13px] font-bold" style={{ color: "#fbbf24" }}>
+                  Documents en attente de validation
                 </span>
-              )}
-            </div>
-            <span className="text-[11px] font-semibold" style={{ color: "rgba(248,113,113,0.5)" }}>
-              {expiredExpanded ? "Réduire ▲" : "Afficher ▼"}
-            </span>
-          </button>
-
-          {expiredExpanded && (
-            loadingExpired ? (
-              <div className="flex items-center justify-center py-8">
-                <span style={{ width: 22, height: 22, border: "2px solid rgba(248,113,113,0.15)", borderTopColor: "#f87171", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+                {!loadingValidation && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}>
+                    {validationDocs.length}
+                  </span>
+                )}
               </div>
-            ) : expiredDocs.length === 0 ? (
-              <div className="flex items-center justify-center py-8 gap-2"
-                style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
-                <LuCircleCheckBig size={16} style={{ color: "rgba(74,222,128,0.5)" }} />
-                <p className="text-[13px] font-semibold m-0" style={{ color: "var(--ged-tx3)" }}>
-                  Aucun document expiré
-                </p>
-              </div>
-            ) : (
-              <div style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
-                {expiredDocs.map((doc, idx) => {
-                  const daysOverdue = doc.next_review_date
-                    ? Math.floor((Date.now() - new Date(doc.next_review_date).getTime()) / 86400000)
-                    : null;
-                  return (
-                    <div
-                      key={doc.id}
-                      onClick={() => openDocModal(doc.id)}
-                      className="flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors duration-150"
-                      style={{
-                        borderBottom: idx < expiredDocs.length - 1 ? "1px solid rgba(248,113,113,0.07)" : "none",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.07)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                    >
-                      {/* Icon */}
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)" }}>
-                        <LuFileWarning size={14} style={{ color: "#f87171" }} />
-                      </div>
+              <span className="text-[11px] font-semibold" style={{ color: "rgba(251,191,36,0.5)" }}>
+                {validationExpanded ? "Réduire ▲" : "Afficher ▼"}
+              </span>
+            </button>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <span className="text-[12px] font-bold" style={{ color: "#f87171" }}>
-                            {doc.doc_code}
-                          </span>
-                          <span className="text-[13px] font-semibold truncate" style={{ color: "rgba(255,255,255,0.8)" }}>
-                            {doc.title}
-                          </span>
+            {validationExpanded && (
+              loadingValidation ? (
+                <div className="flex items-center justify-center py-8">
+                  <span style={{ width: 22, height: 22, border: "2px solid rgba(251,191,36,0.15)", borderTopColor: "#fbbf24", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+                </div>
+              ) : validationDocs.length === 0 ? (
+                <div className="flex items-center justify-center py-8 gap-2"
+                  style={{ borderTop: "1px solid rgba(251,191,36,0.1)" }}>
+                  <LuCircleCheckBig size={16} style={{ color: "rgba(74,222,128,0.5)" }} />
+                  <p className="text-[13px] font-semibold m-0" style={{ color: "var(--ged-tx3)" }}>
+                    Aucun document en attente
+                  </p>
+                </div>
+              ) : (
+                <div style={{ borderTop: "1px solid rgba(251,191,36,0.1)" }}>
+                  {validationDocs.map((doc, idx) => {
+                    const daysWaiting = doc.updated_at
+                      ? Math.floor((Date.now() - new Date(doc.updated_at).getTime()) / 86400000)
+                      : null;
+                    return (
+                      <div
+                        key={doc.id}
+                        onClick={() => openDocModal(doc.id)}
+                        className="flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors duration-150"
+                        style={{ borderBottom: idx < validationDocs.length - 1 ? "1px solid rgba(251,191,36,0.07)" : "none" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(251,191,36,0.05)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)" }}>
+                          <LuClipboardCheck size={14} style={{ color: "#fbbf24" }} />
                         </div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx2)" }}>
-                            <LuCalendar size={10} />
-                            Révision : {fmtDate(doc.next_review_date)}
-                          </span>
-                          {doc.status_name && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                              style={{ background: (STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).bg, color: (STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).color, border: `1px solid ${(STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).border}` }}>
-                              {doc.status_name}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className="text-[12px] font-bold" style={{ color: "#fbbf24" }}>{doc.doc_code}</span>
+                            <span className="text-[13px] font-semibold truncate" style={{ color: "rgba(255,255,255,0.8)" }}>{doc.title}</span>
+                          </div>
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx2)" }}>
+                              <LuCalendar size={10} /> Soumis le : {fmtDate(doc.updated_at)}
                             </span>
-                          )}
-                          {doc.responsible && (
-                            <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx3)" }}>
-                              <LuUser size={10} />
-                              {doc.responsible}
-                            </span>
-                          )}
+                            {doc.responsible && (
+                              <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx3)" }}>
+                                <LuUser size={10} /> {doc.responsible}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Days overdue badge */}
-                      {daysOverdue !== null && (
-                        <div className="flex-shrink-0 text-right">
-                          <span className="text-[11px] font-bold px-2 py-1 rounded-lg"
-                            style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
-                            +{daysOverdue}j
+                        {daysWaiting !== null && daysWaiting > 0 && (
+                          <span className="text-[11px] font-bold px-2 py-1 rounded-lg flex-shrink-0"
+                            style={{ background: daysWaiting > 3 ? "rgba(248,113,113,0.15)" : "rgba(251,191,36,0.15)", color: daysWaiting > 3 ? "#f87171" : "#fbbf24", border: `1px solid ${daysWaiting > 3 ? "rgba(248,113,113,0.25)" : "rgba(251,191,36,0.25)"}` }}>
+                            {daysWaiting}j
                           </span>
-                        </div>
-                      )}
+                        )}
+                        <span className="text-[11px] flex-shrink-0" style={{ color: "rgba(251,191,36,0.4)" }}>→</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+          </div>
+        )}
 
-                      {/* Arrow */}
-                      <span className="text-[11px] flex-shrink-0" style={{ color: "rgba(248,113,113,0.4)" }}>→</span>
-                    </div>
-                  );
-                })}
+        {/* ── Documents expirés (Admin / Ing. Qualité) ───────── */}
+        {!isReviewer && (
+          <div className="mb-5 rounded-2xl overflow-hidden border"
+            style={{ border: "1px solid rgba(248,113,113,0.2)", background: "rgba(248,113,113,0.04)" }}>
+            <button
+              className="w-full flex items-center justify-between px-5 py-3.5 cursor-pointer"
+              style={{ background: "transparent" }}
+              onClick={() => setExpiredExpanded(v => !v)}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                  style={{ background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)" }}>
+                  <LuTriangleAlert size={14} style={{ color: "#f87171" }} />
+                </div>
+                <span className="text-[13px] font-bold" style={{ color: "#f87171" }}>
+                  Documents expirés
+                </span>
+                {!loadingExpired && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
+                    {expiredDocs.length}
+                  </span>
+                )}
               </div>
-            )
-          )}
-        </div>
+              <span className="text-[11px] font-semibold" style={{ color: "rgba(248,113,113,0.5)" }}>
+                {expiredExpanded ? "Réduire ▲" : "Afficher ▼"}
+              </span>
+            </button>
+
+            {expiredExpanded && (
+              loadingExpired ? (
+                <div className="flex items-center justify-center py-8">
+                  <span style={{ width: 22, height: 22, border: "2px solid rgba(248,113,113,0.15)", borderTopColor: "#f87171", borderRadius: "50%", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+                </div>
+              ) : expiredDocs.length === 0 ? (
+                <div className="flex items-center justify-center py-8 gap-2"
+                  style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
+                  <LuCircleCheckBig size={16} style={{ color: "rgba(74,222,128,0.5)" }} />
+                  <p className="text-[13px] font-semibold m-0" style={{ color: "var(--ged-tx3)" }}>
+                    Aucun document expiré
+                  </p>
+                </div>
+              ) : (
+                <div style={{ borderTop: "1px solid rgba(248,113,113,0.1)" }}>
+                  {expiredDocs.map((doc, idx) => {
+                    const daysOverdue = doc.next_review_date
+                      ? Math.floor((Date.now() - new Date(doc.next_review_date).getTime()) / 86400000)
+                      : null;
+                    return (
+                      <div
+                        key={doc.id}
+                        onClick={() => openDocModal(doc.id)}
+                        className="flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors duration-150"
+                        style={{ borderBottom: idx < expiredDocs.length - 1 ? "1px solid rgba(248,113,113,0.07)" : "none" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.07)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                          <LuFileWarning size={14} style={{ color: "#f87171" }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className="text-[12px] font-bold" style={{ color: "#f87171" }}>{doc.doc_code}</span>
+                            <span className="text-[13px] font-semibold truncate" style={{ color: "rgba(255,255,255,0.8)" }}>{doc.title}</span>
+                          </div>
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx2)" }}>
+                              <LuCalendar size={10} /> Révision : {fmtDate(doc.next_review_date)}
+                            </span>
+                            {doc.status_name && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                                style={{ background: (STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).bg, color: (STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).color, border: `1px solid ${(STATUS_STYLE[doc.status_name] || STATUS_STYLE["Brouillon"]).border}` }}>
+                                {doc.status_name}
+                              </span>
+                            )}
+                            {doc.responsible && (
+                              <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--ged-tx3)" }}>
+                                <LuUser size={10} /> {doc.responsible}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {daysOverdue !== null && (
+                          <div className="flex-shrink-0 text-right">
+                            <span className="text-[11px] font-bold px-2 py-1 rounded-lg"
+                              style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}>
+                              +{daysOverdue}j
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-[11px] flex-shrink-0" style={{ color: "rgba(248,113,113,0.4)" }}>→</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+          </div>
+        )}
 
         {/* ── Filter tabs ────────────────────────────────── */}
         <div className="flex gap-1.5 mb-4 flex-wrap">
-          {FILTER_TABS.map(tab => {
+          {filterTabs.map(tab => {
             const count  = tabCount(tab.key);
             const active = filter === tab.key;
             const cfg    = tab.key !== "all" && tab.key !== "unread" ? TYPE_CFG[tab.key] : null;

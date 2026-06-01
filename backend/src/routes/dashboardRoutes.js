@@ -10,9 +10,9 @@ const { loadUser, requireRole } = require("../middleware/roleMiddleware");
 const { getOverview, getDashboardStats } = require("../controllers/dashboardController");
 
 // GET /api/dashboard/overview — KPIs synthétiques (Carte 1)
-router.get("/overview", loadUser, requireRole("Reviewer"), getOverview);
+router.get("/overview", loadUser, requireRole("Admin", "Ing. Qualité", "Reviewer"), getOverview);
 
 // GET /api/dashboard/stats — Statistiques & graphiques (Carte 2)
-router.get("/stats", loadUser, requireRole("Reviewer"), getDashboardStats);
+router.get("/stats", loadUser, requireRole("Admin", "Ing. Qualité", "Reviewer"), getDashboardStats);
 
 module.exports = router;

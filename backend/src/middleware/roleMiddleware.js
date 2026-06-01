@@ -23,7 +23,7 @@ const ROLE_PERMISSIONS = {
   ],
   "Ing. Qualité": [
     "document:read", "document:create", "document:update",
-    "document:status", "validation:create", "audit:read",
+    "document:status", "validation:create", "audit:read", "archive:manage",
   ],
   "Reviewer": [
     "document:read", "validation:create",
@@ -43,8 +43,7 @@ const TRANSITION_ROLE_MAP = {
   "En correction→Appel en relecture":       ["Admin", "Ing. Qualité"],
   "En validation→Validé":                   ["Admin", "Ing. Qualité"],
   "En validation→En correction":            ["Admin", "Reviewer", "Ing. Qualité"],
-  "Validé→Approuvé":                        ["Admin", "Ing. Qualité"],
-  "Approuvé→Diffusé":                       ["Admin", "Ing. Qualité"],
+  "Validé→Diffusé":                          ["Admin", "Ing. Qualité"],
   "Diffusé→Obsolète":                       ["Admin", "Ing. Qualité"],
   "Obsolète→Archivé":                       ["Admin", "Ing. Qualité"],
 };
@@ -57,6 +56,7 @@ const loadUser = async (req, _res, next) => {
   // 1. Essayer JWT Bearer token (Sprint 3)
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith("Bearer ")) {
+    req.authAttempted = true; // token was presented — log 401 if rejected
     const token = authHeader.slice(7);
     try {
       // Rejeter les tokens invalidés après déconnexion
@@ -111,8 +111,12 @@ const loadUser = async (req, _res, next) => {
 // ─────────────────────────────────────────────────────────────
 const requireRole = (...allowedRoles) => (req, res, next) => {
   if (!req.currentUser) {
-    auditLog({ action: "ACCESS_DENIED_401", severity: "warning",
-      details: { path: req.originalUrl, method: req.method }, req });
+    // Only log 401 when a token was presented but rejected (expired/blacklisted).
+    // Silent anonymous requests (no token) are not security events worth logging.
+    if (req.authAttempted) {
+      auditLog({ action: "ACCESS_DENIED_401", severity: "warning",
+        details: { path: req.originalUrl, method: req.method }, req });
+    }
     return res.status(401).json({
       error: "Authentification requise. Sélectionnez un utilisateur.",
       code:  "NO_USER",

@@ -70,7 +70,6 @@ const STATUS_CFG = {
   "En correction":     { bg:"rgba(255,237,213,0.08)", text:"#f97316", border:"rgba(253,186,116,0.2)",  Icon: LuRefreshCw      },
   "En validation":     { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon: LuClipboardCheck },
   "Validé":            { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon: LuCircleCheckBig },
-  "Approuvé":          { bg:"rgba(238,242,255,0.08)", text:"#818cf8", border:"rgba(165,180,252,0.3)",  Icon: LuShieldCheck    },
   "Diffusé":           { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon: LuShare2         },
   "Obsolète":          { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon: LuTriangleAlert  },
   "Archivé":           { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon: LuArchive        },

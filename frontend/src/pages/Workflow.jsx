@@ -82,18 +82,8 @@ const STATUSES = [
     color: "#4ade80",
     bg: "rgba(240,253,244,0.08)",
     border: "rgba(134,239,172,0.25)",
-    description: "Document validé par le reviewer, en attente d'approbation qualité.",
+    description: "Document validé par le reviewer, prêt pour diffusion.",
     roles: ["Admin", "Reviewer"],
-    iso: "",
-  },
-  {
-    name: "Approuvé",
-    icon: LuShieldCheck,
-    color: "#818cf8",
-    bg: "rgba(238,242,255,0.10)",
-    border: "rgba(165,180,252,0.3)",
-    description: "Document approuvé par la direction qualité, prêt pour diffusion.",
-    roles: ["Admin", "Ing. Qualité"],
     iso: "",
   },
   {
@@ -137,8 +127,7 @@ const TRANSITIONS = [
   { from: "En relecture",       to: "En validation",      roles: ["Admin", "Reviewer", "Ing. Qualité"] },
   { from: "En correction",      to: "Appel en relecture", roles: ["Admin", "Ing. Qualité"] },
   { from: "En validation",      to: "Validé",             roles: ["Admin", "Reviewer"] },
-  { from: "Validé",             to: "Approuvé",           roles: ["Admin", "Ing. Qualité"] },
-  { from: "Approuvé",           to: "Diffusé",            roles: ["Admin", "Ing. Qualité"] },
+  { from: "Validé",             to: "Diffusé",            roles: ["Admin", "Ing. Qualité"] },
   { from: "Diffusé",            to: "Obsolète",           roles: ["Admin"] },
   { from: "Obsolète",           to: "Archivé",            roles: ["Admin"] },
 ];
@@ -208,7 +197,6 @@ export default function Workflow() {
     // branch here: En correction (loop back) | En validation (continue)
     "En validation",
     "Validé",
-    "Approuvé",
     "Diffusé",
     "Obsolète",
     "Archivé",

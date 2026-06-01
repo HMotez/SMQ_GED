@@ -17,6 +17,7 @@ const { canTransitionToValidated } = require("./validationController");
 const {
   triggerStatusNotification,
   triggerNewVersionNotification,
+  createNotification,
 } = require("./notificationController");
 const { publishEvent } = require("../kafka/producer");
 
@@ -31,15 +32,14 @@ const ALLOWED_TRANSITIONS = {
   "En relecture":        ["En correction", "En validation"],
   "En correction":       ["Appel en relecture"],
   "En validation":       ["Validé", "En correction"],
-  "Validé":              ["Approuvé", "En rédaction"],
-  "Approuvé":            ["Diffusé"],
+  "Validé":              ["Diffusé", "En rédaction"],
   "Diffusé":             ["Obsolète"],
   "Obsolète":            ["Archivé"],
   "Archivé":             [],
 };
 
 // Statuts qui bloquent toute modification de fichier/version
-const LOCKED_STATUSES = ["Validé", "Approuvé", "Diffusé", "Obsolète", "Archivé"];
+const LOCKED_STATUSES = ["Validé", "Diffusé", "Obsolète", "Archivé"];
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/documents — Créer un document
@@ -215,6 +215,22 @@ const createDocument = async (req, res) => {
     const assignParams = { docId: document.id, docCode: document.doc_code, title: document.title, docType: typeCode, assignedBy };
     if (reviewerEmails.length) {
       sendAssignmentEmail({ ...assignParams, to: reviewerEmails, role: "reviewer" }).catch(() => {});
+      // Create DB designation notifications for each reviewer user
+      try {
+        const reviewerUsers = await pool.query(
+          `SELECT id FROM users WHERE email = ANY($1) AND is_active = true`,
+          [reviewerEmails]
+        );
+        for (const { id: uid } of reviewerUsers.rows) {
+          await createNotification(
+            uid, document.id,
+            `[${document.doc_code}] "${document.title}" — vous avez été désigné(e) Reviewer par ${assignedBy}. Votre examen est requis.`,
+            "designation"
+          );
+        }
+      } catch (err) {
+        console.error("[Notif] Designation DB notification error:", err.message);
+      }
     }
 
     // Fire-and-forget Kafka event (after COMMIT — never blocks the response)
@@ -647,12 +663,12 @@ const changeStatus = async (req, res) => {
     }
 
     // 3. Vérifier la transition dans la machine à états ISO 9001
-    const ISO_LIFECYCLE_ORDER = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Approuvé","Diffusé","Obsolète","Archivé"];
+    const ISO_LIFECYCLE_ORDER = ["Brouillon","En rédaction","Appel en relecture","En relecture","En correction","En validation","Validé","Diffusé","Obsolète","Archivé"];
     const userRole = req.currentUser?.role;
     const curIdx   = ISO_LIFECYCLE_ORDER.indexOf(currentStatus);
 
     // Retour arrière : Admin et Ing. Qualité peuvent revenir au statut précédent
-    // (ex: Approuvé → Validé) même si ce n'est pas dans ALLOWED_TRANSITIONS
+    // (ex: Diffusé → Validé) même si ce n'est pas dans ALLOWED_TRANSITIONS
     const prevStatusInCycle = curIdx > 0 ? ISO_LIFECYCLE_ORDER[curIdx - 1] : null;
     const isAdminRollback   = ["Admin", "Ing. Qualité"].includes(userRole) && newStatus === prevStatusInCycle;
 
@@ -1241,6 +1257,46 @@ async function syncDisk(req, res) {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// DELETE /api/documents/:id — Supprimer un document (Admin)
+// ─────────────────────────────────────────────────────────────
+async function deleteDocument(req, res) {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const { rows } = await client.query(
+      "SELECT file_path FROM documents WHERE id = $1",
+      [id]
+    );
+    if (!rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Document introuvable" });
+    }
+
+    const { file_path } = rows[0];
+
+    await client.query("DELETE FROM documents WHERE id = $1", [id]);
+    await client.query("COMMIT");
+
+    if (file_path) {
+      const fullPath = path.join(baseDir, file_path);
+      if (fs.existsSync(fullPath)) {
+        try { fs.unlinkSync(fullPath); } catch (_) {}
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("deleteDocument:", err);
+    res.status(500).json({ error: "Erreur lors de la suppression" });
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   createDocument,
   getDocuments,
@@ -1261,4 +1317,6 @@ module.exports = {
   getAuditTrail,
   // Sync disque ACTIA ES
   syncDisk,
+  // Suppression Admin
+  deleteDocument,
 };

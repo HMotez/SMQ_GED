@@ -272,10 +272,6 @@ app.listen(process.env.PORT || 4000, async () => {
   await pool.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS validator_emails TEXT[] DEFAULT '{}'`);
   console.log("[Documents] Colonnes reviewer/validator vérifiées.");
 
-  // ── Status — Approuvé (nouveau statut post-Validé) ─────────
-  await pool.query(`INSERT INTO status (name) VALUES ('Approuvé') ON CONFLICT (name) DO NOTHING`);
-  console.log("[Status] Statut 'Approuvé' vérifié.");
-
   // ── Rôles ISO EF06 — doit tourner EN PREMIER (seedDefaultUsers en dépend) ──
   const { ensureRoles } = require("./controllers/roleController");
   await ensureRoles();
@@ -298,25 +294,18 @@ app.listen(process.env.PORT || 4000, async () => {
   const { ensureValidationsTable } = require("./controllers/validationController");
   await ensureValidationsTable();
 
-  // ── Archivage automatique EF11 ─────────────────────────────
-  // Exécuté au démarrage puis toutes les 24h
-  const { runAutoArchiveJob } = require("./controllers/documentController");
-
-  const scheduleAutoArchive = async () => {
-    console.log("[AUTO-ARCHIVE] Vérification des documents expirés…");
-    await runAutoArchiveJob();
-  };
-
-  await scheduleAutoArchive();
-  setInterval(scheduleAutoArchive, 24 * 60 * 60 * 1000);
+  // ── Archivage EF11 — Manuel uniquement (pas de CRON) ─────────
+  // L'Admin déclenche manuellement via POST /api/documents/archive-expired
 
   // ── Notifications intelligentes Sprint 5 ───────────────────
   const {
     ensureNotificationsTable,
+    backfillDesignationNotifications,
     runExpirationNotificationsJob,
   } = require("./controllers/notificationController");
 
   await ensureNotificationsTable();
+  await backfillDesignationNotifications();
 
   // CRON expirations + inactivité — au démarrage puis toutes les 24h
   const scheduleNotifJob = async () => {

@@ -10,7 +10,7 @@ import {
   LuBell, LuCheckCheck, LuClock, LuArrowRight,
   LuClipboardCheck, LuFileWarning, LuFilePlus, LuArchive,
   LuX, LuCalendar, LuFolder, LuTag, LuUser,
-  LuFileText, LuLayers, LuHistory, LuShieldCheck,
+  LuFileText, LuLayers, LuHistory, LuShieldCheck, LuEye,
 } from "react-icons/lu";
 
 import { API, BACKEND } from "../config";
@@ -233,7 +233,27 @@ const TYPE_CFG = {
     Icon:   LuArchive,
     label:  "Inactivité",
   },
+  designation: {
+    color:  "#a78bfa",
+    bg:     "rgba(167,139,250,0.1)",
+    border: "rgba(167,139,250,0.25)",
+    Icon:   LuEye,
+    label:  "Désignation",
+  },
 };
+
+function filterForReviewer(notifications) {
+  const seen = new Set();
+  return notifications.filter(n => {
+    if (n.type === "designation") return true;
+    if (n.type === "validation" && n.doc_status === "En validation") {
+      if (seen.has(n.document_id)) return false;
+      seen.add(n.document_id);
+      return true;
+    }
+    return false;
+  });
+}
 
 /* ── timeAgo helper ───────────────────────────────────────── */
 function timeAgo(dateStr) {
@@ -253,10 +273,13 @@ export default function NotificationBell() {
   const navigate = useNavigate();
   const [open,          setOpen]          = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unread,        setUnread]        = useState(0);
   const [selectedDoc,   setSelectedDoc]   = useState(null);
   const [loadingDoc,    setLoadingDoc]    = useState(false);
   const wrapperRef = useRef(null);
+
+  const isReviewer           = currentUser?.role === "Reviewer";
+  const visibleNotifications = isReviewer ? filterForReviewer(notifications) : notifications;
+  const unread            = visibleNotifications.filter(n => !n.is_read).length;
 
   /* ── Fetch notifications ──────────────────────────────── */
   const fetchNotifications = useCallback(async () => {
@@ -268,7 +291,6 @@ export default function NotificationBell() {
       if (!res.ok) return;
       const data = await res.json();
       setNotifications(data);
-      setUnread(data.filter(n => !n.is_read).length);
     } catch { /* ignore */ }
   }, [token]);
 
@@ -294,7 +316,6 @@ export default function NotificationBell() {
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, is_read: true } : n)
     );
-    setUnread(prev => Math.max(0, prev - 1));
     try {
       await fetch(`${API}/notifications/${id}/read`, {
         method:  "PATCH",
@@ -306,7 +327,6 @@ export default function NotificationBell() {
   /* ── Mark all as read (optimistic) ───────────────────── */
   const markAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    setUnread(0);
     try {
       await fetch(`${API}/notifications/read-all`, {
         method:  "PATCH",
@@ -482,7 +502,7 @@ export default function NotificationBell() {
 
           {/* List */}
           <div style={{ overflowY: "auto", flex: 1 }}>
-            {notifications.length === 0 ? (
+            {visibleNotifications.length === 0 ? (
               <div style={{ padding: "36px 20px", textAlign: "center" }}>
                 <LuBell size={28} style={{ color: "rgba(168,191,212,0.15)", marginBottom: 10 }} />
                 <p style={{ color: "rgba(168,191,212,0.35)", fontSize: 12.5, margin: 0 }}>
@@ -493,7 +513,7 @@ export default function NotificationBell() {
                 </p>
               </div>
             ) : (
-              notifications.map((n, idx) => {
+              visibleNotifications.map((n, idx) => {
                 const cfg  = TYPE_CFG[n.type] || TYPE_CFG.validation;
                 const Icon = cfg.Icon;
                 return (
@@ -502,7 +522,7 @@ export default function NotificationBell() {
                     onClick={() => handleNotifClick(n)}
                     style={{
                       padding:      "11px 14px",
-                      borderBottom: idx < notifications.length - 1
+                      borderBottom: idx < visibleNotifications.length - 1
                         ? "1px solid rgba(255,255,255,0.04)" : "none",
                       display:      "flex",
                       gap:          10,
