@@ -1,7 +1,15 @@
 // ============================================================
-// services/ldapService.js — Sprint 44
-// Authentification LDAP / Active Directory (ISO 9001)
-// Active uniquement si LDAP_ENABLED=true dans .env
+// services/ldapService.js
+// RÔLE : Service d'authentification via LDAP / Active Directory.
+//        Permet aux employés ACTIA de se connecter avec leurs
+//        credentials du réseau d'entreprise (AD).
+//        Désactivé par défaut (LDAP_ENABLED=false dans .env).
+//        Processus en 3 étapes :
+//          1. Bind avec le compte de service pour chercher l'utilisateur
+//          2. Recherche du DN de l'utilisateur par sAMAccountName/email
+//          3. Bind en tant qu'utilisateur pour vérifier le mot de passe
+//        Échappe les caractères LDAP spéciaux pour prévenir l'injection.
+//        Retourne { name, email, samAccount } ou null si échec.
 // ============================================================
 "use strict";
 

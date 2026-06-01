@@ -1,7 +1,20 @@
 # =============================================================
+# frontend/Dockerfile
+# RÔLE : Construit l'image Docker du frontend React + Nginx.
+#        Build multi-stage en 2 étapes :
+#          Stage 1 (builder) → npm run build avec Vite
+#                              génère le bundle statique dans /dist
+#          Stage 2 (runner)  → image Nginx légère qui sert /dist
+#                              et proxifie /api/* vers le backend
+#        Configuration Nginx incluse :
+#          - Sert les fichiers React (SPA avec fallback index.html)
+#          - Proxy /api/* → backend:4000 (réseau interne Docker)
+#          - Headers de sécurité WAF (XSS, clickjacking...)
+#          - server_tokens off (cache la version Nginx)
+#        Ports exposés : 80 (HTTP) et 443 (HTTPS)
+#
 # SMQ_GED — Frontend Dockerfile  (ACTIA Engineering Services)
 # React 19 + Vite → bundle statique servi par Nginx
-# Sprint 42 — Endurcissement infrastructure : WAF + server_tokens
 # =============================================================
 
 # ── Stage 1: Build ───────────────────────────────────────────

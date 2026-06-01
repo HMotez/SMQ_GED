@@ -1,5 +1,15 @@
 /**
- * Global Error Handler Middleware
+ * middleware/errorHandler.js
+ * RÔLE : Gestionnaire global des erreurs Express.
+ *        Intercepte toutes les erreurs non gérées dans les controllers
+ *        et retourne des messages génériques sécurisés au client.
+ *        Principes de sécurité :
+ *          - Jamais d'exposition des stack traces au client
+ *          - Jamais de chemins de fichiers ou requêtes SQL dans les réponses
+ *          - Messages d'erreur standardisés par code HTTP
+ *          - Logs détaillés uniquement côté serveur (fichier errors.log)
+ *        Doit être enregistré EN DERNIER dans la chaîne de middlewares.
+ *
  * ════════════════════════════════════════════════════════════════
  * Purpose: Catch all unhandled errors and return generic messages
  * - Logs detailed errors server-side

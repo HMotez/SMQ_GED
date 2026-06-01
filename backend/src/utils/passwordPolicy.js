@@ -1,5 +1,17 @@
-// Password strength policy — enforced on registration and password reset.
-// Rules: min 12 chars, uppercase, lowercase, digit, special character.
+// ─────────────────────────────────────────────────────────────
+// utils/passwordPolicy.js
+// RÔLE : Valide la complexité des mots de passe selon la politique
+//        de sécurité de l'application.
+//        Appliqué lors de l'inscription (/register) et de la
+//        réinitialisation du mot de passe (/reset-password).
+//        Règles obligatoires :
+//          - Minimum 12 caractères
+//          - Au moins une lettre majuscule
+//          - Au moins une lettre minuscule
+//          - Au moins un chiffre
+//          - Au moins un caractère spécial (!, @, #...)
+//        Retourne { valid: boolean, errors: string[] }
+// ─────────────────────────────────────────────────────────────
 
 const POLICY = {
   minLength:   12,

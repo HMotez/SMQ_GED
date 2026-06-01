@@ -1,5 +1,18 @@
 // =============================================================
-// kafka/consumer.js — KafkaJS consumer → email dispatch
+// kafka/consumer.js
+// RÔLE : Consumer Kafka qui écoute les topics et déclenche
+//        l'envoi d'emails de notification via emailService.
+//        S'abonne aux 5 topics documentaires et mappe chaque
+//        topic vers le template email correspondant.
+//        Détermine les destinataires selon le type d'événement :
+//          created/version → Admin + Ing. Qualité
+//          status=Diffusé  → TOUS les utilisateurs actifs
+//          expiring        → Admin uniquement
+//        Crée automatiquement les topics Kafka au démarrage
+//        (KAFKA_AUTO_CREATE_TOPICS_ENABLE=true).
+//        Les erreurs de traitement sont swallowed pour ne pas
+//        bloquer le consumer (offset commité quand même).
+//
 // Sprint 8 — Kafka + Email notifications
 // =============================================================
 "use strict";

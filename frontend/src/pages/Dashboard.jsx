@@ -1,5 +1,13 @@
 ﻿// ============================================================
-// pages/Dashboard.jsx — ACTIA ES GED — Login-Style Dark Design
+// pages/Dashboard.jsx
+// RÔLE : Tableau de bord analytique de l'application GED.
+//        Affiche en temps réel les KPIs ISO 9001 :
+//          - Nombre de documents par statut (graphique doughnut)
+//          - Documents expirés et en attente de validation
+//          - Activité récente (graphique line/bar)
+//          - Répartition par type, processus et dossier
+//        Accessible à Admin et Ing. Qualité.
+//        Utilise Chart.js (Doughnut, Bar, Line) pour les graphiques.
 // ============================================================
 import { useEffect, useState, useCallback, useRef } from "react";
 import { NavLink, useNavigate, useMatch, useLocation } from "react-router-dom";

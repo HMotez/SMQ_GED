@@ -1,5 +1,12 @@
 // ============================================================
-// pages/Login.jsx — ACTIA ES · Dark Glass Premium · TailwindCSS
+// pages/Login.jsx
+// RÔLE : Page de connexion principale de l'application.
+//        Permet à l'utilisateur de s'authentifier avec email
+//        et mot de passe. Retourne un JWT stocké dans localStorage.
+//        Affiche la matrice des rôles (Admin, Ing. Qualité, Reviewer)
+//        avec leurs permissions respectives.
+//        Redirige vers / après connexion réussie.
+//        Lien vers /forgot-password et /register.
 // ============================================================
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";

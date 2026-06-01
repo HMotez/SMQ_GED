@@ -1,8 +1,15 @@
 // ============================================================
 // controllers/dashboardController.js
-// ACTIA ES — GED Sprint 4 — Tableau de bord & Supervision
-// Carte 1: /api/dashboard/overview  — KPIs temps réel
-// Carte 2: /api/dashboard/stats     — Graphiques & répartitions
+// RÔLE : Fournit les données analytiques du tableau de bord.
+//        Agrège les KPIs temps réel depuis la base de données :
+//        nombre de documents par statut, documents expirés,
+//        validations en attente, activité récente, répartition
+//        par type/processus/dossier.
+//        Accessible à Admin et Ing. Qualité uniquement.
+//
+// Sprint 4 — Tableau de bord & Supervision
+//   GET /api/dashboard/overview  → KPIs temps réel (compteurs)
+//   GET /api/dashboard/stats     → données graphiques (Chart.js)
 // ============================================================
 
 const pool = require("../db");

@@ -1,5 +1,12 @@
 // ============================================================
-// pages/Home.jsx — ACTIA ES GED · Login-Style Premium Dark Design
+// pages/Home.jsx
+// RÔLE : Page d'accueil publique de l'application GED.
+//        Point d'entrée pour les utilisateurs non connectés.
+//        Affiche les statistiques globales des documents en temps
+//        réel, une animation typewriter du nom de l'app, et un
+//        accès rapide aux fonctionnalités selon le rôle connecté.
+//        Contient le LoginModal intégré pour connexion rapide
+//        sans redirection vers /login.
 // ============================================================
 
 import { useEffect, useState, useRef } from "react";

@@ -1,8 +1,15 @@
 // ─────────────────────────────────────────────────────────────
-// metrics.js — Supervision des performances (Prometheus format)
-// Expose /api/metrics pour Prometheus scraping toutes les 15s.
-// Métriques : uptime, requêtes HTTP, erreurs 5xx, auth ok/fail,
-//             mémoire heap/RSS, charge OS.
+// middleware/metrics.js
+// RÔLE : Collecte et expose les métriques de performance de
+//        l'application au format Prometheus (texte plain).
+//        Prometheus scrape /api/metrics toutes les 15 secondes
+//        et Grafana affiche les dashboards en temps réel.
+//        Métriques collectées :
+//          - Nombre de requêtes HTTP par route et statut
+//          - Nombre d'erreurs 5xx
+//          - Succès/échecs d'authentification
+//          - Mémoire heap/RSS utilisée
+//          - Uptime du processus et charge OS
 // ─────────────────────────────────────────────────────────────
 const os = require("os");
 

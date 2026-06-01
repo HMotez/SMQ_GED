@@ -1,5 +1,14 @@
 // ============================================================
-// pages/AIAssistant.jsx — ACTIA ES GED — Sprint 6 Module IA
+// pages/AIAssistant.jsx — Sprint 6
+// RÔLE : Interface du module d'intelligence artificielle intégré.
+//        4 fonctionnalités IA :
+//          1. Chatbot Qualité   : questions en langage naturel sur les
+//             documents (NLP + Groq LLM llama-3.3-70b avec streaming SSE)
+//          2. Classification    : suggère automatiquement le type et
+//             le processus d'un document selon son contenu
+//          3. Extraction dates  : détecte les dates dans le texte
+//          4. Amélioration      : suggestions d'amélioration continue
+//        Accès restreint par rôle : Visiteur = documents archivés uniquement.
 // Carte 1 : Chatbot Qualité
 // Carte 2 : Classification Automatique
 // Carte 3 : Extraction Automatique des Dates

@@ -1,5 +1,13 @@
 // ============================================================
-// Validations.jsx — ACTIA ES · DocumentList-style layout
+// pages/Validations.jsx — EF05
+// RÔLE : Interface de validation ISO des documents.
+//        Affiche les documents en statut "En validation" avec
+//        les boutons Approuver/Rejeter pour les Reviewers.
+//        Implémente les contraintes ISO EF05 :
+//          - Le validateur doit être différent du responsable
+//          - Chaque validation est immuable (signée SHA-256)
+//          - Historique complet des décisions de validation
+//        Accessible à Admin, Ing. Qualité et Reviewer.
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";

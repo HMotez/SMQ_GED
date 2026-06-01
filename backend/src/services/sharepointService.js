@@ -1,5 +1,16 @@
 // =============================================================
-// services/sharepointService.js — Microsoft SharePoint integration
+// services/sharepointService.js
+// RÔLE : Service d'intégration avec Microsoft SharePoint Online.
+//        Permet l'upload automatique des documents validés vers
+//        la bibliothèque SharePoint de l'entreprise ACTIA.
+//        Désactivé par défaut (SHAREPOINT_ENABLED=false dans .env).
+//        Utilise Microsoft Graph API avec OAuth2 (client credentials).
+//        Fonctions :
+//          uploadFileToSharePoint(localPath, fileName) → URL SharePoint
+//          getSharePointLink(fileName)                 → URL existante
+//        Le lien SharePoint est stocké dans versions.sharepoint_link
+//        et affiché dans DocDetailModal pour un accès direct.
+//
 // Sprint 10 — Workflow A1/A2/A3 + SharePoint
 //
 // To enable: set SHAREPOINT_ENABLED=true in .env and fill in

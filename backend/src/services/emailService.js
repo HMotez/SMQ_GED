@@ -1,5 +1,17 @@
 // =============================================================
-// services/emailService.js — Nodemailer + Rich HTML email templates
+// services/emailService.js
+// RÔLE : Service d'envoi d'emails via Nodemailer (SMTP Gmail).
+//        Génère des templates HTML riches pour chaque événement :
+//          - sendDocumentCreatedEmail   → nouveau document créé
+//          - sendStatusChangedEmail     → changement de statut
+//          - sendNewVersionEmail        → nouvelle version uploadée
+//          - sendExpiringDocumentEmail  → date de révision proche
+//          - sendInactiveDocumentEmail  → document sans activité
+//          - sendSecurityAlert          → incident de sécurité détecté
+//          - sendPasswordResetEmail     → lien de réinitialisation mdp
+//        Utilisé par le consumer Kafka (Sprint 8) et directement
+//        par notificationController pour les alertes critiques.
+//        Désactivé si SMTP_USER non configuré dans .env.
 // =============================================================
 const nodemailer = require("nodemailer");
 

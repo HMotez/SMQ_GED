@@ -1,5 +1,12 @@
 // ============================================================
-// pages/ResetPassword.jsx — ACTIA ES · Dark Glass Premium
+// pages/ResetPassword.jsx
+// RÔLE : Page de réinitialisation du mot de passe via lien email.
+//        Lit le token depuis l'URL (?token=xxx) et permet à
+//        l'utilisateur de définir un nouveau mot de passe.
+//        Valide la force du mot de passe avec indicateur visuel
+//        5 niveaux (Faible → Très fort).
+//        Redirige automatiquement vers /login après succès (3 sec).
+//        Le token est invalidé après utilisation (usage unique).
 // ============================================================
 import { useState }              from "react";
 import { useNavigate, useSearchParams, NavLink } from "react-router-dom";

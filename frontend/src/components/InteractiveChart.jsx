@@ -1,5 +1,16 @@
 /**
- * components/InteractiveChart.jsx — Dynamic Chart Component
+ * components/InteractiveChart.jsx
+ * RÔLE : Wrapper Chart.js réutilisable pour les graphiques du Dashboard.
+ *        Supporte 3 types : line (tendances), bar (comparaisons),
+ *        doughnut (répartitions).
+ *        Fonctionnalités avancées :
+ *          - Toggle des datasets (cacher/afficher une série)
+ *          - Animations fluides au chargement
+ *          - Tooltips enrichis avec pourcentages
+ *          - Gradients de couleur sur les graphiques line
+ *          - Mode temps réel optionnel (DynamicAreaCard)
+ *        Utilisé par Dashboard.jsx pour tous les graphiques.
+ *
  * Enhanced Chart.js wrapper with interactivity, animations, and real-time updates
  * Features:
  * - Toggle datasets on/off

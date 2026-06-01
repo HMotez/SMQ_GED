@@ -1,7 +1,16 @@
 // ============================================================
-// context/UserContext.jsx — Sprint 3 : JWT Authentication
-// login() → POST /api/auth/login → Bearer token
-// logout() → clear token → redirect /login
+// context/UserContext.jsx — Sprint 3
+// RÔLE : Contexte React global gérant l'état d'authentification.
+//        Fournit à toute l'application :
+//          - currentUser  : données de l'utilisateur connecté
+//          - token        : JWT stocké dans localStorage
+//          - isAuthenticated, authLoading, userRole
+//          - login()      : POST /api/auth/login → stocke le JWT
+//          - logout()     : POST /api/auth/logout → blacklist + clear
+//        Restaure automatiquement la session depuis localStorage
+//        au chargement de l'app (refresh de page).
+//        Définit aussi la matrice ROLE_PERMISSIONS et
+//        TRANSITION_ROLE_MAP (miroir du backend).
 // ============================================================
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import axios from "axios";

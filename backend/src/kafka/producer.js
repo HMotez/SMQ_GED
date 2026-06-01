@@ -1,5 +1,17 @@
 // =============================================================
-// kafka/producer.js — KafkaJS singleton producer
+// kafka/producer.js
+// RÔLE : Singleton Kafka producer pour la publication d'événements.
+//        Publie des messages sur les topics Kafka quand des actions
+//        importantes surviennent dans l'application :
+//          smq.document.created        → document créé
+//          smq.document.status_changed → statut changé
+//          smq.document.version_added  → nouvelle version
+//          smq.document.expiring       → révision proche
+//          smq.document.inactive       → document inactif
+//        Pattern fire-and-forget : ne bloque jamais la requête HTTP
+//        en cas d'erreur Kafka (dégradation gracieuse).
+//        Désactivé si KAFKA_BROKER n'est pas défini dans .env.
+//
 // Sprint 8 — Kafka + Email notifications
 // =============================================================
 const { Kafka } = require("kafkajs");

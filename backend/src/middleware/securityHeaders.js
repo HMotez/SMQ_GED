@@ -1,7 +1,15 @@
 /**
- * securityHeaders.js — Global Security Headers Middleware
- * Applies security headers to all backend API responses
- * Complements Nginx frontend security configuration
+ * middleware/securityHeaders.js
+ * RÔLE : Applique les en-têtes HTTP de sécurité sur toutes les
+ *        réponses API du backend.
+ *        Protège contre les attaques web courantes :
+ *          - HSTS           → force HTTPS pendant 1 an
+ *          - X-Frame-Options → anti-clickjacking (DENY sauf fichiers)
+ *          - X-Content-Type → anti-MIME sniffing
+ *          - CSP            → anti-XSS, restreint les sources autorisées
+ *          - Referrer-Policy → limite les fuites d'information
+ *          - Permissions-Policy → désactive caméra/micro/géoloc
+ *        Complète la configuration sécurité de Nginx en frontend.
  */
 
 // File-serving routes that must be embeddable in iframes

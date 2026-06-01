@@ -1,6 +1,16 @@
 // ─────────────────────────────────────────────────────────────
-// logger.js — Utilitaire de journalisation centralisé
-// Écrit dans /logs/errors.log (erreurs) et /logs/app.log (info)
+// utils/logger.js
+// RÔLE : Utilitaire de journalisation centralisé du serveur.
+//        Écrit les logs en JSON (une ligne par entrée) dans :
+//          /logs/errors.log  → erreurs + événements sécurité
+//          /logs/app.log     → info + warnings applicatifs
+//        4 niveaux disponibles :
+//          logger.error(cat, data)    → erreurs critiques
+//          logger.warn(cat, data)     → avertissements
+//          logger.info(cat, data)     → informations normales
+//          logger.security(evt, data) → événements sécurité
+//        Affiche aussi dans la console Node.js en dev.
+//        Crée le dossier /logs automatiquement s'il n'existe pas.
 // ─────────────────────────────────────────────────────────────
 const fs   = require("fs");
 const path = require("path");

@@ -1,6 +1,12 @@
 // ============================================================
-// pages/Register.jsx — ACTIA ES · Dark Glass Premium · TailwindCSS
-// L'utilisateur choisit son rôle souhaité — l'admin valide et attribue
+// pages/Register.jsx
+// RÔLE : Page d'inscription à l'application GED.
+//        L'utilisateur crée un compte en choisissant son rôle
+//        souhaité (Ing. Qualité ou Reviewer). Le compte est créé
+//        en état "En attente" jusqu'à validation par l'Admin.
+//        Inclut un indicateur de force du mot de passe en temps réel
+//        et valide les contraintes de complexité (min 12 chars,
+//        majuscule, chiffre, caractère spécial) avant soumission.
 // ============================================================
 import { useState } from "react";
 import { NavLink } from "react-router-dom";

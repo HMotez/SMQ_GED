@@ -1,4 +1,17 @@
 # =============================================================
+# docker-compose.offline.yml
+# RÔLE : Configuration pour déploiement sans accès internet.
+#        Adapté au réseau d'entreprise ACTIA où Docker Hub peut
+#        être inaccessible (proxy, firewall, timeout TLS).
+#        Utilise uniquement les images déjà présentes localement
+#        (pré-téléchargées avec build-offline.ps1).
+#        NE télécharge aucune image depuis internet.
+#
+# Images locales requises (pré-construites) :
+#   smq_ged-backend:latest  → base Node.js + LibreOffice
+#   smq_ged-frontend:latest → base nginx
+#
+# Usage : docker compose -f docker-compose.offline.yml up -d
 # SMQ_GED — docker-compose.offline.yml
 # Surcharge pour reconstruire les images quand Docker Hub est
 # inaccessible (timeout TLS, réseau d'entreprise, proxy bloquant).

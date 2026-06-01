@@ -1,7 +1,15 @@
 /**
- * components/DistributionForm.jsx
+ * components/DistributionForm.jsx — Sprint 2 Carte 3
+ * RÔLE : Formulaire de distribution d'un document validé.
+ *        Permet à l'Admin de distribuer un document aux destinataires
+ *        après qu'il soit passé en statut "Validé".
+ *        Enregistre : destinataires, format de distribution, commentaires.
+ *        Contrainte ISO : disponible uniquement si statut = "Validé"
+ *        et si au moins une validation APPROUVÉ existe.
+ *        Utilisé dans DocDetailModal (Admin uniquement).
+ *
  * Sprint 2 - Carte 3 (Distribution with Proof of Validation)
- * 
+ *
  * Form to create distribution records
  * - Only available if document is in "Validé" status
  * - Requires at least one APPROUVÉ validation

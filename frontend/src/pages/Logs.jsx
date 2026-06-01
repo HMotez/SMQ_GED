@@ -1,5 +1,12 @@
 // ============================================================
-// pages/Logs.jsx — Consultation et export des logs (Admin)
+// pages/Logs.jsx
+// RÔLE : Interface de consultation du journal d'audit ISO 9001.
+//        Affiche toutes les actions tracées dans la table logs :
+//        créations, changements de statut, validations, connexions,
+//        accès refusés, avec filtres par action/user/date/sévérité.
+//        Admin : voit tous les logs y compris sécurité.
+//        Ing. Qualité : voit uniquement les logs documentaires.
+//        Permet l'export en CSV pour archivage légal.
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

@@ -1,6 +1,12 @@
 // ============================================================
-// Workflow.jsx — ACTIA ES · Document Lifecycle Visualization
-// EF06 — ISO 9001 Workflow with role-based transitions
+// pages/Workflow.jsx — EF06
+// RÔLE : Visualisation interactive du cycle de vie ISO 9001.
+//        Affiche les 10 statuts documentaires sous forme de
+//        diagramme de flux avec les transitions autorisées
+//        selon le rôle de l'utilisateur connecté.
+//        Pour chaque statut : description, rôles autorisés,
+//        et documents actuellement dans cet état.
+//        Outil pédagogique pour comprendre le workflow ISO.
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";

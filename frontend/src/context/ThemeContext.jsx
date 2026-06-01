@@ -1,8 +1,15 @@
 // ============================================================
-// context/ThemeContext.jsx — Gestion du thème clair/sombre
-// Persiste le choix dans localStorage (clé "ged_theme").
-// Ajoute/supprime la classe "dark" sur <html> pour Tailwind.
-// Usage : const { isDark, toggleTheme } = useTheme();
+// context/ThemeContext.jsx
+// RÔLE : Contexte React gérant le thème visuel de l'application.
+//        Persiste le choix dans localStorage (clé "ged_theme").
+//        Synchronise la classe CSS "dark" sur <html> pour que
+//        Tailwind CSS applique automatiquement les variantes dark:.
+//        Par défaut : mode sombre (dark).
+//        Expose :
+//          theme       : "dark" | "light"
+//          isDark      : boolean (raccourci)
+//          toggleTheme : bascule entre les deux modes
+//        Usage : const { isDark, toggleTheme } = useTheme();
 // ============================================================
 import { createContext, useContext, useEffect, useState } from "react";
 

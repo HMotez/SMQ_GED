@@ -1,6 +1,13 @@
 // ============================================================
-// pages/UserManagement.jsx — Admin GED · Gestion des utilisateurs
-// Activation des comptes + attribution des rôles + rejet
+// pages/UserManagement.jsx
+// RÔLE : Interface d'administration des comptes utilisateurs.
+//        Réservé exclusivement à l'Admin.
+//        Affiche deux sections :
+//          1. Comptes en attente → l'Admin choisit le rôle et active
+//          2. Comptes actifs → l'Admin peut désactiver
+//        Workflow d'activation :
+//          Inscription → En attente → Admin assigne rôle → Actif
+//          OU Admin rejette → Supprimé définitivement
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";

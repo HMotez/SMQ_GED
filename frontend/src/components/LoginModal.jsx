@@ -1,5 +1,14 @@
 // ============================================================
-// components/LoginModal.jsx — Auth prompt modal with role quick-login
+// components/LoginModal.jsx
+// RÔLE : Modal de connexion rapide intégré dans la page Home.
+//        S'affiche quand un utilisateur non connecté tente
+//        d'accéder à une fonctionnalité protégée depuis l'accueil.
+//        Propose la connexion directe sans redirection vers /login.
+//        Affiche les 3 rôles avec leurs credentials de démo.
+//        Props :
+//          onClose   : ferme le modal
+//          message   : texte contextuel affiché en haut
+//          infoOnly  : mode lecture seule (pas de formulaire)
 // ============================================================
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";

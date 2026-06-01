@@ -1,6 +1,12 @@
 // ============================================================
-// routes/dashboardRoutes.js
-// ACTIA ES — GED Sprint 4 — Tableau de bord
+// routes/dashboardRoutes.js — Sprint 4
+// RÔLE : Expose les endpoints du tableau de bord analytique.
+//        Fournit les KPIs et statistiques pour les graphiques
+//        Chart.js du Dashboard. Accès réservé à Admin et Ing. Qualité.
+//
+// Endpoints :
+//   GET /api/dashboard/overview → KPIs temps réel (compteurs)
+//   GET /api/dashboard/stats    → données graphiques (répartitions)
 // ============================================================
 
 const express = require("express");

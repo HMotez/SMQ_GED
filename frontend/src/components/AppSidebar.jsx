@@ -1,6 +1,14 @@
 // ============================================================
-// components/AppSidebar.jsx — Pure Tailwind CSS · No Emojis
-// All icons verified against installed react-icons/lu version
+// components/AppSidebar.jsx
+// RÔLE : Barre de navigation latérale principale de l'application.
+//        Affiche les liens de navigation adaptés au rôle connecté :
+//          Admin        : toutes les pages + Utilisateurs + Logs
+//          Ing. Qualité : toutes les pages sauf Utilisateurs/Logs
+//          Reviewer     : Accueil, Documents, Validations, Workflow, IA
+//          Visiteur     : Accueil, Documents, Archivage uniquement
+//        Affiche les badges de compteur (notifications non lues,
+//        comptes en attente) en temps réel.
+//        Présent sur toutes les pages authentifiées.
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";

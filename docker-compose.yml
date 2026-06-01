@@ -1,4 +1,18 @@
 # =============================================================
+# docker-compose.yml
+# RÔLE : Orchestration principale de l'application en production.
+#        Définit et lance les 7 services de l'application :
+#          postgres   → Base de données PostgreSQL 16
+#          backend    → API Node.js/Express (port 4000 interne)
+#          frontend   → React + Nginx (ports 80/443 publics)
+#          kafka      → Messagerie asynchrone pour emails
+#          clamav     → Antivirus des fichiers uploadés
+#          backup     → Sauvegardes automatiques .sql.gz
+#          prometheus/grafana → Supervision (--profile monitoring)
+#        Tous les services communiquent via le réseau privé smq_network.
+#        Seul Nginx (frontend) est exposé au public.
+#
+# Usage : docker compose up -d
 # SMQ_GED — Docker Compose  (ACTIA Engineering Services)
 # Endurcissement infrastructure
 # =============================================================

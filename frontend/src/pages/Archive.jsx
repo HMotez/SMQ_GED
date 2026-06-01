@@ -1,5 +1,12 @@
 // ============================================================
-// Archive.jsx — EF11 — ACTIA ES · DocumentList-style layout
+// pages/Archive.jsx — EF11
+// RÔLE : Page d'archivage manuel des documents.
+//        Affiche les documents en statut Diffusé/Obsolète/Archivé.
+//        Admin et Ing. Qualité peuvent faire progresser les documents
+//        vers le statut Archivé manuellement.
+//        Affiche l'historique des archivages (AUTO_ARCHIVE,
+//        VERSION_SUPERSEDED, STATUS_CHANGE) avec détails complets.
+//        Accessible à Admin et Ing. Qualité uniquement.
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";

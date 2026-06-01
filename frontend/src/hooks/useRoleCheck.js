@@ -1,8 +1,19 @@
 /**
- * hooks/useRoleCheck.js
+ * hooks/useRoleCheck.js — EF06
+ * RÔLE : Hook React centralisant toute la logique de vérification
+ *        des permissions RBAC côté frontend.
+ *        Utilisé par DocumentList, Archive, Validations et tous les
+ *        composants qui ont besoin de vérifier les droits d'un user.
+ *        Fonctions exposées :
+ *          canPerformAction(action, document) → boolean
+ *          getBlockReason(action, document)   → string | null
+ *          canTransitionStatus(from, to)      → boolean
+ *          getAllowedTransitions(currentStatus)→ string[]
+ *          canArchive(document)               → boolean
+ *        La matrice de transitions doit rester synchronisée
+ *        avec roleMiddleware.js côté backend.
+ *
  * Sprint 2 - EF06 (Role Management)
- * 
- * Advanced role checking utilities for document-specific permissions
  */
 
 import { useUser } from '../context/UserContext';

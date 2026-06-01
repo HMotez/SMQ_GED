@@ -1,6 +1,13 @@
 // ============================================================
-// HistoryDetailPanel.jsx — slide-in drawer for history entries
-// Used by Validations.jsx (type="validation") and Archive.jsx (type="archive")
+// components/HistoryDetailPanel.jsx
+// RÔLE : Panneau latéral (slide-in drawer) affichant le détail
+//        d'une entrée d'historique sélectionnée.
+//        Utilisé par deux pages avec deux modes :
+//          - type="validation" : détail d'une décision de validation
+//            (validateur, décision, commentaire, signature SHA-256)
+//          - type="archive"    : détail d'un événement d'archivage
+//            (action AUTO_ARCHIVE, VERSION_SUPERSEDED, STATUS_CHANGE)
+//        Se ferme avec la touche Échap ou le bouton X.
 // ============================================================
 import { useEffect } from "react";
 import {

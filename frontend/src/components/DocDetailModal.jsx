@@ -1,5 +1,13 @@
 // ============================================================
-// components/DocDetailModal.jsx — Shared document detail modal
+// components/DocDetailModal.jsx
+// RÔLE : Modal partagé affichant les détails complets d'un document.
+//        Utilisé par plusieurs pages (Home, Dashboard, Notifications,
+//        DocumentList, AIAssistant) pour afficher :
+//          - Métadonnées : titre, code, responsable, statut, dates
+//          - Historique des versions avec liens de téléchargement
+//          - Historique des validations (décisions + signatures)
+//          - Lien SharePoint si disponible
+//        Composant réutilisable — reçoit documentId en prop.
 // ============================================================
 import { useEffect, useState } from "react";
 import axios from "axios";

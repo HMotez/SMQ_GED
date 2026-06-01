@@ -1,5 +1,15 @@
-// Shared helper — writes a security/audit event to the logs table.
-// Columns ip_address, user_agent, severity are added at startup by ensureAuditColumns().
+// ─────────────────────────────────────────────────────────────
+// utils/auditLog.js
+// RÔLE : Fonction partagée d'écriture dans le journal d'audit DB.
+//        Insère une entrée dans la table logs avec :
+//          action, user_id, document_id, details (JSONB),
+//          severity (info/warning/critical), ip_address, user_agent
+//        Utilisé par roleMiddleware (accès refusés), authController
+//        (login/logout), documentController (CRUD + transitions),
+//        validationController (créations immuables).
+//        Ne lance jamais d'exception — une erreur de log ne doit
+//        pas bloquer la requête principale.
+// ─────────────────────────────────────────────────────────────
 
 const pool = require("../db");
 

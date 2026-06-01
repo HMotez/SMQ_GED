@@ -1,5 +1,11 @@
 // ============================================================
-// pages/ForgotPassword.jsx — ACTIA ES · Dark Glass Premium
+// pages/ForgotPassword.jsx
+// RÔLE : Page de demande de réinitialisation du mot de passe.
+//        L'utilisateur saisit son email et reçoit un lien sécurisé
+//        valable 1 heure via SMTP (Gmail).
+//        Le lien contient un token à usage unique stocké dans
+//        la table reset_tokens.
+//        Protégée par rate limiting (20 req/15min) contre l'abus.
 // ============================================================
 import { useState } from "react";
 import { NavLink }  from "react-router-dom";

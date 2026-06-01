@@ -1,7 +1,13 @@
 // ============================================================
 // middleware/validate.js
-// Middleware de validation centralisé — express-validator
-// Usage : router.post("/route", validate(rules), controller)
+// RÔLE : Valide et sanitise les données reçues dans les requêtes
+//        HTTP avant qu'elles atteignent les controllers.
+//        Utilise express-validator pour définir des règles par champ
+//        (longueur, format email, caractères interdits...).
+//        Si la validation échoue → retourne 400 avec les erreurs détaillées.
+//        Protège contre les injections XSS et les données malformées.
+//
+// Usage : router.post("/route", validate([règles]), controller)
 // ============================================================
 "use strict";
 

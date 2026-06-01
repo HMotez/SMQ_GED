@@ -1,5 +1,15 @@
 // =============================================================
-// src/config.js — Centralized API URL Configuration
+// src/config.js
+// RÔLE : Configuration centralisée des URLs de l'API.
+//        Exporte deux constantes utilisées dans toute l'app :
+//          API     → URL de base pour les appels REST (/api/...)
+//          BACKEND → URL de base pour les fichiers (/files/, /download/)
+//        Les valeurs sont injectées par Vite au moment du build
+//        depuis les variables d'environnement VITE_API_URL et
+//        VITE_BACKEND_URL définies dans le Dockerfile frontend.
+//        En local  : http://localhost:4000/api
+//        En Docker : /api (proxifié par Nginx vers le backend)
+//
 // Sprint 7 — Dockerisation & Déploiement Containerisé
 // =============================================================
 //

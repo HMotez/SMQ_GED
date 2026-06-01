@@ -1,7 +1,18 @@
 # =============================================================
+# backend/Dockerfile
+# RÔLE : Construit l'image Docker du backend Node.js/Express.
+#        Build multi-stage pour optimiser la taille de l'image :
+#          Stage 1 (deps)   → installe les dépendances npm
+#          Stage 2 (runner) → copie seulement node_modules + src
+#        Installe LibreOffice headless pour la conversion de docs
+#        (PDF → DOCX/XLSX) et Python + pdf2docx/pdfplumber pour
+#        l'extraction de contenu.
+#        Sécurité : exécute en tant qu'utilisateur non-root (node)
+#        pour limiter les droits en cas de compromission.
+#        Port exposé : 4000 (interne, proxifié par Nginx)
+#
 # SMQ_GED — Backend Dockerfile  (ACTIA Engineering Services)
 # Node.js 20 + Express + LibreOffice + Module IA Groq (llama-3.3-70b)
-# Sprint 31 — Endurcissement infrastructure : non-root user
 # =============================================================
 
 # ── Stage 1: Dependency resolution ───────────────────────────

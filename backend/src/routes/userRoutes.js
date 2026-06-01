@@ -1,5 +1,14 @@
 // ============================================================
 // routes/userRoutes.js
+// RÔLE : Expose les endpoints de gestion des utilisateurs.
+//        Permet à l'Admin de lister tous les comptes et de voir
+//        le nombre de comptes en attente d'activation (badge sidebar).
+//        L'Ing. Qualité peut consulter la liste pour désigner
+//        des relecteurs et validateurs sur les documents.
+//
+// Endpoints :
+//   GET /api/users                → liste tous les utilisateurs (Admin, Ing. Qualité)
+//   GET /api/users/pending-count  → nombre de comptes non activés (Admin)
 // ============================================================
 
 const express = require("express");

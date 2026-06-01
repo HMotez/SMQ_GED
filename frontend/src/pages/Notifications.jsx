@@ -1,6 +1,14 @@
 // ============================================================
-// pages/Notifications.jsx — Sprint 5 · Centre de notifications
-// Click on a notification → document detail modal
+// pages/Notifications.jsx — Sprint 5
+// RÔLE : Centre de notifications personnel de l'utilisateur.
+//        Affiche toutes les notifications reçues groupées par type :
+//          - validation  : document soumis/approuvé/rejeté
+//          - expiration  : date de révision dépassée
+//          - version     : nouvelle version uploadée
+//          - inactivite  : document sans activité depuis longtemps
+//          - designation : désigné comme relecteur/validateur
+//        Cliquer sur une notification ouvre le détail du document.
+//        Permet de marquer comme lu individuellement ou tout à la fois.
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";

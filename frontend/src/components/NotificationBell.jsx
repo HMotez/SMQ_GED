@@ -1,6 +1,12 @@
 // ============================================================
 // components/NotificationBell.jsx — Sprint 5
-// Cloche avec badge non-lu + dropdown panel + document modal
+// RÔLE : Icône de cloche dans la navbar avec badge de compteur.
+//        Affiche le nombre de notifications non lues en temps réel
+//        (polling toutes les 30 secondes).
+//        Au clic, ouvre un dropdown avec les dernières notifications.
+//        Cliquer sur une notification ouvre le DocDetailModal
+//        du document concerné sans quitter la page courante.
+//        Présent dans la navbar de Home et Dashboard.
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

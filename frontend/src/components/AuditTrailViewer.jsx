@@ -1,7 +1,15 @@
 /**
- * AuditTrailViewer.jsx
+ * components/AuditTrailViewer.jsx — EF14
+ * RÔLE : Affiche la timeline complète d'un document sous forme
+ *        de frise chronologique (audit trail ISO 9001).
+ *        Combine les entrées de la table logs (CREATE, STATUS_CHANGE,
+ *        NEW_VERSION, VALIDATION_CREATED) triées par date.
+ *        Permet de filtrer par type d'événement.
+ *        Utilisé dans DocDetailModal pour la traçabilité légale.
+ *        Conforme à l'exigence EF14 d'immuabilité de l'historique.
+ *
  * Sprint 2 - EF14 (Historique & Traçabilité ISO)
- * 
+ *
  * Affiche la timeline complète d'un document avec validations, statuts et versions
  * Conforme aux exigences légales ISO pour archivage
  */

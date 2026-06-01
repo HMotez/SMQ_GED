@@ -1,5 +1,16 @@
 // ============================================================
-// DocumentList.jsx — ACTIA ES · Dark Login-Style Premium Design
+// pages/DocumentList.jsx
+// RÔLE : Liste principale des documents avec gestion complète
+//        du cycle de vie ISO 9001.
+//        Fonctionnalités :
+//          - Recherche et filtres (statut, type, processus, dossier)
+//          - Transitions de statut selon les droits du rôle
+//          - Upload de nouvelle version
+//          - Téléchargement multi-format (PDF, DOCX, XLSX)
+//          - Détails du document avec historique des versions
+//        Machine à états : Brouillon → ... → Archivé
+//        Accessible à tous les rôles (lecture), modifications
+//        réservées à Admin et Ing. Qualité.
 // ============================================================
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";

@@ -1,9 +1,14 @@
 // ============================================================
-// main.jsx — Point d'entrée React
-// Monte l'application sur <div id="root"> (index.html).
-// BrowserRouter : active le routage HTML5 (URLs propres sans #).
-// StrictMode    : active les avertissements de développement React
-//                 (double-render intentionnel en dev uniquement).
+// main.jsx
+// RÔLE : Point d'entrée de l'application React.
+//        Fichier exécuté en premier par Vite au démarrage.
+//        Monte le composant App sur le <div id="root"> de index.html.
+//        Configure :
+//          BrowserRouter → routage HTML5 (URLs propres sans #)
+//          StrictMode    → avertissements de développement React
+//                          (double-render intentionnel en dev uniquement,
+//                           désactivé automatiquement en production)
+// ============================================================
 // ============================================================
 import React from "react";
 import ReactDOM from "react-dom/client";

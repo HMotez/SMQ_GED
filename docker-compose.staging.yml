@@ -1,10 +1,17 @@
 # =============================================================
+# docker-compose.staging.yml
+# RÔLE : Environnement de staging — miroir complet de la production.
+#        Permet de valider chaque mise à jour AVANT de déployer
+#        en production. Utilise les mêmes services et configuration
+#        que docker-compose.yml mais avec des ports différents
+#        pour coexister avec la production sur le même serveur.
+#        Ports : 8080 (HTTP) et 8443 (HTTPS) au lieu de 80/443.
+#
+# Règle : toute modification doit passer par staging avant prod.
+#
+# Usage : docker compose -f docker-compose.staging.yml up --build -d
 # SMQ_GED — Docker Compose STAGING  (ACTIA Engineering Services)
 # Miroir complet de la production
-# Usage : docker compose -f docker-compose.staging.yml up --build -d
-# =============================================================
-# RÈGLE : toute mise à jour doit être validée ici AVANT prod
-# Ports différents (8080/8443) pour coexister avec la prod
 # =============================================================
 
 services:

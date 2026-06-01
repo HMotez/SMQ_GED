@@ -1,6 +1,15 @@
 // ============================================================
-// App.jsx — Racine de l'application React
-// Définit le routage global et les gardes d'accès par rôle.
+// App.jsx
+// RÔLE : Composant racine de l'application React.
+//        Définit le routage global avec React Router et applique
+//        les gardes d'accès par rôle (RBAC) :
+//          PublicRoute     → /login, /register (redirige si déjà connecté)
+//          ProtectedRoute  → toutes les pages authentifiées
+//          AdminRoute      → /admin/users (Admin uniquement)
+//          AdminOrQualite  → /admin/logs (Admin + Ing. Qualité)
+//        Enveloppe l'app dans UserProvider (auth) et Toaster (notifications).
+//        SessionManager est monté ici pour détecter l'inactivité globalement.
+//
 // Structure :
 //   PublicRoute      → accessible uniquement si NON connecté (login/register)
 //   ProtectedRoute   → accessible uniquement si connecté

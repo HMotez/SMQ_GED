@@ -1,5 +1,19 @@
 // ============================================================
 // routes/notificationRoutes.js — Sprint 5
+// RÔLE : Gère les notifications intelligentes de l'utilisateur connecté.
+//        Toutes les routes exigent une authentification (loadUser global).
+//        Les notifications sont créées automatiquement par :
+//          - Les changements de statut des documents
+//          - Les nouvelles versions uploadées
+//          - Les dates de révision dépassées (CRON 24h)
+//          - Les désignations comme relecteur/validateur
+//
+// Endpoints :
+//   GET   /api/notifications              → liste les notifications de l'utilisateur
+//   GET   /api/notifications/unread-count → compteur badge cloche
+//   PATCH /api/notifications/:id/read     → marquer une notif comme lue
+//   PATCH /api/notifications/read-all     → tout marquer comme lu
+//   POST  /api/notifications/trigger-expiration → déclencher manuellement le job
 // ============================================================
 const express = require("express");
 const router  = express.Router();

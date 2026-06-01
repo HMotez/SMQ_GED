@@ -1,5 +1,11 @@
 // ============================================================
-// components/UserSelector.jsx — Static user info panel (no role switching)
+// components/UserSelector.jsx
+// RÔLE : Panneau d'information de l'utilisateur connecté affiché
+//        en bas du sidebar dans la page Home.
+//        Affiche : avatar avec icône de rôle, nom, email, badge rôle
+//        et bouton de déconnexion.
+//        Composant statique — affiche uniquement les infos,
+//        ne permet pas le changement de rôle (RBAC strict).
 // ============================================================
 import { useNavigate } from "react-router-dom";
 import { LuLogOut, LuShield, LuCrown, LuWrench, LuClipboardCheck } from "react-icons/lu";

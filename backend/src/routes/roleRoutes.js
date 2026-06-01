@@ -1,5 +1,20 @@
 // ============================================================
-// routes/roleRoutes.js — Sprint 2, Carte 2 (EF06)
+// routes/roleRoutes.js — Sprint 2 EF06
+// RÔLE : Gère le cycle de vie des comptes utilisateurs et l'attribution
+//        des rôles ISO (Admin, Ing. Qualité, Reviewer).
+//        Toutes les actions de modification sont réservées à l'Admin.
+//        Flux d'activation :
+//          1. Utilisateur s'inscrit avec un rôle souhaité
+//          2. Admin voit le compte en attente (badge rouge sidebar)
+//          3. Admin assigne un rôle → compte activé
+//          4. OU Admin rejette → compte supprimé
+//
+// Endpoints :
+//   GET    /api/roles                          → liste rôles + permissions
+//   GET    /api/roles/users                    → utilisateurs + rôles (Admin)
+//   PATCH  /api/roles/users/:id                → assigner rôle + activer (Admin)
+//   DELETE /api/roles/users/:id                → rejeter compte (Admin)
+//   PATCH  /api/roles/users/:id/deactivate     → désactiver compte (Admin)
 // ============================================================
 
 const express = require("express");

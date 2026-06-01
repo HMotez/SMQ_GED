@@ -1,5 +1,18 @@
 // ============================================================
-// routes/authRoutes.js — Sprint 3, Carte 1
+// routes/authRoutes.js
+// RÔLE : Définit les endpoints d'authentification JWT.
+//        Gère la connexion, l'inscription, la déconnexion,
+//        la récupération et la réinitialisation du mot de passe.
+//        Ces routes sont soumises au rate-limiting strict (20 req/15min)
+//        pour protéger contre le brute force.
+//
+// Endpoints :
+//   POST /api/auth/login            → connexion + retourne JWT
+//   POST /api/auth/register         → inscription (en attente d'activation)
+//   GET  /api/auth/me               → vérifie le token actuel
+//   POST /api/auth/logout           → invalide le token (blacklist)
+//   POST /api/auth/forgot-password  → envoie email de réinitialisation
+//   POST /api/auth/reset-password   → change le mot de passe via token
 // ============================================================
 "use strict";
 

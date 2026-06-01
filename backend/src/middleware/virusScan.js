@@ -1,8 +1,14 @@
 // ============================================================
 // middleware/virusScan.js
-// Analyse antivirus des fichiers uploadés via ClamAV (clamd)
-// Protocole : INSTREAM sur TCP (port 3310)
-// Comportement : si ClamAV indisponible → warning + upload autorisé
+// RÔLE : Analyse antivirus de chaque fichier uploadé avant
+//        son stockage sur le disque.
+//        S'intercale entre Multer (upload) et le controller
+//        dans la chaîne de middleware.
+//        Communique avec le service ClamAV via le protocole
+//        INSTREAM sur TCP (port 3310).
+//        Si un virus est détecté → fichier supprimé + erreur 422.
+//        Si ClamAV est indisponible → warning loggé + upload autorisé
+//        (fail-open pour ne pas bloquer la production).
 // ============================================================
 "use strict";
 

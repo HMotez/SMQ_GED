@@ -1,5 +1,17 @@
-// Scans the audit logs table every 30 minutes looking for suspicious patterns.
-// When a threshold is crossed, auto-creates a security_incident and emails the admin.
+// ─────────────────────────────────────────────────────────────
+// utils/incidentDetector.js
+// RÔLE : Détecteur automatique d'incidents de sécurité.
+//        S'exécute toutes les 30 minutes et analyse la table logs
+//        pour détecter des patterns suspects :
+//          BRUTE_FORCE       → 5+ échecs login depuis la même IP/60min
+//          ACCESS_ABUSE      → 15+ refus 403 pour le même user/60min
+//          SUSPICIOUS_LOGIN  → connexion depuis une nouvelle IP
+//          ACCOUNT_LOCKED    → compte verrouillé après trop d'échecs
+//        Quand un seuil est dépassé → crée un incident dans
+//        security_incidents et envoie un email à l'admin.
+//        Déduplique les incidents : ne crée pas si un incident
+//        similaire est déjà ouvert dans la même fenêtre de temps.
+// ─────────────────────────────────────────────────────────────
 
 const pool         = require("../db");
 const emailService = require("../services/emailService");

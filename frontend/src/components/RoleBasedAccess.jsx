@@ -1,8 +1,17 @@
 /**
- * components/RoleBasedAccess.jsx
+ * components/RoleBasedAccess.jsx — EF06
+ * RÔLE : Collection de composants utilitaires pour le contrôle
+ *        d'accès basé sur les rôles (RBAC) côté frontend.
+ *        Exports :
+ *          AccessDeniedMessage        → affiche pourquoi l'accès est refusé
+ *          RoleInfoBadge              → badge de rôle coloré de l'utilisateur
+ *          DocumentAccessStatus       → permissions de l'utilisateur sur un doc
+ *          DocumentRolePermissionsMatrix → matrice complète des permissions
+ *          ConditionalAccess          → wrapper qui cache/affiche selon le rôle
+ *          ActionButton               → bouton désactivé si accès refusé
+ *          RolePermissionTag          → tag listant les rôles autorisés
+ *
  * Sprint 2 - EF06 (Role Management)
- * 
- * Component to display and enforce role-based access control
  */
 
 import React from 'react';

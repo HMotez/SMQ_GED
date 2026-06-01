@@ -1,6 +1,13 @@
 // ============================================================
-// CreateDocument.jsx — ACTIA ES · Dark Premium Design
-// Custom dropdowns — no white native select popups
+// pages/CreateDocument.jsx
+// RÔLE : Formulaire de création d'un nouveau document GED.
+//        Permet à l'Admin et l'Ing. Qualité de créer un document
+//        en sélectionnant : dossier (arborescence 4 niveaux),
+//        type documentaire (PR, TR, GU...), processus, responsable,
+//        date de révision, relecteurs/validateurs, et fichier joint.
+//        Le doc_code est généré automatiquement par le backend.
+//        Utilise des dropdowns sombres personnalisés (pas de <select>
+//        natif blanc qui casserait le design dark).
 // ============================================================
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";

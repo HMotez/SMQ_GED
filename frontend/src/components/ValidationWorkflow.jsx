@@ -1,7 +1,17 @@
 /**
- * ValidationWorkflow.jsx
+ * components/ValidationWorkflow.jsx — EF05 + EF06 + EF14
+ * RÔLE : Composant de gestion des validations d'un document.
+ *        Affiche le résumé des décisions (approuvé/rejeté/en attente)
+ *        et le formulaire de création d'une nouvelle validation.
+ *        Implémente les contraintes ISO EF05 :
+ *          - Validateur ≠ responsable du document
+ *          - Signature numérique SHA-256 générée automatiquement
+ *          - Validation immuable après création (is_locked = true)
+ *        Indique si le document peut passer en statut "Validé".
+ *        Utilisé dans DocDetailModal.
+ *
  * Sprint 2 - EF05 (Validation Workflow) + EF06 (Role Management) + EF14 (Audit Trail)
- * 
+ *
  * Component pour afficher et gérer les validations d'un document
  * Applique les contraintes ISO : validator ≠ responsible, signature numérique, immuabilité
  */
