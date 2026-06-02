@@ -9,7 +9,7 @@
 //        sans redirection vers /login.
 // ============================================================
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { NavLink, useNavigate, useMatch } from "react-router-dom";
 import axios from "axios";
 import logoImg from "../assets/Logo.png";
@@ -110,7 +110,6 @@ const NAV_ITEMS_BY_ROLE = {
   ],
   "Reviewer": [
     { to: "/",            label: "Accueil",         end: true, Icon: LuHouse          },
-    { to: "/dashboard",   label: "Tableau de bord",            Icon: LuLayoutDashboard },
     { to: "/list",        label: "Documents",                  Icon: LuFileText        },
     { to: "/validations", label: "Validations",                Icon: LuClipboardCheck  },
     { to: "/archive",     label: "Archivage",                  Icon: LuArchive         },
@@ -1112,6 +1111,326 @@ const FEATURES = [
   },
 ];
 
+/* AnimatedBackground is now in App.jsx (global) — removed from here */
+function _AnimatedBackgroundUnused() {
+  const canvasRef = useRef(null);
+  const mouseRef  = useRef({ x: -9999, y: -9999 });
+  const rafRef    = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width  = W;
+    canvas.height = H;
+
+    const onResize = () => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width  = W;
+      canvas.height = H;
+    };
+    window.addEventListener("resize", onResize);
+
+    const onMouseMove = (e) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("mousemove", onMouseMove);
+
+    // ── Colour palette ──────────────────────────────────────
+    const COLORS = [
+      "rgba(74,184,63,",   // green
+      "rgba(96,165,250,",  // blue
+      "rgba(165,180,252,", // indigo
+      "rgba(45,212,191,",  // teal
+      "rgba(251,191,36,",  // amber (rare)
+    ];
+    const randomColor = (alpha = 1) =>
+      COLORS[Math.floor(Math.random() * COLORS.length)] + alpha + ")";
+
+    // ── PARTICLES ───────────────────────────────────────────
+    const NUM_PARTICLES = 120;
+    const particles = Array.from({ length: NUM_PARTICLES }, () => ({
+      x:    Math.random() * W,
+      y:    Math.random() * H,
+      vx:   (Math.random() - 0.5) * 0.6,
+      vy:   (Math.random() - 0.5) * 0.6,
+      r:    Math.random() * 2.2 + 0.6,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: Math.random() * 0.5 + 0.3,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: Math.random() * 0.04 + 0.01,
+    }));
+
+    // ── METEORS ─────────────────────────────────────────────
+    const NUM_METEORS = 5;
+    const meteors = Array.from({ length: NUM_METEORS }, () => createMeteor(W, H));
+    function createMeteor(W, H) {
+      const angle = Math.PI / 5 + Math.random() * (Math.PI / 6);
+      const speed = 8 + Math.random() * 8;
+      return {
+        x:     Math.random() * W * 1.5 - W * 0.25,
+        y:     -20 - Math.random() * 200,
+        vx:    Math.cos(angle) * speed,
+        vy:    Math.sin(angle) * speed,
+        len:   80 + Math.random() * 120,
+        alpha: 0,
+        life:  0,
+        maxLife: 60 + Math.random() * 40,
+        color: COLORS[Math.floor(Math.random() * 3)],
+        width: 1.5 + Math.random() * 1,
+        delay: Math.random() * 300,
+      };
+    }
+
+    // ── WAVE LINES ──────────────────────────────────────────
+    const NUM_WAVES = 4;
+    const waves = Array.from({ length: NUM_WAVES }, (_, i) => ({
+      amplitude: 30 + i * 18,
+      frequency: 0.003 + i * 0.001,
+      speed:     0.008 + i * 0.004,
+      phase:     (i * Math.PI) / 2,
+      y:         H * 0.55 + i * 60,
+      color:     COLORS[i % COLORS.length],
+      alpha:     0.04 + i * 0.01,
+      width:     1 + i * 0.3,
+    }));
+
+    // ── RIPPLES ─────────────────────────────────────────────
+    const ripples = [];
+    function addRipple(x, y) {
+      ripples.push({ x, y, r: 0, maxR: 120 + Math.random() * 80, alpha: 0.4,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)], speed: 2 + Math.random() * 2 });
+    }
+    const rippleInterval = setInterval(() => {
+      if (ripples.length < 6)
+        addRipple(Math.random() * W, Math.random() * H);
+    }, 2200);
+
+    // ── ENERGY BEAMS ────────────────────────────────────────
+    const beams = Array.from({ length: 3 }, (_, i) => ({
+      x1: Math.random() * W, y1: Math.random() * H,
+      x2: Math.random() * W, y2: Math.random() * H,
+      vx1:(Math.random()-0.5)*0.4, vy1:(Math.random()-0.5)*0.4,
+      vx2:(Math.random()-0.5)*0.4, vy2:(Math.random()-0.5)*0.4,
+      color: COLORS[i % COLORS.length],
+      alpha: 0.06 + Math.random() * 0.06,
+      width: 1,
+    }));
+
+    let frame = 0;
+
+    const draw = () => {
+      frame++;
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Base gradient ────────────────────────────────────
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0,   "#0a1420");
+      bg.addColorStop(0.35,"#0f1e30");
+      bg.addColorStop(0.7, "#1a2f4a");
+      bg.addColorStop(1,   "#1e3a55");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Waves ───────────────────────────────────────────
+      waves.forEach(w => {
+        w.phase += w.speed;
+        ctx.beginPath();
+        ctx.moveTo(0, w.y);
+        for (let x = 0; x <= W; x += 4) {
+          ctx.lineTo(x, w.y + Math.sin(x * w.frequency + w.phase) * w.amplitude);
+        }
+        ctx.strokeStyle = w.color + w.alpha + ")";
+        ctx.lineWidth   = w.width;
+        ctx.stroke();
+      });
+
+      // ── Energy beams ────────────────────────────────────
+      beams.forEach(b => {
+        b.x1 += b.vx1; b.y1 += b.vy1;
+        b.x2 += b.vx2; b.y2 += b.vy2;
+        if (b.x1 < 0 || b.x1 > W) b.vx1 *= -1;
+        if (b.y1 < 0 || b.y1 > H) b.vy1 *= -1;
+        if (b.x2 < 0 || b.x2 > W) b.vx2 *= -1;
+        if (b.y2 < 0 || b.y2 > H) b.vy2 *= -1;
+        const grad = ctx.createLinearGradient(b.x1, b.y1, b.x2, b.y2);
+        grad.addColorStop(0,   b.color + "0)");
+        grad.addColorStop(0.5, b.color + b.alpha + ")");
+        grad.addColorStop(1,   b.color + "0)");
+        ctx.beginPath();
+        ctx.moveTo(b.x1, b.y1);
+        ctx.lineTo(b.x2, b.y2);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = b.width;
+        ctx.stroke();
+      });
+
+      // ── Ripples ─────────────────────────────────────────
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        rp.r     += rp.speed;
+        rp.alpha -= 0.008;
+        if (rp.alpha <= 0 || rp.r >= rp.maxR) { ripples.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+        ctx.strokeStyle = rp.color + rp.alpha + ")";
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+        // Inner glow ring
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r * 0.6, 0, Math.PI * 2);
+        ctx.strokeStyle = rp.color + (rp.alpha * 0.4) + ")";
+        ctx.lineWidth   = 0.5;
+        ctx.stroke();
+      }
+
+      // ── Particles + constellation lines ─────────────────
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+
+      particles.forEach((p, idx) => {
+        // Mouse attraction
+        const dx = mx - p.x, dy = my - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 180) {
+          p.vx += (dx / dist) * 0.06;
+          p.vy += (dy / dist) * 0.06;
+        }
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = W;
+        if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H;
+        if (p.y > H) p.y = 0;
+
+        // Pulse alpha
+        p.pulse += p.pulseSpeed;
+        const a = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + a + ")";
+        ctx.fill();
+
+        // Glow
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 2.5, 0, Math.PI * 2);
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2.5);
+        grd.addColorStop(0, p.color + (a * 0.4) + ")");
+        grd.addColorStop(1, p.color + "0)");
+        ctx.fillStyle = grd;
+        ctx.fill();
+
+        // Constellation lines
+        for (let j = idx + 1; j < particles.length; j++) {
+          const q = particles[j];
+          const dx2 = p.x - q.x, dy2 = p.y - q.y;
+          const d2  = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+          if (d2 < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            const lineAlpha = (1 - d2 / 110) * 0.18;
+            ctx.strokeStyle = p.color + lineAlpha + ")";
+            ctx.lineWidth   = 0.6;
+            ctx.stroke();
+          }
+        }
+
+        // Mouse-particle lines
+        if (dist < 150) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(mx, my);
+          const la = (1 - dist / 150) * 0.35;
+          ctx.strokeStyle = p.color + la + ")";
+          ctx.lineWidth   = 0.8;
+          ctx.stroke();
+        }
+      });
+
+      // ── Meteors ─────────────────────────────────────────
+      meteors.forEach((m, idx) => {
+        if (m.delay > 0) { m.delay--; return; }
+        m.life++;
+        m.x += m.vx;
+        m.y += m.vy;
+        if (m.life < 10) m.alpha = m.life / 10;
+        else if (m.life > m.maxLife - 10) m.alpha = (m.maxLife - m.life) / 10;
+        else m.alpha = 1;
+
+        const tx = m.x - m.vx * (m.len / (Math.sqrt(m.vx*m.vx+m.vy*m.vy)));
+        const ty = m.y - m.vy * (m.len / (Math.sqrt(m.vx*m.vx+m.vy*m.vy)));
+        const mg = ctx.createLinearGradient(tx, ty, m.x, m.y);
+        mg.addColorStop(0, m.color + "0)");
+        mg.addColorStop(0.7, m.color + (m.alpha * 0.6) + ")");
+        mg.addColorStop(1,   m.color + (m.alpha * 0.9) + ")");
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(m.x, m.y);
+        ctx.strokeStyle = mg;
+        ctx.lineWidth   = m.width;
+        ctx.lineCap     = "round";
+        ctx.stroke();
+
+        // Head glow
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.width * 2, 0, Math.PI * 2);
+        const hg = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.width * 4);
+        hg.addColorStop(0, m.color + (m.alpha * 0.9) + ")");
+        hg.addColorStop(1, m.color + "0)");
+        ctx.fillStyle = hg;
+        ctx.fill();
+
+        if (m.life >= m.maxLife || m.x > W + 100 || m.y > H + 100) {
+          meteors[idx] = { ...createMeteor(W, H), delay: 60 + Math.random() * 180 };
+        }
+      });
+
+      // ── Mouse cursor glow ────────────────────────────────
+      if (mx > 0 && mx < W) {
+        const mg = ctx.createRadialGradient(mx, my, 0, mx, my, 80);
+        mg.addColorStop(0, "rgba(74,184,63,0.12)");
+        mg.addColorStop(0.5,"rgba(96,165,250,0.06)");
+        mg.addColorStop(1, "rgba(74,184,63,0)");
+        ctx.beginPath();
+        ctx.arc(mx, my, 80, 0, Math.PI * 2);
+        ctx.fillStyle = mg;
+        ctx.fill();
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      clearInterval(rippleInterval);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouseMove);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed", inset: 0, zIndex: 0,
+        width: "100%", height: "100%",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
 /* ══════════════════════════════════════════════════════════ */
 export default function Home() {
   const navigate = useNavigate();
@@ -1172,30 +1491,267 @@ export default function Home() {
   return (
     <div
       className="min-h-screen text-white"
-      style={{
-        background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)",
-      }}
+      style={{ background: "transparent" }}
     >
-      {/* Background decorative orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 600, height: 600,
-            top: -200, right: -150,
-            background: "radial-gradient(circle, rgba(74,184,63,0.06) 0%, transparent 70%)",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 500, height: 500,
-            bottom: -100, left: -100,
-            background: "radial-gradient(circle, rgba(96,165,250,0.05) 0%, transparent 70%)",
-            filter: "blur(60px)",
-          }}
-        />
+      {/* ══ ANIMATED BACKGROUND — rendered globally in App.jsx ══ */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0, display:"none" }}>
+        <style>{`
+          @keyframes orbFloat1 {
+            0%,100%{ transform:translate(0,0) scale(1); }
+            25%    { transform:translate(80px,-60px) scale(1.10); }
+            50%    { transform:translate(30px,70px) scale(0.93); }
+            75%    { transform:translate(-50px,-20px) scale(1.05); }
+          }
+          @keyframes orbFloat2 {
+            0%,100%{ transform:translate(0,0) scale(1); }
+            30%    { transform:translate(-80px,40px) scale(1.14); }
+            60%    { transform:translate(60px,-70px) scale(0.90); }
+            80%    { transform:translate(-20px,30px) scale(1.07); }
+          }
+          @keyframes orbFloat3 {
+            0%,100%{ transform:translate(-50%,0) scale(1); }
+            33%    { transform:translate(-50%,60px) scale(1.08); }
+            66%    { transform:translate(-50%,-40px) scale(0.94); }
+          }
+          @keyframes orbFloat4 {
+            0%,100%{ transform:translate(0,0) scale(1); }
+            40%    { transform:translate(50px,80px) scale(1.12); }
+            70%    { transform:translate(-60px,20px) scale(0.88); }
+          }
+          @keyframes particleDrift {
+            0%  { transform:translateY(0) translateX(0); opacity:0; }
+            8%  { opacity:1; }
+            92% { opacity:0.7; }
+            100%{ transform:translateY(-140px) translateX(40px); opacity:0; }
+          }
+          @keyframes particleDriftR {
+            0%  { transform:translateY(0) translateX(0); opacity:0; }
+            8%  { opacity:1; }
+            92% { opacity:0.7; }
+            100%{ transform:translateY(-110px) translateX(-35px); opacity:0; }
+          }
+          @keyframes gridPulse {
+            0%,100%{ opacity:0.022; }
+            50%    { opacity:0.042; }
+          }
+          @keyframes scanLine {
+            0%  { transform:translateY(-4px); opacity:0; }
+            3%  { opacity:1; }
+            97% { opacity:0.5; }
+            100%{ transform:translateY(100vh); opacity:0; }
+          }
+          @keyframes scanLineH {
+            0%  { transform:translateX(-4px); opacity:0; }
+            3%  { opacity:0.6; }
+            97% { opacity:0.2; }
+            100%{ transform:translateX(100vw); opacity:0; }
+          }
+          @keyframes ringPulse {
+            0%  { transform:translate(-50%,-50%) scale(0.6); opacity:0.5; }
+            100%{ transform:translate(-50%,-50%) scale(2.4); opacity:0; }
+          }
+          @keyframes hexRotate {
+            0%  { transform:rotate(0deg); }
+            100%{ transform:rotate(360deg); }
+          }
+          @keyframes hexRotateR {
+            0%  { transform:rotate(0deg); }
+            100%{ transform:rotate(-360deg); }
+          }
+          @keyframes starTwinkle {
+            0%,100%{ opacity:0.15; transform:scale(1); }
+            50%    { opacity:0.9;  transform:scale(1.6); }
+          }
+          @keyframes aurораShift {
+            0%,100%{ background-position:0% 50%; }
+            50%    { background-position:100% 50%; }
+          }
+          @keyframes noiseFloat {
+            0%,100%{ transform:translateY(0) skewX(0deg); }
+            25%    { transform:translateY(-8px) skewX(0.5deg); }
+            75%    { transform:translateY(6px) skewX(-0.3deg); }
+          }
+          @keyframes cornerGlow {
+            0%,100%{ opacity:0.4; }
+            50%    { opacity:0.9; }
+          }
+        `}</style>
+
+        {/* ── Aurora gradient layer ── */}
+        <div style={{
+          position:"absolute", inset:0,
+          background:"linear-gradient(135deg, rgba(74,184,63,0.04) 0%, transparent 40%, rgba(96,165,250,0.04) 70%, rgba(165,180,252,0.03) 100%)",
+          backgroundSize:"400% 400%",
+          animation:"aurораShift 20s ease infinite",
+        }} />
+
+        {/* ── 4 big floating orbs ── */}
+        <div style={{ position:"absolute", width:800, height:800, top:-250, right:-200,
+          background:"radial-gradient(circle, rgba(74,184,63,0.13) 0%, transparent 60%)",
+          filter:"blur(60px)", borderRadius:"50%", animation:"orbFloat1 20s ease-in-out infinite" }} />
+        <div style={{ position:"absolute", width:700, height:700, bottom:-180, left:-160,
+          background:"radial-gradient(circle, rgba(96,165,250,0.11) 0%, transparent 60%)",
+          filter:"blur(65px)", borderRadius:"50%", animation:"orbFloat2 25s ease-in-out infinite" }} />
+        <div style={{ position:"absolute", width:500, height:500, top:"38%", left:"50%",
+          background:"radial-gradient(circle, rgba(165,180,252,0.08) 0%, transparent 65%)",
+          filter:"blur(70px)", borderRadius:"50%", animation:"orbFloat3 30s ease-in-out infinite" }} />
+        <div style={{ position:"absolute", width:450, height:450, top:"15%", left:"25%",
+          background:"radial-gradient(circle, rgba(45,212,191,0.07) 0%, transparent 65%)",
+          filter:"blur(55px)", borderRadius:"50%", animation:"orbFloat4 22s ease-in-out infinite 3s" }} />
+
+        {/* ── Animated grid ── */}
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:`linear-gradient(rgba(74,184,63,0.07) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(74,184,63,0.07) 1px, transparent 1px)`,
+          backgroundSize:"70px 70px",
+          animation:"gridPulse 7s ease-in-out infinite",
+        }} />
+
+        {/* ── Smaller dot grid ── */}
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:`radial-gradient(circle, rgba(96,165,250,0.15) 1px, transparent 1px)`,
+          backgroundSize:"35px 35px",
+          animation:"gridPulse 9s ease-in-out infinite 2s",
+        }} />
+
+        {/* ── Vertical scan line ── */}
+        <div style={{
+          position:"absolute", left:0, right:0, height:2,
+          background:"linear-gradient(90deg, transparent 0%, rgba(74,184,63,0.5) 30%, rgba(96,165,250,0.4) 60%, transparent 100%)",
+          animation:"scanLine 12s linear infinite", filter:"blur(1px)",
+        }} />
+
+        {/* ── Second scan line (offset) ── */}
+        <div style={{
+          position:"absolute", left:0, right:0, height:1,
+          background:"linear-gradient(90deg, transparent, rgba(165,180,252,0.4), transparent)",
+          animation:"scanLine 12s linear infinite 6s", filter:"blur(0.5px)",
+        }} />
+
+        {/* ── Horizontal scan line ── */}
+        <div style={{
+          position:"absolute", top:0, bottom:0, width:1,
+          background:"linear-gradient(180deg, transparent, rgba(74,184,63,0.25), transparent)",
+          animation:"scanLineH 18s linear infinite 4s",
+        }} />
+
+        {/* ── Pulsing rings (center) ── */}
+        {[0,1,2].map(i => (
+          <div key={i} style={{
+            position:"absolute", top:"35%", left:"50%",
+            width:300, height:300, borderRadius:"50%",
+            border:"1px solid rgba(74,184,63,0.15)",
+            animation:`ringPulse 5s ease-out infinite ${i * 1.65}s`,
+          }} />
+        ))}
+
+        {/* ── Pulsing rings (top-right) ── */}
+        {[0,1].map(i => (
+          <div key={i} style={{
+            position:"absolute", top:"8%", right:"12%",
+            width:200, height:200, borderRadius:"50%",
+            border:"1px solid rgba(96,165,250,0.12)",
+            animation:`ringPulse 6s ease-out infinite ${i * 3}s`,
+          }} />
+        ))}
+
+        {/* ── Rotating hexagon-like rings ── */}
+        <div style={{
+          position:"absolute", top:"20%", right:"8%",
+          width:180, height:180,
+          border:"1px solid rgba(74,184,63,0.08)",
+          borderRadius:"30%",
+          animation:"hexRotate 30s linear infinite",
+        }} />
+        <div style={{
+          position:"absolute", top:"22%", right:"9%",
+          width:140, height:140,
+          border:"1px solid rgba(96,165,250,0.06)",
+          borderRadius:"30%",
+          animation:"hexRotateR 20s linear infinite",
+        }} />
+        <div style={{
+          position:"absolute", bottom:"20%", left:"6%",
+          width:160, height:160,
+          border:"1px solid rgba(165,180,252,0.07)",
+          borderRadius:"30%",
+          animation:"hexRotate 25s linear infinite 5s",
+        }} />
+
+        {/* ── Corner glow accents ── */}
+        <div style={{
+          position:"absolute", top:0, left:0, width:300, height:300,
+          background:"radial-gradient(circle at 0% 0%, rgba(74,184,63,0.08) 0%, transparent 70%)",
+          animation:"cornerGlow 5s ease-in-out infinite",
+        }} />
+        <div style={{
+          position:"absolute", bottom:0, right:0, width:350, height:350,
+          background:"radial-gradient(circle at 100% 100%, rgba(96,165,250,0.07) 0%, transparent 70%)",
+          animation:"cornerGlow 7s ease-in-out infinite 2s",
+        }} />
+        <div style={{
+          position:"absolute", top:0, right:0, width:250, height:250,
+          background:"radial-gradient(circle at 100% 0%, rgba(165,180,252,0.06) 0%, transparent 70%)",
+          animation:"cornerGlow 6s ease-in-out infinite 4s",
+        }} />
+
+        {/* ── Twinkling stars ── */}
+        {[
+          {l:"5%",  t:"12%", s:2}, {l:"15%", t:"28%", s:1.5}, {l:"25%", t:"8%",  s:2.5},
+          {l:"38%", t:"18%", s:1}, {l:"52%", t:"6%",  s:2},   {l:"62%", t:"22%", s:1.5},
+          {l:"73%", t:"10%", s:2}, {l:"83%", t:"30%", s:1},   {l:"92%", t:"15%", s:2.5},
+          {l:"8%",  t:"45%", s:1}, {l:"18%", t:"60%", s:1.5}, {l:"48%", t:"50%", s:1},
+          {l:"78%", t:"42%", s:2}, {l:"88%", t:"55%", s:1.5}, {l:"55%", t:"35%", s:1},
+          {l:"33%", t:"72%", s:2}, {l:"68%", t:"68%", s:1},   {l:"95%", t:"38%", s:1.5},
+        ].map((s, i) => (
+          <div key={i} style={{
+            position:"absolute", left:s.l, top:s.t,
+            width:s.s, height:s.s, borderRadius:"50%",
+            background:"white",
+            animation:`starTwinkle ${2.5 + (i % 4) * 0.7}s ease-in-out infinite ${(i * 0.4) % 3}s`,
+          }} />
+        ))}
+
+        {/* ── Floating particles (bottom→up, left drift) ── */}
+        {[
+          {l:"8%",  t:"82%", sz:3, d:"0s",   dur:"7s",   c:"rgba(74,184,63,0.8)"},
+          {l:"16%", t:"75%", sz:2, d:"1.8s", dur:"9s",   c:"rgba(96,165,250,0.7)"},
+          {l:"24%", t:"88%", sz:4, d:"3.2s", dur:"8s",   c:"rgba(74,184,63,0.6)"},
+          {l:"32%", t:"70%", sz:2, d:"0.5s", dur:"11s",  c:"rgba(165,180,252,0.7)"},
+          {l:"41%", t:"85%", sz:3, d:"2.5s", dur:"7.5s", c:"rgba(45,212,191,0.7)"},
+          {l:"50%", t:"78%", sz:2, d:"4.2s", dur:"9.5s", c:"rgba(74,184,63,0.8)"},
+          {l:"58%", t:"90%", sz:3, d:"1.2s", dur:"8.5s", c:"rgba(96,165,250,0.6)"},
+          {l:"66%", t:"72%", sz:2, d:"3.8s", dur:"10s",  c:"rgba(165,180,252,0.8)"},
+          {l:"74%", t:"86%", sz:4, d:"5.5s", dur:"6.5s", c:"rgba(74,184,63,0.7)"},
+          {l:"82%", t:"68%", sz:2, d:"2.2s", dur:"12s",  c:"rgba(45,212,191,0.6)"},
+          {l:"90%", t:"80%", sz:3, d:"0.9s", dur:"8s",   c:"rgba(96,165,250,0.8)"},
+          {l:"96%", t:"74%", sz:2, d:"4.8s", dur:"10s",  c:"rgba(165,180,252,0.6)"},
+          {l:"12%", t:"55%", sz:2, d:"6s",   dur:"9s",   c:"rgba(74,184,63,0.5)"},
+          {l:"44%", t:"60%", sz:3, d:"7s",   dur:"7s",   c:"rgba(96,165,250,0.5)"},
+          {l:"70%", t:"52%", sz:2, d:"1.5s", dur:"11s",  c:"rgba(165,180,252,0.5)"},
+          {l:"85%", t:"45%", sz:2, d:"8s",   dur:"8.5s", c:"rgba(45,212,191,0.5)"},
+        ].map((p, i) => (
+          <div key={i} style={{
+            position:"absolute", left:p.l, top:p.t,
+            width:p.sz, height:p.sz, borderRadius:"50%",
+            background:p.c,
+            animation:`${i % 2 === 0 ? "particleDrift" : "particleDriftR"} ${p.dur} ${p.d} ease-in-out infinite`,
+            boxShadow:`0 0 ${p.sz * 3}px ${p.c}`,
+          }} />
+        ))}
+
+        {/* ── Noise/static overlay ── */}
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundRepeat:"repeat",
+          backgroundSize:"200px 200px",
+          opacity:0.025,
+          animation:"noiseFloat 8s ease-in-out infinite",
+          mixBlendMode:"overlay",
+        }} />
       </div>
 
       <div className="relative" style={{ zIndex: 1 }}>

@@ -16,10 +16,11 @@
 //   AdminRoute       → accessible uniquement si rôle = Admin
 //   AdminOrQualite   → accessible si Admin ou Ing. Qualité
 // ============================================================
-import { Navigate, Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { UserProvider, useUser } from "./context/UserContext";
 import SessionManager from "./components/SessionManager";
+import AnimatedBackground from "./components/AnimatedBackground";
 import Home           from "./pages/Home";
 import Login          from "./pages/Login";
 import Register        from "./pages/Register";
@@ -42,7 +43,7 @@ function ProtectedRoute({ children }) {
   const { isAuthenticated, authLoading } = useUser();
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0a1420" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background:"transparent" }}>
         <div className="text-center">
           <div className="mx-auto mb-4 rounded-full" style={{ width:36,height:36,border:"2.5px solid rgba(74,184,63,0.2)",borderTopColor:"#4ab83f",animation:"spin 0.7s linear infinite" }} />
           <p className="text-sm" style={{ color:"rgba(168,191,212,0.5)" }}>Vérification de la session…</p>
@@ -82,8 +83,11 @@ function PublicRoute({ children }) {
 }
 
 function AppRoutes() {
+  const { pathname } = useLocation();
+
   return (
     <>
+    <AnimatedBackground />
     <SessionManager />
     <Routes>
       {/* Public */}

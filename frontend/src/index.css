@@ -76,7 +76,8 @@
 
 @layer base {
   body {
-    background-color: var(--actia-bg);
+    background: linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%);
+    background-attachment: fixed;
     color: var(--actia-text);
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;

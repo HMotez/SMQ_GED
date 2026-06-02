@@ -26,13 +26,13 @@ import { API } from "../config";
    Renders a fully-styled dark glass dropdown instead of
    the browser-native <select> which always shows white.
 ════════════════════════════════════════════════════════════ */
-function DarkSelect({ options = [], value, onChange, placeholder = "— Sélectionner —", disabled = false }) {
+function DarkSelect({ options = [], value, onChange, placeholder = "— Sélectionner —", disabled = false, btnRef }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const containerRef = useRef(null);
 
   // Close on outside click
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
@@ -40,9 +40,10 @@ function DarkSelect({ options = [], value, onChange, placeholder = "— Sélecti
   const selected = options.find(o => String(o.value) === String(value));
 
   return (
-    <div ref={ref} className="relative w-full" style={{ zIndex: open ? 999 : "auto" }}>
+    <div ref={containerRef} className="relative w-full" style={{ zIndex: open ? 999 : "auto" }}>
       {/* Trigger */}
       <button
+        ref={btnRef}
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen(o => !o)}
@@ -323,6 +324,33 @@ export default function CreateDocument() {
   const [allUsers,         setAllUsers]         = useState([]);
   const [selectedReviewers,  setSelectedReviewers]  = useState([]);
 
+  const titleRef         = useRef(null);
+  const responsibleRef   = useRef(null);
+  const reviewDateRef    = useRef(null);
+  const typeSelectRef    = useRef(null);
+  const originSelectRef  = useRef(null);
+  const contextSelectRef = useRef(null);
+  const keywordsRef      = useRef(null);
+  const sharepointRef    = useRef(null);
+
+  // Step nav refs
+  const step2NextRef = useRef(null);
+
+  // Step 3 — classification dropdown trigger refs
+  const l1SelectRef = useRef(null);
+  const l2SelectRef = useRef(null);
+  const l3SelectRef = useRef(null);
+  const l4SelectRef = useRef(null);
+  // Flags: auto-open next dropdown after async load
+  // Auto-focus first interactive element when step changes
+  useEffect(() => {
+    if (step === 1) setTimeout(() => titleRef.current?.focus(), 60);
+    if (step === 2) setTimeout(() => step2NextRef.current?.focus(), 60);
+    if (step === 3) setTimeout(() => l1SelectRef.current?.focus(), 60);
+    if (step === 4) setTimeout(() => sharepointRef.current?.focus(), 60);
+  }, [step]);
+
+
   useEffect(() => {
     Promise.all([
       axios.get(`${API}/types`),
@@ -336,19 +364,28 @@ export default function CreateDocument() {
   useEffect(() => {
     setSelectedL2(""); setSelectedL3(""); setSelectedL4(""); setLevel2([]); setLevel3([]); setLevel4([]);
     if (!selectedL1) return;
-    axios.get(`${API}/folders/children/${selectedL1}`).then(r => setLevel2(r.data));
+    axios.get(`${API}/folders/children/${selectedL1}`).then(r => {
+      setLevel2(r.data);
+      if (r.data.length > 0) setTimeout(() => l2SelectRef.current?.focus(), 80);
+    });
   }, [selectedL1]);
 
   useEffect(() => {
     setSelectedL3(""); setSelectedL4(""); setLevel3([]); setLevel4([]);
     if (!selectedL2) return;
-    axios.get(`${API}/folders/children/${selectedL2}`).then(r => setLevel3(r.data));
+    axios.get(`${API}/folders/children/${selectedL2}`).then(r => {
+      setLevel3(r.data);
+      if (r.data.length > 0) setTimeout(() => l3SelectRef.current?.focus(), 80);
+    });
   }, [selectedL2]);
 
   useEffect(() => {
     setSelectedL4(""); setLevel4([]);
     if (!selectedL3) return;
-    axios.get(`${API}/folders/children/${selectedL3}`).then(r => setLevel4(r.data));
+    axios.get(`${API}/folders/children/${selectedL3}`).then(r => {
+      setLevel4(r.data);
+      if (r.data.length > 0) setTimeout(() => l4SelectRef.current?.focus(), 80);
+    });
   }, [selectedL3]);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
@@ -368,8 +405,9 @@ export default function CreateDocument() {
     return `${form.typeCode.toUpperCase()}XXXX_${slug}_-`;
   };
 
-  const handleSubmit = async e => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (loading) return; // guard against double submission
     setError(""); setMessage("");
 
     const missing = [];
@@ -380,7 +418,13 @@ export default function CreateDocument() {
     if (!selectedL1)          missing.push("Processus stratégique");
     if (!selectedL2)          missing.push("Processus principal");
     if (!file)                missing.push("Fichier");
-    if (missing.length)       { setError(`Champs obligatoires : ${missing.join(" · ")}`); return; }
+    if (missing.length) {
+      setError(`Champs obligatoires : ${missing.join(" · ")}`);
+      // go back to step 1 if info fields are missing
+      if (!form.title || !form.responsible || !form.nextReviewDate || !form.typeCode) setStep(1);
+      else if (!selectedL1 || !selectedL2) setStep(3);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -400,14 +444,17 @@ export default function CreateDocument() {
       fd.append("validator_emails", JSON.stringify([]));
       fd.append("file",   file);
 
-      const res = await axios.post(`${API}/documents`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const token = localStorage.getItem("ged_token");
+      const res = await axios.post(`${API}/documents`, fd, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setMessage(res.data.document.doc_code);
       setForm({ title:"", responsible:"", nextReviewDate:"", typeCode:"", origin:"INTERNE", context:"", keywords:"" });
       setFile(null); setSharepointLink(""); setSelectedL1(""); setSelectedL2(""); setSelectedL3("");
       setSelectedReviewers([]); setStep(1);
       document.getElementById("fileInput").value = "";
     } catch (err) {
-      setError(err.response?.data?.error || "Erreur lors de l'enregistrement.");
+      setError(err.response?.data?.error || `Erreur ${err.response?.status || ""} — vérifiez vos droits ou réessayez.`);
     } finally {
       setLoading(false);
     }
@@ -501,7 +548,7 @@ export default function CreateDocument() {
 
   return (
     <div className="min-h-screen flex"
-      style={{ background: "linear-gradient(145deg, #0a1420 0%, #0f1e30 35%, #1a2f4a 70%, #1e3a55 100%)" }}>
+      style={{ background: "transparent" }}>
 
       <AppSidebar user={currentUser} middleContent={sidebarMiddle} bottomContent={sidebarBottom} />
 
@@ -565,6 +612,7 @@ export default function CreateDocument() {
           )}
 
           <form onSubmit={handleSubmit}
+            onKeyDown={e => { if (e.key === "Enter" && e.target.type !== "submit" && e.target.tagName !== "BUTTON") e.preventDefault(); }}
             style={{
               opacity: can("document:create") ? 1 : 0.35,
               pointerEvents: can("document:create") ? "auto" : "none",
@@ -581,42 +629,48 @@ export default function CreateDocument() {
 
                     <div className="md:col-span-2">
                       <F label="Titre du document *">
-                        <I name="title" value={form.title} onChange={handleChange}
-                          placeholder="Ex : Procédure de contrôle qualité" />
+                        <I ref={titleRef} name="title" value={form.title} onChange={handleChange}
+                          placeholder="Ex : Procédure de contrôle qualité"
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); responsibleRef.current?.focus(); }}} />
                       </F>
                     </div>
 
                     <F label="Responsable *">
-                      <I name="responsible" value={form.responsible} onChange={handleChange}
-                        placeholder="Nom et prénom" />
+                      <I ref={responsibleRef} name="responsible" value={form.responsible} onChange={handleChange}
+                        placeholder="Nom et prénom"
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); reviewDateRef.current?.focus(); }}} />
                     </F>
 
                     <F label="Prochaine revue *">
-                      <I type="date" name="nextReviewDate" value={form.nextReviewDate} onChange={handleChange} />
+                      <I ref={reviewDateRef} type="date" name="nextReviewDate" value={form.nextReviewDate} onChange={handleChange}
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); typeSelectRef.current?.focus(); }}} />
                     </F>
 
                     <F label="Type documentaire *">
                       <DarkSelect
+                        btnRef={typeSelectRef}
                         options={typeOptions}
                         value={form.typeCode}
-                        onChange={v => setForm(f => ({ ...f, typeCode: v }))}
+                        onChange={v => { setForm(f => ({ ...f, typeCode: v })); setTimeout(() => originSelectRef.current?.focus(), 50); }}
                         placeholder="— Sélectionner un type —"
                       />
                     </F>
 
                     <F label="Origine">
                       <DarkSelect
+                        btnRef={originSelectRef}
                         options={originOptions}
                         value={form.origin}
-                        onChange={v => setForm(f => ({ ...f, origin: v }))}
+                        onChange={v => { setForm(f => ({ ...f, origin: v })); setTimeout(() => contextSelectRef.current?.focus(), 50); }}
                       />
                     </F>
 
                     <F label="Contexte">
                       <DarkSelect
+                        btnRef={contextSelectRef}
                         options={contextOptions}
                         value={form.context}
-                        onChange={v => setForm(f => ({ ...f, context: v }))}
+                        onChange={v => { setForm(f => ({ ...f, context: v })); setTimeout(() => keywordsRef.current?.focus(), 50); }}
                         placeholder="— Optionnel —"
                       />
                     </F>
@@ -626,9 +680,10 @@ export default function CreateDocument() {
                         <div className="relative">
                           <LuTag size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2"
                             style={{ color:"var(--ged-tx2)" }} />
-                          <I name="keywords" value={form.keywords} onChange={handleChange}
+                          <I ref={keywordsRef} name="keywords" value={form.keywords} onChange={handleChange}
                             placeholder="iso9001, audit, conception, ..."
-                            style={{ paddingLeft:"2.5rem" }} />
+                            style={{ paddingLeft:"2.5rem" }}
+                            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); setStep(2); }}} />
                         </div>
                       </F>
                     </div>
@@ -677,7 +732,7 @@ export default function CreateDocument() {
                     style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.12)", color:"rgba(168,191,212,0.8)", fontFamily:"inherit" }}>
                     <LuArrowLeft size={15} /> Retour
                   </button>
-                  <button type="button" onClick={() => setStep(3)}
+                  <button ref={step2NextRef} type="button" onClick={() => setStep(3)}
                     className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white border-none cursor-pointer"
                     style={{ background:"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:"0 4px 16px rgba(74,184,63,0.35)", fontFamily:"inherit" }}>
                     Suivant : Classification <LuArrowRight size={15} />
@@ -697,6 +752,7 @@ export default function CreateDocument() {
 
                     <F label="Processus stratégique *">
                       <DarkSelect
+                        btnRef={l1SelectRef}
                         options={level1Options}
                         value={selectedL1}
                         onChange={setSelectedL1}
@@ -706,6 +762,7 @@ export default function CreateDocument() {
 
                     <F label="Processus principal *">
                       <DarkSelect
+                        btnRef={l2SelectRef}
                         options={level2Options}
                         value={selectedL2}
                         onChange={setSelectedL2}
@@ -716,6 +773,7 @@ export default function CreateDocument() {
 
                     <F label="Sous-processus *">
                       <DarkSelect
+                        btnRef={l3SelectRef}
                         options={level3Options}
                         value={selectedL3}
                         onChange={setSelectedL3}
@@ -727,6 +785,7 @@ export default function CreateDocument() {
                     {level4.length > 0 && (
                       <F label="Dossier document *">
                         <DarkSelect
+                          btnRef={l4SelectRef}
                           options={level4.map(f => ({ value: String(f.id), label: f.name }))}
                           value={selectedL4}
                           onChange={setSelectedL4}
@@ -805,9 +864,11 @@ export default function CreateDocument() {
                     Lien SharePoint <span style={{ color:"var(--ged-tx3)", fontWeight:400, textTransform:"none" }}>(optionnel)</span>
                   </label>
                   <input
+                    ref={sharepointRef}
                     type="url"
                     value={sharepointLink}
                     onChange={e => setSharepointLink(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (file) handleSubmit(); else document.getElementById("fileInput")?.click(); }}}
                     placeholder="https://mohetn.sharepoint.com/..."
                     className="w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none transition-all"
                     style={{ background:"var(--ged-card)", borderColor: sharepointLink ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.10)", color:"rgba(255,255,255,0.85)", fontFamily:"inherit" }}

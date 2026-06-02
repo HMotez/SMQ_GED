@@ -65,7 +65,6 @@ const NAV_ITEMS_BY_ROLE = {
   ],
   "Reviewer": [
     { icon: LuHouse,           label: "Accueil",          href: "/",     end: true  },
-    { icon: LuLayoutDashboard, label: "Tableau de bord",  href: "/dashboard",     end: false },
     { icon: LuFileText,        label: "Liste documents",  href: "/list",          end: false },
     { icon: LuClipboardCheck,  label: "Validations",      href: "/validations",   end: false },
     { icon: LuArchive,         label: "Archivage",        href: "/archive",       end: false },

@@ -11,6 +11,7 @@
 // ============================================================
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
 import DownloadMenu from "../components/DownloadMenu";
@@ -24,16 +25,16 @@ import { API, BACKEND } from "../config";
 import HistoryDetailPanel from "../components/HistoryDetailPanel";
 
 const STATUS_CFG = {
-  "Brouillon":           { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil         },
-  "En rédaction":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon:LuPenLine        },
-  "Appel en relecture":  { bg:"rgba(255,247,205,0.08)", text:"#fbbf24", border:"rgba(252,211,77,0.2)",   Icon:LuEye            },
-  "En relecture":        { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon:LuEye            },
-  "En correction":       { bg:"rgba(255,237,213,0.08)", text:"#f97316", border:"rgba(253,186,116,0.2)",  Icon:LuPenLine        },
-  "En validation":       { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon:LuClipboardCheck },
-  "Validé":              { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon:LuCircleCheckBig },
-  "Diffusé":             { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2         },
-  "Obsolète":            { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert  },
-  "Archivé":             { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive        },
+  "Brouillon":           { bg:"rgba(156,163,175,0.12)", text:"#d1d5db", border:"rgba(209,213,219,0.30)", Icon:LuPencil         },
+  "En rédaction":        { bg:"rgba(74,222,128,0.12)",  text:"#4ade80", border:"rgba(74,222,128,0.30)",  Icon:LuPenLine        },
+  "Appel en relecture":  { bg:"rgba(251,191,36,0.12)",  text:"#fbbf24", border:"rgba(251,191,36,0.30)",  Icon:LuEye            },
+  "En relecture":        { bg:"rgba(96,165,250,0.12)",  text:"#60a5fa", border:"rgba(96,165,250,0.30)",  Icon:LuEye            },
+  "En correction":       { bg:"rgba(249,115,22,0.12)",  text:"#fb923c", border:"rgba(249,115,22,0.30)",  Icon:LuPenLine        },
+  "En validation":       { bg:"rgba(165,180,252,0.12)", text:"#a5b4fc", border:"rgba(165,180,252,0.30)", Icon:LuClipboardCheck },
+  "Validé":              { bg:"rgba(74,222,128,0.12)",  text:"#4ade80", border:"rgba(74,222,128,0.30)",  Icon:LuCircleCheckBig },
+  "Diffusé":             { bg:"rgba(45,212,191,0.12)",  text:"#2dd4bf", border:"rgba(45,212,191,0.30)",  Icon:LuShare2         },
+  "Obsolète":            { bg:"rgba(251,146,60,0.12)",  text:"#fb923c", border:"rgba(251,146,60,0.30)",  Icon:LuTriangleAlert  },
+  "Archivé":             { bg:"rgba(96,165,250,0.12)",  text:"#60a5fa", border:"rgba(96,165,250,0.30)",  Icon:LuArchive        },
 };
 
 const DECISION_CFG = {
@@ -46,7 +47,7 @@ function StatusBadge({ name }) {
   const s = STATUS_CFG[name] || { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuFileText };
   const SI = s.Icon;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border whitespace-nowrap"
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-semibold rounded-md border whitespace-nowrap w-fit"
       style={{ background:s.bg, color:s.text, borderColor:s.border }}>
       <SI size={11} /> {name}
     </span>
@@ -57,7 +58,7 @@ function DecisionBadge({ decision }) {
   const d = DECISION_CFG[decision] || DECISION_CFG["EN_ATTENTE"];
   const DI = d.Icon;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border"
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-semibold rounded-md border w-fit"
       style={{ background:d.bg, color:d.text, borderColor:d.border }}>
       <DI size={11} /> {d.label}
     </span>
@@ -537,18 +538,37 @@ export default function Validations() {
   const submitDecision = async () => {
     if (!decisionModal) return;
     setDecisionLoading(true);
+    const docId     = decisionModal.doc.id;
+    const docCode   = decisionModal.doc.doc_code;
+    const action    = decisionModal.action;
     try {
-      const token = currentUser?.token || localStorage.getItem("token");
+      const token = localStorage.getItem("ged_token") || localStorage.getItem("token");
       await axios.post(
-        `${API}/validations/document/${decisionModal.doc.id}`,
-        { validatorId: currentUser?.id, decision: decisionModal.action, comment: decisionComment },
+        `${API}/validations/document/${docId}`,
+        { validatorId: currentUser?.id, decision: action, comment: decisionComment },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // Remove doc from pending list immediately
+      setPendingDocs(prev => prev.filter(d => d.id !== docId));
       setDecisionModal(null);
       setDecisionComment("");
+      if (action === "approuvé") {
+        toast.success(`${docCode} — approuvé avec succès.`);
+      } else {
+        toast.error(`${docCode} — rejeté.`);
+      }
       load();
     } catch (err) {
-      alert(err.response?.data?.error || "Erreur lors de la validation.");
+      const msg = err.response?.data?.error || "Erreur lors de la validation.";
+      // Already validated → remove from list and inform user
+      if (msg.toLowerCase().includes("déjà") || msg.toLowerCase().includes("already")) {
+        setPendingDocs(prev => prev.filter(d => d.id !== docId));
+        setDecisionModal(null);
+        setDecisionComment("");
+        toast.info(`${docCode} — déjà traité, retiré de la liste.`);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setDecisionLoading(false);
     }
@@ -580,7 +600,7 @@ export default function Validations() {
 
   return (
     <div className="min-h-screen flex"
-      style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+      style={{ background: "transparent" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }

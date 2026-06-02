@@ -258,7 +258,7 @@ export default function UserManagement() {
 
   return (
     <div className="flex min-h-screen"
-      style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 40%,#162840 100%)", fontFamily:"'Inter',-apple-system,sans-serif" }}>
+      style={{ background:"transparent", fontFamily:"'Inter',-apple-system,sans-serif" }}>
       <style>{STYLES}</style>
 
       <AppSidebar user={currentUser} onLogout={logout} />

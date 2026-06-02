@@ -11,6 +11,7 @@
 //        Permet de marquer comme lu individuellement ou tout à la fois.
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import AppSidebar from "../components/AppSidebar";
 import {
@@ -177,15 +178,15 @@ function DocumentModal({ doc, loading, onClose }) {
   return (
     <div
       className="fixed inset-0 z-[9990] flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+      style={{ background: "rgba(0,0,0,0.3)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden"
         style={{
-          background:    "rgba(10,20,32,0.98)",
-          border:        "1px solid rgba(255,255,255,0.1)",
-          boxShadow:     "0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.07)",
+          background:    "linear-gradient(160deg,rgba(18,32,58,0.96) 0%,rgba(12,22,40,0.96) 100%)",
+          border:        "1px solid rgba(255,255,255,0.14)",
+          boxShadow:     "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)",
           fontFamily:    "'Inter',-apple-system,sans-serif",
         }}
       >
@@ -336,6 +337,7 @@ function DocumentModal({ doc, loading, onClose }) {
 /* ════════════════════════════════════════════════════════════ */
 export default function Notifications() {
   const { currentUser, token, logout } = useUser();
+  const navigate   = useNavigate();
   const userRole  = currentUser?.role;
   const isReviewer = userRole === "Reviewer";
 
@@ -519,7 +521,7 @@ export default function Notifications() {
 
   return (
     <div className="flex min-h-screen"
-      style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 40%,#162840 100%)", fontFamily: "'Inter',-apple-system,sans-serif" }}>
+      style={{ background: "transparent", fontFamily: "'Inter',-apple-system,sans-serif" }}>
 
       <AppSidebar user={currentUser} onLogout={logout} />
 
@@ -648,7 +650,7 @@ export default function Notifications() {
                     return (
                       <div
                         key={doc.id}
-                        onClick={() => openDocModal(doc.id)}
+                        onClick={() => navigate("/validations")}
                         className="flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors duration-150"
                         style={{ borderBottom: idx < validationDocs.length - 1 ? "1px solid rgba(251,191,36,0.07)" : "none" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(251,191,36,0.05)"}

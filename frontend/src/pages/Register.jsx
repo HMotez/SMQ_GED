@@ -163,7 +163,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-6 overflow-hidden relative"
-      style={{ background:"linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)", fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+      style={{ background:"transparent", fontFamily:"'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
       <style>{STYLES}</style>
 
       {/* Blobs */}

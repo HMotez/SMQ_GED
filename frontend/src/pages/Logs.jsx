@@ -721,7 +721,7 @@ export default function Logs() {
 
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#0a1420", color: "#dce8f5" }}>
+    <div className="flex min-h-screen" style={{ background: "transparent", color: "#dce8f5" }}>
       <style>{STYLES}</style>
       <AppSidebar user={currentUser ? { ...currentUser, role: userRole } : null} />
 

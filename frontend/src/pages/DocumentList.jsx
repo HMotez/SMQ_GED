@@ -50,16 +50,16 @@ const ALLOWED_TRANSITIONS = {
 
 /* Dark-adapted status config */
 const STATUS_CFG = {
-  "Brouillon":           { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuPencil          },
-  "En rédaction":        { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(187,247,208,0.15)", Icon:LuPenLine         },
-  "Appel en relecture":  { bg:"rgba(255,247,205,0.08)", text:"#fbbf24", border:"rgba(252,211,77,0.2)",   Icon:LuEye             },
-  "En relecture":        { bg:"rgba(239,246,255,0.08)", text:"#60a5fa", border:"rgba(191,219,254,0.15)", Icon:LuEye             },
-  "En correction":       { bg:"rgba(255,237,213,0.08)", text:"#f97316", border:"rgba(253,186,116,0.2)",  Icon:LuPenLine         },
-  "En validation":       { bg:"rgba(238,242,255,0.08)", text:"#a5b4fc", border:"rgba(199,210,254,0.15)", Icon:LuClipboardCheck  },
-  "Validé":              { bg:"rgba(240,253,244,0.08)", text:"#4ade80", border:"rgba(134,239,172,0.2)",  Icon:LuCircleCheckBig  },
-  "Diffusé":             { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2          },
-  "Obsolète":            { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert   },
-  "Archivé":             { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive         },
+  "Brouillon":           { bg:"rgba(156,163,175,0.12)", text:"#d1d5db", border:"rgba(209,213,219,0.30)",  Icon:LuPencil          },
+  "En rédaction":        { bg:"rgba(74,222,128,0.12)",  text:"#4ade80", border:"rgba(74,222,128,0.30)",  Icon:LuPenLine         },
+  "Appel en relecture":  { bg:"rgba(251,191,36,0.12)",  text:"#fbbf24", border:"rgba(251,191,36,0.30)",  Icon:LuEye             },
+  "En relecture":        { bg:"rgba(96,165,250,0.12)",  text:"#60a5fa", border:"rgba(96,165,250,0.30)",  Icon:LuEye             },
+  "En correction":       { bg:"rgba(249,115,22,0.12)",  text:"#fb923c", border:"rgba(249,115,22,0.30)",  Icon:LuPenLine         },
+  "En validation":       { bg:"rgba(165,180,252,0.12)", text:"#a5b4fc", border:"rgba(165,180,252,0.30)", Icon:LuClipboardCheck  },
+  "Validé":              { bg:"rgba(74,222,128,0.12)",  text:"#4ade80", border:"rgba(74,222,128,0.30)",  Icon:LuCircleCheckBig  },
+  "Diffusé":             { bg:"rgba(45,212,191,0.12)",  text:"#2dd4bf", border:"rgba(45,212,191,0.30)",  Icon:LuShare2          },
+  "Obsolète":            { bg:"rgba(251,146,60,0.12)",  text:"#fb923c", border:"rgba(251,146,60,0.30)",  Icon:LuTriangleAlert   },
+  "Archivé":             { bg:"rgba(96,165,250,0.12)",  text:"#60a5fa", border:"rgba(96,165,250,0.30)",  Icon:LuArchive         },
 };
 const sCfg = (n) => STATUS_CFG[n] || { bg:"rgba(243,244,246,0.08)", text:"#9ca3af", border:"rgba(209,213,219,0.15)", Icon:LuCircleHelp };
 
@@ -460,7 +460,7 @@ export default function DocumentList() {
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+    <div className="min-h-screen flex" style={{ background: "transparent" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         .animate-fade-in { animation: fadeIn 0.2s ease; }

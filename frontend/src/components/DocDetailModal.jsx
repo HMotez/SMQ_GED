@@ -100,11 +100,11 @@ export default function DocDetailModal({ docId, onClose }) {
   return (
     <>
       <div onClick={onClose} className="fixed inset-0 flex items-center justify-center z-50"
-        style={{ background:"rgba(5,12,20,0.88)", backdropFilter:"blur(12px)" }}>
+        style={{ background:"rgba(5,12,20,0.4)" }}>
         <div onClick={e => e.stopPropagation()}
           className="rounded-2xl border w-[min(960px,96vw)] max-h-[90vh] flex flex-col overflow-hidden"
           style={{
-            background:"linear-gradient(160deg,rgba(18,32,58,0.99) 0%,rgba(12,22,40,0.99) 100%)",
+            background:"linear-gradient(160deg,rgba(18,32,58,0.96) 0%,rgba(12,22,40,0.96) 100%)",
             borderColor:"rgba(255,255,255,0.14)",
             boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}>

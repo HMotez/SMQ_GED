@@ -20,7 +20,7 @@ import {
   LuShieldCheck, LuList, LuSearch, LuUsers,
   LuClipboardCheck, LuClock, LuCircleAlert, LuCircleCheck,
   LuTriangleAlert, LuRefreshCw, LuArrowRight,
-  LuLogOut, LuPlus, LuUser,
+  LuLogOut, LuPlus, LuUser, LuWrench, LuCrown, LuChevronDown, LuShield,
   LuHouse, LuLayoutDashboard, LuFileText, LuArchive, LuCpu, LuGitBranch,
 } from "react-icons/lu";
 
@@ -88,6 +88,16 @@ const ROLE_COLOR = {
   "Ing. Qualité": "#2dd4bf",
   "Reviewer":     "#4ade80",
 };
+const ROLE_STYLE_NAV = {
+  "Admin":        { color:"#f87171", bg:"rgba(248,113,113,0.12)", border:"rgba(248,113,113,0.25)", Icon: LuCrown         },
+  "Ing. Qualité": { color:"#2dd4bf", bg:"rgba(45,212,191,0.1)",   border:"rgba(45,212,191,0.22)",  Icon: LuWrench        },
+  "Reviewer":     { color:"#4ade80", bg:"rgba(74,222,128,0.12)",  border:"rgba(74,222,128,0.25)",  Icon: LuClipboardCheck },
+};
+const QUICK_ROLES = [
+  { name:"Admin",        email:"admin@test.com",    password:"Admin123!", color:"#f87171", Icon: LuCrown         },
+  { name:"Ing. Qualité", email:"ing@test.com",      password:"Ing123!",   color:"#2dd4bf", Icon: LuWrench        },
+  { name:"Reviewer",     email:"reviewer@test.com", password:"Rev123!",   color:"#4ade80", Icon: LuClipboardCheck },
+];
 
 const NAV_ITEMS_BY_ROLE = {
   "Admin": [
@@ -176,6 +186,120 @@ function AdminNavItem({ to, label, icon }) {
         )}
       </div>
     </NavLink>
+  );
+}
+
+/* ── NavRoleSwitcher ──────────────────────────────────────── */
+function NavRoleSwitcher() {
+  const { currentUser, userRole, logout, autoLogin } = useUser();
+  const navigate   = useNavigate();
+  const [open,      setOpen]      = useState(false);
+  const [switching, setSwitching] = useState(null);
+
+  const roleColor = ROLE_COLOR[userRole] || "#94a3b8";
+  const RoleIcon  = QUICK_ROLES.find(r => r.name === userRole)?.Icon || LuUser;
+
+  const handleSwitch = async (role) => {
+    if (switching || role.name === userRole) { setOpen(false); return; }
+    setSwitching(role.name);
+    try {
+      await autoLogin(role.email, role.password);
+      setOpen(false);
+      navigate("/dashboard", { replace: true });
+    } catch { /* ignore */ }
+    finally { setSwitching(null); }
+  };
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await logout();
+    navigate("/", { replace: true });
+  };
+
+  if (!currentUser) return null;
+
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200"
+        style={{
+          background:  open ? `${roleColor}12` : "rgba(255,255,255,0.05)",
+          borderColor: open ? `${roleColor}40` : "rgba(255,255,255,0.1)",
+          cursor: "pointer",
+        }}
+        onMouseEnter={e => { if(!open){ e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.18)"; }}}
+        onMouseLeave={e => { if(!open){ e.currentTarget.style.background="rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.1)"; }}}
+      >
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background:`${roleColor}18`, border:`1.5px solid ${roleColor}35`, color:roleColor }}>
+          <RoleIcon size={14} />
+        </div>
+        <div className="leading-none text-left">
+          <p className="text-[12.5px] font-semibold text-white m-0 leading-tight truncate max-w-[100px]">{currentUser.name}</p>
+          <p className="text-[10.5px] font-bold m-0 mt-0.5 leading-tight" style={{ color:roleColor }}>{userRole}</p>
+        </div>
+        <LuChevronDown size={12} style={{ color:"rgba(168,191,212,0.45)", transform:open?"rotate(180deg)":"rotate(0)", transition:"transform 0.2s", flexShrink:0 }} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-60 rounded-2xl border overflow-hidden"
+          style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 24px 60px rgba(0,0,0,0.6)", zIndex:200 }}>
+
+          {/* User header */}
+          <div className="px-4 pt-3.5 pb-3 border-b" style={{ borderColor:"rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background:`${roleColor}18`, border:`1.5px solid ${roleColor}35` }}>
+                <RoleIcon size={17} style={{ color:roleColor }} />
+              </div>
+              <div className="overflow-hidden">
+                <p className="m-0 text-[13px] font-semibold text-white truncate">{currentUser.name}</p>
+                <p className="m-0 text-[10.5px] truncate" style={{ color:"rgba(168,191,212,0.45)", fontFamily:"monospace" }}>{currentUser.email}</p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1.5 mt-2.5 rounded-lg px-2 py-[4px] text-[11px] font-bold border"
+              style={{ background:`${roleColor}15`, color:roleColor, borderColor:`${roleColor}35` }}>
+              <LuShield size={10} /> {userRole}
+            </span>
+          </div>
+
+          {/* Role list */}
+          <p className="text-[10px] uppercase tracking-[1.5px] font-bold px-4 pt-3 pb-1.5 m-0" style={{ color:"rgba(168,191,212,0.4)" }}>Rôles disponibles</p>
+          {QUICK_ROLES.map(role => {
+            const RI       = role.Icon;
+            const isActive = role.name === userRole;
+            return (
+              <button key={role.name}
+                onClick={() => handleSwitch(role)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 border-none transition-all"
+                style={{ background: isActive ? `${role.color}10` : "transparent", cursor: switching ? "wait" : "pointer" }}>
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background:`${role.color}18`, border:`1px solid ${role.color}35` }}>
+                  {switching === role.name
+                    ? <span style={{ width:10, height:10, border:"1.5px solid transparent", borderTopColor:role.color, borderRadius:"50%", animation:"spin 0.7s linear infinite", display:"inline-block" }} />
+                    : <RI size={12} style={{ color:role.color }} />}
+                </div>
+                <p className="m-0 flex-1 text-[12.5px] font-semibold text-left" style={{ color:isActive?role.color:"rgba(220,235,248,0.8)" }}>{role.name}</p>
+                {isActive && <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background:`${role.color}18`, color:role.color, border:`1px solid ${role.color}30` }}>Actif</span>}
+              </button>
+            );
+          })}
+
+          {/* Logout */}
+          <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", margin:"4px 0 0" }}>
+            <button onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-3 text-[12.5px] font-semibold border-none transition-all"
+              style={{ background:"transparent", color:"rgba(168,191,212,0.5)", cursor:"pointer" }}
+              onMouseEnter={e => { e.currentTarget.style.background="rgba(248,113,113,0.08)"; e.currentTarget.style.color="#f87171"; }}
+              onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(168,191,212,0.5)"; }}>
+              <LuLogOut size={13} /> Déconnexion
+            </button>
+          </div>
+        </div>
+      )}
+
+      {open && <div className="fixed inset-0 z-[199]" onClick={() => setOpen(false)} />}
+    </div>
   );
 }
 
@@ -269,52 +393,7 @@ function Navbar() {
             <NotificationBell />
 
             {/* User profile */}
-            {currentUser && (
-              <div className="flex items-center gap-2.5 pl-1">
-                {/* Initials avatar */}
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: "rgba(74,184,63,0.15)",
-                    border: "1.5px solid rgba(74,184,63,0.35)",
-                    color: "#4ab83f",
-                  }}>
-                  <LuUser size={17} />
-                </div>
-
-                {/* Name + Role */}
-                <div className="leading-none">
-                  <p className="text-[13px] font-semibold text-white m-0 leading-tight">{currentUser.name}</p>
-                  <p className="text-[11px] font-semibold m-0 mt-0.5 leading-tight"
-                    style={{ color: ROLE_COLOR[userRole] || "#94a3b8" }}>
-                    {userRole}
-                  </p>
-                </div>
-
-                {/* Logout */}
-                <button
-                  onClick={handleLogout}
-                  title="Déconnexion"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg border transition-all duration-200 cursor-pointer ml-0.5"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    borderColor: "rgba(255,255,255,0.1)",
-                    color: "var(--ged-tx2)",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = "rgba(239,68,68,0.12)";
-                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
-                    e.currentTarget.style.color = "#f87171";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                    e.currentTarget.style.color = "var(--ged-tx2)";
-                  }}
-                >
-                  <LuLogOut size={14} />
-                </button>
-              </div>
-            )}
+            <NavRoleSwitcher />
           </div>
         </div>
       </div>
@@ -946,7 +1025,7 @@ export default function Dashboard() {
   const formatTime   = (d) => d.toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
 
   return (
-    <div className="min-h-screen text-white" style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+    <div className="min-h-screen text-white" style={{ background: "transparent" }}>
       {/* BG orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex:0 }}>
         <div className="absolute rounded-full" style={{ width:600,height:600,top:-200,right:-150,background:"radial-gradient(circle,rgba(74,184,63,0.06) 0%,transparent 70%)",filter:"blur(40px)" }} />

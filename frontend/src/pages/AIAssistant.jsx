@@ -1659,7 +1659,7 @@ export default function AIAssistant() {
   const [activeTab, setActiveTab] = useState("chatbot");
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(145deg,#0a1420 0%,#0d1f2d 50%,#0b1929 100%)" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "transparent" }}>
       <AppSidebar user={currentUser} />
 
       <main style={{ flex: 1, overflowY: "auto", padding: "28px 32px", maxWidth: 1100 }}>

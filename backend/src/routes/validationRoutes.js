@@ -12,7 +12,7 @@ const { loadUser, requireRole } = require("../middleware/roleMiddleware");
 
 // ── Routes de lecture — accès libre ──────────────────────────
 router.get(  "/stats",                  ctrl.getValidationStats);
-router.get(  "/pending-docs",           ctrl.getPendingDocuments);
+router.get(  "/pending-docs",           loadUser, ctrl.getPendingDocuments);
 router.get(  "/document/:docId/summary", ctrl.getValidationSummary);  // EF05 + EF14
 router.get(  "/document/:docId",        ctrl.getDocumentValidations);
 router.get(  "/",                       ctrl.getAllValidations);

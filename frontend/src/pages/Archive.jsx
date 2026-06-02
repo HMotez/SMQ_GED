@@ -24,9 +24,9 @@ import { API, BACKEND } from "../config";
 import HistoryDetailPanel from "../components/HistoryDetailPanel";
 
 const STATUS_CFG = {
-  "Diffusé":         { bg:"rgba(240,253,250,0.08)", text:"#2dd4bf", border:"rgba(153,246,228,0.15)", Icon:LuShare2        },
-  "Obsolète":        { bg:"rgba(255,247,237,0.08)", text:"#fb923c", border:"rgba(254,215,170,0.15)", Icon:LuTriangleAlert },
-  "Archivé":         { bg:"rgba(248,250,252,0.06)", text:"#94a3b8", border:"rgba(203,213,225,0.12)", Icon:LuArchive       },
+  "Diffusé":         { bg:"rgba(45,212,191,0.12)",  text:"#2dd4bf", border:"rgba(45,212,191,0.30)",  Icon:LuShare2        },
+  "Obsolète":        { bg:"rgba(251,146,60,0.12)",  text:"#fb923c", border:"rgba(251,146,60,0.30)",  Icon:LuTriangleAlert },
+  "Archivé":         { bg:"rgba(96,165,250,0.12)",  text:"#60a5fa", border:"rgba(96,165,250,0.30)",  Icon:LuArchive       },
 };
 const statusCfg = (name) => STATUS_CFG[name] || { bg:"rgba(240,243,246,0.06)", text:"var(--ged-tx2)", border:"rgba(255,255,255,0.1)", Icon:LuFileText };
 
@@ -34,7 +34,7 @@ function StatusBadge({ name }) {
   const s = statusCfg(name);
   const SI = s.Icon;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-full border whitespace-nowrap"
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-semibold rounded-md border whitespace-nowrap w-fit"
       style={{ background:s.bg, color:s.text, borderColor:s.border }}>
       <SI size={11} /> {name}
     </span>
@@ -385,7 +385,7 @@ function DocDetailModal({ docId, onClose, onArchive, canArchive }) {
                         } else {
                           cfg = ({
                             STATUS_CHANGE:      { text:"#a5b4fc", Icon:LuArrowLeftRight, label:"Changement de statut" },
-                            AUTO_ARCHIVE:       { text:"#94a3b8", Icon:LuArchive,         label:"Archivage automatique" },
+                            AUTO_ARCHIVE:       { text:"#60a5fa", Icon:LuArchive,         label:"Archivage automatique" },
                             VERSION_SUPERSEDED: { text:"#fb923c", Icon:LuHistory,         label:"Version remplacée" },
                             DOCUMENT_CREATED:   { text:"#4ab83f", Icon:LuZap,             label:"Création" },
                           })[event.action] || { text:"#94a3b8", Icon:LuFileText, label: event.action || "Activité" };
@@ -537,7 +537,7 @@ export default function Archive() {
           { label:"À archiver", value:expiredDiffuse.length, accent:"#f87171" },
           { label:"Obsolètes",  value:obsoletes.length,      accent:"#fb923c" },
         ] : []),
-        { label:"Archivés",   value:archived.length,       accent:"#94a3b8" },
+        { label:"Archivés",   value:archived.length,       accent:"#60a5fa" },
       ].map(({ label, value, accent }) => (
         <div key={label} className="flex justify-between items-center px-3 py-2 rounded-lg border"
           style={{ background:`${accent}10`, borderColor:`${accent}25` }}>
@@ -615,7 +615,7 @@ export default function Archive() {
 
   return (
     <div className="min-h-screen flex"
-      style={{ background: "linear-gradient(145deg,#0a1420 0%,#0f1e30 35%,#1a2f4a 70%,#1e3a55 100%)" }}>
+      style={{ background: "transparent" }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
         @keyframes rowSlideIn { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:translateX(0); } }
@@ -631,14 +631,14 @@ export default function Archive() {
           style={{ background:"var(--ged-header)", backdropFilter:"blur(20px)", borderColor:"var(--ged-border)", boxShadow:"0 1px 0 rgba(255,255,255,0.04)" }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background:"linear-gradient(135deg,rgba(148,163,184,0.18),rgba(148,163,184,0.08))", border:"1.5px solid rgba(148,163,184,0.3)", boxShadow:"0 4px 14px rgba(0,0,0,0.2)" }}>
-              <LuArchive size={19} style={{ color:"#94a3b8" }} />
+              style={{ background:"linear-gradient(135deg,rgba(96,165,250,0.18),rgba(96,165,250,0.08))", border:"1.5px solid rgba(96,165,250,0.3)", boxShadow:"0 4px 14px rgba(96,165,250,0.15)" }}>
+              <LuArchive size={19} style={{ color:"#60a5fa" }} />
             </div>
             <div>
               <h1 className="m-0 font-extrabold" style={{ fontSize:21, letterSpacing:"-0.022em", lineHeight:1.2, color:"var(--ged-tx1)" }}>Archivage</h1>
               <p className="m-0 text-xs mt-0.5" style={{ color:"var(--ged-tx4)" }}>
                 Documents obsolètes · Aucune suppression définitive
-                {activeTab === "archived"   && <span style={{ color:"#94a3b8" }}> · {archived.length} archivés</span>}
+                {activeTab === "archived"   && <span style={{ color:"#60a5fa" }}> · {archived.length} archivés</span>}
 
                 {activeTab === "history"    && <span style={{ color:"#4ab83f" }}> · {history.length} opérations</span>}
               </p>
@@ -705,8 +705,8 @@ export default function Archive() {
                   <div className="rounded-2xl overflow-hidden border"
                     style={{ background:"var(--ged-header)", borderColor:"var(--ged-border)", boxShadow:"0 20px 60px rgba(0,0,0,0.3)" }}>
                     <div className="px-5 py-2.5 border-b"
-                      style={{ background:"rgba(148,163,184,0.05)", borderColor:"rgba(148,163,184,0.12)" }}>
-                      <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#94a3b8" }}>
+                      style={{ background:"rgba(96,165,250,0.06)", borderColor:"rgba(96,165,250,0.18)" }}>
+                      <p className="m-0 text-xs font-bold uppercase tracking-wider" style={{ color:"#60a5fa" }}>
                         Documents archivés — historique conservé · Cliquer pour voir les détails
                       </p>
                     </div>

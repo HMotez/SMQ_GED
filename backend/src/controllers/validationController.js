@@ -492,7 +492,14 @@ const getPendingDocuments = async (req, res) => {
        ) last_ver ON TRUE
 
        WHERE s.name = 'En validation'
+         AND NOT EXISTS (
+           SELECT 1 FROM validations v
+           WHERE v.document_id = d.id
+             AND v.validator_id = $1
+             AND v.decision IN ('APPROUVÉ', 'REJETÉ')
+         )
        ORDER BY d.doc_code`,
+      [req.currentUser?.id || 0]
     );
     return res.json(result.rows);
   } catch (err) {
