@@ -90,9 +90,7 @@ export default function LoginModal({ onClose, message = "Connectez-vous pour acc
     <div
       className="modal-overlay fixed inset-0 z-[300] flex items-center justify-center p-4"
       style={{
-        background: "rgba(0,0,0,0.78)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: "rgba(0,0,0,0.3)",
       }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >

@@ -116,6 +116,13 @@ const INTENT_PATTERNS = [
     label: "Procédure de validation",
     roles: ["*"],
   },
+  // Documents archivés par dossier (BEFORE by_folder — more specific)
+  {
+    regex: /archiv[eé]s?\s+(par|dans|par\s+)dossier|dossier.*archiv|combien.*archiv.*dossier|r[eé]partition.*archiv/i,
+    intent: "archived_by_folder",
+    label: "Documents archivés par dossier",
+    roles: ["*"],
+  },
   // Documents par dossier (MOVED before statistics)
   {
     regex: /\bdossier|\br[eé]pertoire|\bclasseur/i,
@@ -662,13 +669,19 @@ async function buildSQLForIntent(intent, entities, role) {
       return {
         sql: BASE_SELECT + `
           WHERE d.id NOT IN (
-            SELECT DISTINCT document_id FROM logs WHERE document_id IS NOT NULL
+            SELECT DISTINCT document_id FROM logs
+            WHERE document_id IS NOT NULL
+            AND action NOT IN (
+              'DOCUMENT_CREATED','STATUS_CHANGE','AUTO_ARCHIVE',
+              'VERSION_SUPERSEDED','NEW_VERSION','APPROBATION','REJET'
+            )
           )
-          ORDER BY d.created_at DESC
+          AND d.status_name NOT IN ('Archivé','Obsolète')
+          ORDER BY d.created_at ASC
           LIMIT 20
         `,
         params: [],
-        message: "Voici les documents qui n'ont jamais été consultés.",
+        message: "Voici les documents qui n'ont jamais eu d'activité utilisateur depuis leur création.",
       };
 
     case "my_docs": {
@@ -688,6 +701,27 @@ async function buildSQLForIntent(intent, entities, role) {
         `,
         params: [uid],
         message: "Voici vos documents créés dans le système.",
+      };
+    }
+
+    case "archived_by_folder": {
+      const archivedFolderResult = await pool.query(`
+        SELECT f.name AS name, COUNT(*) AS count
+        FROM documents d
+        JOIN folders f ON f.id = d.folder_id
+        JOIN status  s ON s.id  = d.status_id
+        WHERE s.name IN ('Archivé','Obsolète')
+        GROUP BY f.name
+        ORDER BY count DESC
+        LIMIT 15
+      `);
+      return {
+        statistics: archivedFolderResult.rows,
+        message: archivedFolderResult.rows.length === 0
+          ? "Aucun document archivé trouvé dans les dossiers."
+          : "Voici le nombre de documents archivés par dossier.",
+        is_stats: true,
+        stats_label: "Dossier",
       };
     }
 
@@ -1193,7 +1227,8 @@ async function handleChatQuery(req, res) {
     if (intentPattern.intent === "text_search" && entities.type_code) {
       intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
     }
-    if (role === "Visiteur" && intentPattern.intent !== "archived_docs") {
+    const VISITOR_ALLOWED_INTENTS = ["archived_docs","archived_by_folder","statistics","greeting"];
+    if (role === "Visiteur" && !VISITOR_ALLOWED_INTENTS.includes(intentPattern.intent)) {
       intentPattern = { intent: "archived_docs", label: "Documents archivés", roles: ["*"] };
     }
 
@@ -1311,7 +1346,8 @@ async function handleStreamQuery(req, res) {
     if (intentPattern.intent === "text_search" && entities.type_code) {
       intentPattern = { intent: "by_type", label: "Documents par type", roles: ["*"] };
     }
-    if (isVisitorMode && intentPattern.intent !== "archived_docs") {
+    const VISITOR_ALLOWED_STREAM = ["archived_docs","archived_by_folder","statistics","greeting"];
+    if (isVisitorMode && !VISITOR_ALLOWED_STREAM.includes(intentPattern.intent)) {
       intentPattern = { intent: "archived_docs", label: "Documents archivés", roles: ["*"] };
     }
 

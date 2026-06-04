@@ -61,7 +61,7 @@ function InfoRow({ Icon, label, value, valueStyle }) {
 }
 
 /* ── Document Detail Modal ───────────────────────────────── */
-function DocumentModal({ doc, loading, onClose }) {
+function DocumentModal({ doc, loading, onClose, onValidate }) {
   useEffect(() => {
     const h = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", h);
@@ -77,7 +77,7 @@ function DocumentModal({ doc, loading, onClose }) {
     <div
       style={{ position:"fixed", top:0, right:0, bottom:0, left:0, zIndex:99999,
         display:"flex", alignItems:"center", justifyContent:"center", padding:16,
-        background:"rgba(0,0,0,0.75)", backdropFilter:"blur(10px)",
+        background:"rgba(0,0,0,0.3)",
         fontFamily:"'Inter',-apple-system,sans-serif" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -191,7 +191,17 @@ function DocumentModal({ doc, loading, onClose }) {
             </div>
 
             {/* Footer */}
-            <div style={{ padding:"14px 24px", borderTop:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
+            <div style={{ padding:"14px 24px", borderTop:"1px solid rgba(255,255,255,0.07)", flexShrink:0, display:"flex", flexDirection:"column", gap:8 }}>
+              {doc.status_name === "En validation" && onValidate && (
+                <button onClick={() => { onClose(); onValidate(doc.id); }}
+                  style={{ width:"100%", padding:"10px", borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer",
+                    background:"rgba(255,255,255,0.04)", color:"rgba(168,191,212,0.8)", border:"1px solid rgba(255,255,255,0.12)",
+                    fontFamily:"inherit", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}
+                  onMouseEnter={e => { e.currentTarget.style.background="rgba(165,180,252,0.1)"; e.currentTarget.style.borderColor="rgba(165,180,252,0.35)"; e.currentTarget.style.color="#a5b4fc"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.12)"; e.currentTarget.style.color="rgba(168,191,212,0.8)"; }}>
+                  <LuClipboardCheck size={13} /> Aller aux validations <LuArrowRight size={13} />
+                </button>
+              )}
               <button onClick={onClose}
                 style={{ width:"100%", padding:"10px", borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer",
                   background:"rgba(255,255,255,0.05)", color:"rgba(168,191,212,0.7)", border:"1px solid rgba(255,255,255,0.09)",
@@ -673,6 +683,7 @@ export default function NotificationBell() {
         doc={selectedDoc}
         loading={loadingDoc}
         onClose={() => { setSelectedDoc(null); setLoadingDoc(false); }}
+        onValidate={() => navigate("/validations")}
       />
     )}
     </>

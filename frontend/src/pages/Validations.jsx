@@ -888,10 +888,10 @@ export default function Validations() {
       {decisionModal && (
         <div onClick={() => setDecisionModal(null)}
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background:"rgba(5,12,20,0.88)", backdropFilter:"blur(12px)" }}>
+          style={{ background:"rgba(0,0,0,0.3)" }}>
           <div onClick={e => e.stopPropagation()}
-            className="rounded-2xl border w-[min(480px,95vw)] p-6 flex flex-col gap-4"
-            style={{ background:"linear-gradient(160deg,#0d1f30 0%,#0a1622 100%)", borderColor: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.3)" : "rgba(248,113,113,0.3)", boxShadow:"0 40px 80px rgba(0,0,0,0.6)" }}>
+            className="rounded-2xl border w-[min(860px,95vw)] p-8 flex flex-col gap-5"
+            style={{ background:"linear-gradient(160deg,rgba(18,32,58,0.96) 0%,rgba(12,22,40,0.96) 100%)", borderColor: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.3)" : "rgba(248,113,113,0.3)", boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.12)" : "rgba(248,113,113,0.12)", border:`1.5px solid ${decisionModal.action === "APPROUVÉ" ? "rgba(74,184,63,0.3)" : "rgba(248,113,113,0.3)"}` }}>
@@ -909,7 +909,7 @@ export default function Validations() {
               <textarea
                 value={decisionComment}
                 onChange={e => setDecisionComment(e.target.value)}
-                rows={7}
+                rows={10}
                 placeholder={decisionModal.action === "APPROUVÉ" ? "Document conforme aux exigences…" : "Motif du rejet…"}
                 className="w-full rounded-xl border px-3 py-2.5 text-sm resize-y outline-none"
                 style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"white", fontFamily:"inherit" }}

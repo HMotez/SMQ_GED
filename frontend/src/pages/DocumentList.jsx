@@ -26,7 +26,7 @@ import {
   LuTriangleAlert, LuCircleHelp, LuCheck, LuClock, LuRefreshCw,
   LuInbox, LuX, LuLock, LuPlus, LuFile, LuDownload,
   LuFolder, LuArrowRight, LuArchive, LuFileText, LuClipboardCheck, LuChevronDown,
-  LuShieldCheck,
+  LuShieldCheck, LuHistory, LuUpload, LuLink,
 } from "react-icons/lu";
 import { toast } from "sonner";
 
@@ -658,9 +658,9 @@ export default function DocumentList() {
       {/* ══ Document detail modal ════════════════════════════ */}
       {selected && (
         <div onClick={closeDoc} className="fixed inset-0 flex items-center justify-center z-[1000] p-6 animate-fade-in"
-          style={{ background:"rgba(5,12,20,0.85)", backdropFilter:"blur(8px)" }}>
-          <div onClick={e => e.stopPropagation()} className="rounded-2xl w-full max-w-[700px] max-h-[90vh] overflow-auto border"
-            style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+          style={{ background:"rgba(5,12,20,0.4)", backdropFilter:"blur(8px)" }}>
+          <div onClick={e => e.stopPropagation()} className="rounded-2xl w-full max-w-[800px] max-h-[90vh] overflow-auto border"
+            style={{ background:"linear-gradient(160deg,rgba(18,32,58,0.96) 0%,rgba(12,22,40,0.96) 100%)", borderColor:"rgba(255,255,255,0.14)", boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
             <div className="p-7">
               {/* Modal header */}
               <div className="flex justify-between items-start mb-5">
@@ -1008,60 +1008,139 @@ export default function DocumentList() {
       )}
 
       {/* ══ New version modal ════════════════════════════════ */}
-      {newVerOpen && selected && (
-        <div onClick={() => setNewVerOpen(false)} className="fixed inset-0 z-[1200] flex items-center justify-center" style={{ background:"rgba(5,12,20,0.85)", backdropFilter:"blur(8px)" }}>
-          <form onClick={e => e.stopPropagation()} onSubmit={handleNewVersion}
-            className="rounded-2xl p-6 w-[420px] flex flex-col gap-3.5 border animate-fade-in"
-            style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6)" }}>
-            <h3 className="m-0 text-white text-base font-bold flex items-center gap-1.5"><LuPlus size={15} /> Nouvelle version — {selected.doc_code}</h3>
-            <p className="m-0 text-sm" style={{ color:"var(--ged-tx2)" }}>
-              Version actuelle : <strong className="text-white">{selected.current_version}</strong> → Nouvelle : <strong style={{ color:"#4ab83f" }}>{(() => {
-                const raw = selected.current_version || "-";
-                const c = raw.replace(/^v/, "");
-                const vv = (selected.validated_version || "").replace(/^v/, "");
-                if (c === "-") return "A";
-                if (/^[A-Z]$/i.test(c)) return `${c.toUpperCase()}1`;
-                const m = c.match(/^([A-Z])(\d+)$/i);
-                if (!m) return "A";
-                const [, letter, num] = m;
-                if (vv && c === vv) return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
-                const n = parseInt(num);
-                if (n < 9) return `${letter.toUpperCase()}${n + 1}`;
-                return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
-              })()}</strong>
-            </p>
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"var(--ged-tx2)" }}>Nouveau fichier *</label>
-              <input type="file" required onChange={e => setNewFile(e.target.files[0])}
-                className="w-full px-3 py-1.5 rounded-lg border text-sm" style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
-            </div>
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"var(--ged-tx2)" }}>Résumé des changements *</label>
-              <textarea required rows={3} value={summary} onChange={e => setSummary(e.target.value)} placeholder="Décrivez les modifications…"
-                className="w-full px-3 py-1.5 rounded-lg border text-sm resize-y outline-none"
-                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
-            </div>
-            <div>
-              <label className="text-xs font-bold uppercase tracking-wider block mb-1.5" style={{ color:"var(--ged-tx2)" }}>Lien SharePoint <span style={{ color:"var(--ged-tx3)", fontWeight:400, textTransform:"none" }}>(optionnel)</span></label>
-              <input type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
-                className="w-full px-3 py-1.5 rounded-lg border text-sm outline-none"
-                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.8)" }} />
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" disabled={submitting}
-                className="flex-1 py-2.5 rounded-xl border-none text-white text-sm font-bold flex items-center justify-center gap-1.5"
-                style={{ background:submitting?"rgba(255,255,255,0.08)":"linear-gradient(135deg,#4ab83f,#3da333)", boxShadow:submitting?"none":"0 4px 16px rgba(74,184,63,0.35)", cursor:submitting?"not-allowed":"pointer", color:submitting?"var(--ged-tx3)":"white" }}>
-                {submitting?"Enregistrement…":<><LuCircleCheckBig size={14} /> Créer la version</>}
-              </button>
-              <button type="button" onClick={() => setNewVerOpen(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm border transition-all cursor-pointer"
-                style={{ background:"var(--ged-card)", borderColor:"rgba(255,255,255,0.1)", color:"var(--ged-tx2)" }}>
-                Annuler
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {newVerOpen && selected && (() => {
+        const nextVer = (() => {
+          const raw = selected.current_version || "-";
+          const c = raw.replace(/^v/, "");
+          const vv = (selected.validated_version || "").replace(/^v/, "");
+          if (c === "-") return "A";
+          if (/^[A-Z]$/i.test(c)) return `${c.toUpperCase()}1`;
+          const m = c.match(/^([A-Z])(\d+)$/i);
+          if (!m) return "A";
+          const [, letter, num] = m;
+          if (vv && c === vv) return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
+          const n = parseInt(num);
+          if (n < 9) return `${letter.toUpperCase()}${n + 1}`;
+          return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
+        })();
+        return (
+          <div onClick={() => setNewVerOpen(false)} className="fixed inset-0 z-[1200] flex items-center justify-center" style={{ background:"rgba(5,12,20,0.4)", backdropFilter:"blur(8px)" }}>
+            <form onClick={e => e.stopPropagation()} onSubmit={handleNewVersion}
+              className="rounded-2xl w-[680px] flex flex-col border animate-fade-in overflow-hidden"
+              style={{ background:"linear-gradient(160deg,#0f2140 0%,#0a1830 100%)", borderColor:"rgba(255,255,255,0.14)", boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+
+              {/* ── Header ── */}
+              <div className="relative px-6 pt-5 pb-4" style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.08),rgba(15,33,64,0))", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+                <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background:"linear-gradient(90deg,#4ab83f,#3da333,rgba(74,184,63,0))" }} />
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <LuHistory size={15} style={{ color:"#4ab83f" }} />
+                      <span className="text-white font-bold text-base">Nouvelle version</span>
+                    </div>
+                    <p className="m-0 text-xs font-mono" style={{ color:"rgba(168,191,212,0.55)" }}>{selected.doc_code}</p>
+                  </div>
+                  <button type="button" onClick={() => setNewVerOpen(false)}
+                    className="rounded-lg p-1.5 border transition-colors cursor-pointer flex-shrink-0 mt-0.5"
+                    style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.08)", color:"rgba(168,191,212,0.5)" }}>
+                    <LuX size={13} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold font-mono" style={{ background:"rgba(255,255,255,0.07)", color:"rgba(255,255,255,0.55)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                    {selected.current_version || "—"}
+                  </span>
+                  <LuArrowRight size={11} style={{ color:"rgba(168,191,212,0.4)" }} />
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold font-mono" style={{ background:"rgba(74,184,63,0.15)", color:"#4ab83f", border:"1px solid rgba(74,184,63,0.28)" }}>
+                    {nextVer}
+                  </span>
+                  <span className="text-xs" style={{ color:"rgba(168,191,212,0.4)" }}>· version suivante</span>
+                </div>
+              </div>
+
+              {/* ── Body ── */}
+              <div className="flex flex-col gap-4 px-6 py-5">
+
+                {/* File drop zone */}
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider block mb-2" style={{ color:"rgba(168,191,212,0.65)" }}>
+                    Nouveau fichier <span style={{ color:"#4ab83f" }}>*</span>
+                  </label>
+                  <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed cursor-pointer transition-all py-5"
+                    style={{ borderColor: newFile ? "rgba(74,184,63,0.45)" : "rgba(255,255,255,0.1)", background: newFile ? "rgba(74,184,63,0.05)" : "rgba(255,255,255,0.015)" }}>
+                    <input type="file" required className="hidden" onChange={e => setNewFile(e.target.files[0])} />
+                    {newFile ? (
+                      <>
+                        <LuFile size={22} style={{ color:"#4ab83f" }} />
+                        <span className="text-sm font-semibold max-w-[560px] truncate px-2 text-center" style={{ color:"#4ab83f" }}>{newFile.name}</span>
+                        <span className="text-xs" style={{ color:"rgba(168,191,212,0.45)" }}>
+                          {(newFile.size / 1024 / 1024).toFixed(2)} Mo · Cliquer pour changer
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <LuUpload size={22} style={{ color:"rgba(168,191,212,0.35)" }} />
+                        <span className="text-sm" style={{ color:"rgba(168,191,212,0.55)" }}>Cliquer pour sélectionner un fichier</span>
+                        <span className="text-xs" style={{ color:"rgba(168,191,212,0.3)" }}>PDF, DOCX, XLSX…</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                {/* Summary */}
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider block mb-2" style={{ color:"rgba(168,191,212,0.65)" }}>
+                    Résumé des changements <span style={{ color:"#4ab83f" }}>*</span>
+                  </label>
+                  <textarea required rows={3} value={summary} onChange={e => setSummary(e.target.value.slice(0, 500))}
+                    placeholder="Décrivez les modifications apportées à cette version…"
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm resize-none outline-none transition-colors"
+                    style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.85)", fontFamily:"inherit" }} />
+                  <p className="m-0 mt-1 text-right text-xs" style={{ color: summary.length > 450 ? "#f87171" : "rgba(168,191,212,0.3)" }}>
+                    {summary.length}/500
+                  </p>
+                </div>
+
+                {/* SharePoint */}
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider block mb-2" style={{ color:"rgba(168,191,212,0.65)" }}>
+                    Lien SharePoint <span className="font-normal normal-case" style={{ color:"rgba(168,191,212,0.35)" }}>(optionnel)</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                      <LuLink size={12} style={{ color:"rgba(168,191,212,0.35)" }} />
+                    </div>
+                    <input type="url" value={spLink} onChange={e => setSpLink(e.target.value)} placeholder="https://..."
+                      className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border text-sm outline-none transition-colors"
+                      style={{ background:"rgba(255,255,255,0.05)", borderColor:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.85)" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Footer ── */}
+              <div className="flex gap-2.5 px-6 pb-5">
+                <button type="submit" disabled={submitting}
+                  className="flex-1 py-3 rounded-xl border-none text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                  style={{
+                    background: submitting ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg,#4ab83f,#3da333)",
+                    boxShadow: submitting ? "none" : "0 4px 20px rgba(74,184,63,0.38)",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    color: submitting ? "rgba(168,191,212,0.45)" : "white",
+                  }}>
+                  {submitting
+                    ? <><LuRefreshCw size={14} className="animate-spin" /> Enregistrement…</>
+                    : <><LuCircleCheckBig size={15} /> Créer la version</>}
+                </button>
+                <button type="button" onClick={() => setNewVerOpen(false)}
+                  className="px-5 py-3 rounded-xl text-sm border transition-all cursor-pointer"
+                  style={{ background:"rgba(255,255,255,0.04)", borderColor:"rgba(255,255,255,0.08)", color:"rgba(168,191,212,0.65)" }}>
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+        );
+      })()}
 
       {/* ── Confirmation modal for status transition ──────── */}
       {confirmTransition && selected && (() => {
