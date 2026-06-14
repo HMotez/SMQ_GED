@@ -2,11 +2,11 @@
 
 <img src="frontend/src/assets/Logo.png" alt="ACTIA Logo" width="160"/>
 
-# SMQ\_GED — Système de Management de la Qualité & Gestion Électronique des Documents
+# SMQ\_GED — Quality Management System & Electronic Document Management
 
-**Projet de Fin d'Études — ACTIA Engineering Services (AES)**
+**Final Year Project — ACTIA Engineering Services (AES)**
 
-*Licence Appliquée en Génie Logiciel / Systèmes d'Information — FSM Monastir, 2025-2026*
+*Applied Bachelor's Degree in Software Engineering / Information Systems — FSM Monastir, 2025-2026*
 
 ---
 
@@ -14,56 +14,56 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://www.docker.com)
-[![License](https://img.shields.io/badge/Licence-Privée-red)](#)
+[![License](https://img.shields.io/badge/License-Private-red)](#)
 
 </div>
 
 ---
 
-## Table des matières
+## Table of Contents
 
-1. [Présentation du projet](#-présentation-du-projet)
-2. [Architecture technique](#-architecture-technique)
-3. [Fonctionnalités](#-fonctionnalités)
-4. [Captures d'écran](#-captures-décran)
-5. [Rôles & Permissions](#-rôles--permissions)
-6. [Cycle de vie ISO 9001](#-cycle-de-vie-iso-9001)
-7. [Sécurité](#-sécurité)
-8. [Infrastructure Docker](#-infrastructure-docker)
-9. [Auteur](#-auteur)
+1. [Project Overview](#-project-overview)
+2. [Technical Architecture](#-technical-architecture)
+3. [Features](#-features)
+4. [Screenshots](#-screenshots)
+5. [Roles & Permissions](#-roles--permissions)
+6. [ISO 9001 Document Lifecycle](#-iso-9001-document-lifecycle)
+7. [Security](#-security)
+8. [Docker Infrastructure](#-docker-infrastructure)
+9. [Author](#-author)
 
 ---
 
-## Présentation du projet
+## Project Overview
 
-SMQ\_GED est une plateforme web complète de **Gestion Électronique des Documents** alignée sur la norme **ISO 9001:2015**, développée dans le cadre d'un PFE au sein d'**ACTIA Engineering Services**.
+SMQ\_GED is a full-stack web platform for **Electronic Document Management** aligned with the **ISO 9001:2015** standard, developed as a Final Year Project at **ACTIA Engineering Services**.
 
-Elle centralise la création, la révision, la validation et l'archivage des documents qualité de l'entreprise en remplaçant les processus papier par un workflow numérique sécurisé et traçable.
+It centralizes the creation, revision, validation, and archiving of quality documents, replacing paper-based processes with a secure, traceable digital workflow.
 
-### Objectifs
+### Goals
 
-| Objectif | Description |
+| Goal | Description |
 |---|---|
-| **Conformité ISO 9001** | Workflow documentaire complet avec cycle de vie normalisé |
-| **Traçabilité totale** | Journal d'audit de toutes les actions utilisateurs |
-| **Sécurité by design** | 18 suites de tests de sécurité, WAF, antivirus, chiffrement |
-| **Multi-rôles RBAC** | Contrôle d'accès granulaire par rôle |
-| **IA intégrée** | Assistant documentaire basé sur GPT-4o (OpenAI) |
+| **ISO 9001 Compliance** | Complete document workflow with a normalized lifecycle |
+| **Full Traceability** | Audit log of all user actions |
+| **Security by Design** | 18 automated security test suites, WAF, antivirus, encryption |
+| **Role-Based Access** | Granular RBAC access control per role |
+| **Built-in AI** | Document assistant powered by GPT-4o (OpenAI) |
 
 ---
 
-## Architecture technique
+## Technical Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        INTERNET                             │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ HTTPS (443) / HTTP→HTTPS redirect
+                           │ HTTPS (443) / HTTP → HTTPS redirect
                   ┌────────▼────────┐
-                  │  Nginx + WAF    │  Frontend React (SPA)
-                  │  Let's Encrypt  │  Reverse proxy sécurisé
+                  │  Nginx + WAF    │  React SPA (Frontend)
+                  │  Let's Encrypt  │  Secure reverse proxy
                   └────────┬────────┘
-                           │ Réseau interne Docker (smq_network)
+                           │ Internal Docker network (smq_network)
           ┌────────────────┼────────────────┐
           │                │                │
    ┌──────▼──────┐  ┌──────▼──────┐  ┌─────▼──────┐
@@ -74,403 +74,403 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
           │
    ┌──────▼──────┐  ┌─────────────┐  ┌────────────┐
    │   ClamAV   │  │  Prometheus │  │  Grafana   │
-   │  Antivirus  │  │  Métriques  │  │ Dashboards │
+   │  Antivirus  │  │   Metrics   │  │ Dashboards │
    └─────────────┘  └─────────────┘  └────────────┘
 ```
 
-### Stack technologique
+### Tech Stack
 
-| Couche | Technologie | Version |
+| Layer | Technology | Version |
 |---|---|---|
 | **Frontend** | React + Vite + Tailwind CSS | 19 / 8 / 4 |
 | **Routing** | React Router DOM | 7 |
 | **Backend** | Node.js + Express | 20 / 5 |
-| **Base de données** | PostgreSQL | 16 |
-| **Messagerie** | Apache Kafka (KRaft) | 3.7 |
-| **Authentification** | JWT + bcryptjs | — |
+| **Database** | PostgreSQL | 16 |
+| **Messaging** | Apache Kafka (KRaft) | 3.7 |
+| **Authentication** | JWT + bcryptjs | — |
 | **Antivirus** | ClamAV | stable |
-| **IA** | OpenAI GPT-4o | — |
-| **Annuaire** | LDAP (ldapjs) | — |
+| **AI** | OpenAI GPT-4o | — |
+| **Directory** | LDAP (ldapjs) | — |
 | **Emails** | Nodemailer via Kafka | — |
-| **Supervision** | Prometheus + Grafana | latest |
-| **Reverse proxy** | Nginx + WAF | alpine |
-| **Conteneurs** | Docker Compose | — |
+| **Monitoring** | Prometheus + Grafana | latest |
+| **Reverse Proxy** | Nginx + WAF | alpine |
+| **Containers** | Docker Compose | — |
 | **Export** | jsPDF, docx, pptxgenjs, xlsx | — |
 
 ---
 
-## Fonctionnalités
+## Features
 
-### Gestion documentaire
+### Document Management
 
-- **Création de documents** — Formulaire guidé avec classification par type (Procédure, Trame, Instruction, Guide, Manuel), processus, responsable et origine (Interne / QHSE / Client).
-- **Liste des documents** — Vue filtrée par type, statut, processus, responsable et retard. Indicateurs de délai de révision en temps réel.
-- **Versions multiples** — Historique complet des révisions avec accès individuel à chaque version (Consulter, Télécharger, PDF, Word, Excel).
-- **Archivage** — Déplacement des documents obsolètes vers une archive consultable.
-- **Export multi-format** — PDF, Word (.docx), Excel (.xlsx), PowerPoint (.pptx).
+- **Document Creation** — Guided form with classification by type (Procedure, Template, Instruction, Guide, Manual), process, owner and origin (Internal / QHSE / Client).
+- **Document List** — Filtered view by type, status, process, owner and deadline. Real-time revision deadline indicators.
+- **Version History** — Full revision history with individual access to each version (View, Download, PDF, Word, Excel).
+- **Archiving** — Move obsolete documents to a searchable archive.
+- **Multi-format Export** — PDF, Word (.docx), Excel (.xlsx), PowerPoint (.pptx).
 
-### Workflow de validation ISO 9001
+### ISO 9001 Validation Workflow
 
-- **Tableau de validation** — Interface dédiée aux Reviewers pour approuver ou rejeter les documents *En validation*.
-- **Workflow visuel** — Kanban par statut montrant la répartition des documents à chaque étape du cycle de vie.
-- **Transitions de statut** — Progression guidée et contrôlée selon la matrice de permissions par rôle.
+- **Validation Board** — Dedicated interface for Reviewers to approve or reject documents *In Validation*.
+- **Visual Workflow** — Kanban view showing document distribution at each lifecycle stage.
+- **Status Transitions** — Guided, controlled progression based on the role-permission matrix.
 
-### Tableau de bord
+### Dashboard
 
-- Statistiques en temps réel : répartition par statut, par type et par processus.
-- Graphique circulaire (Chart.js) avec légende interactive.
-- Section **Retard de révision** : documents dont la date de révision est dépassée, triés par urgence.
+- Real-time statistics: breakdown by status, document type and process.
+- Donut chart (Chart.js) with interactive legend and trend curves.
+- **Overdue Revisions** section: documents past their revision date, sorted by urgency.
 
-### Notifications intelligentes
+### Smart Notifications
 
-- Alertes automatiques sur les **documents expirés** (révision dépassée).
-- Notifications pour les **appels en relecture**, **nouvelles versions** et **validations en attente**.
-- Badges dynamiques dans la barre de navigation.
-- Marquage individuel ou global comme lu.
+- Automatic alerts for **expired documents** (overdue revision).
+- Notifications for **review requests**, **new versions** and **pending validations**.
+- Dynamic badges in the navigation bar.
+- Mark individual or all notifications as read.
 
-### Assistant IA
+### AI Assistant
 
-- Assistant conversationnel contextuel basé sur **OpenAI GPT-4o**.
-- Modes : Création Qualité, Amélioration Continue, et mode libre.
-- Historique des conversations persistant par session.
-- Suggestions rapides intégrées pour les cas d'usage documentaires courants.
+- Contextual conversational assistant powered by **OpenAI GPT-4o**.
+- Modes: Quality Creation, Continuous Improvement, and free chat.
+- Persistent conversation history per session.
+- Quick suggestions organized by theme: surveillance, documents, statistics, processes.
 
 ### Administration
 
-- **Gestion des utilisateurs** (Admin) — Création, modification de rôle, activation/désactivation des comptes.
-- **Journal d'audit** (Admin + Ing. Qualité) — Consultation de toutes les actions système avec filtres par type d'action, utilisateur et plage de dates. Export PDF.
-- **Matrice de permissions** — Visualisation des droits par rôle directement dans l'interface.
+- **User Management** (Admin) — Create accounts, change roles, activate/deactivate users.
+- **Audit Log** (Admin + Quality Engineer) — View all system actions with filters by action type, user and date range. PDF export.
+- **Permission Matrix** — Visual RBAC grid showing role rights directly in the UI.
 
-### Authentification & Sessions
+### Authentication & Sessions
 
-- Connexion par email/mot de passe avec JWT.
-- Réinitialisation de mot de passe par email (lien sécurisé à usage unique).
-- Détection d'inactivité avec déconnexion automatique (`SessionManager`).
-- Protection brute-force : verrouillage de compte après tentatives échouées.
-
----
-
-## Captures d'écran
-
-### Connexion & Profils d'accès
-
-<img src="frontend/src/assets/Interface1.png" alt="Page de connexion et matrice des rôles" width="100%"/>
-
-*Page de connexion sécurisée avec aperçu de la matrice des profils d'accès par rôle*
+- Email/password login with JWT.
+- Password reset via email (secure one-time link, 1-hour expiry).
+- Inactivity detection with automatic logout (`SessionManager`).
+- Brute-force protection: account lock after failed attempts.
 
 ---
 
-### Inscription & Sélection du rôle
+## Screenshots
 
-<img src="frontend/src/assets/IN35.png" alt="Création de compte" width="100%"/>
+### Login & Access Profiles
 
-*Formulaire d'inscription avec sélection du rôle souhaité et informations sur les droits associés*
+<img src="frontend/src/assets/Interface1.png" alt="Login page and role matrix" width="100%"/>
 
----
-
-### Mot de passe oublié
-
-<img src="frontend/src/assets/IN11.png" alt="Mot de passe oublié" width="100%"/>
-
-*Réinitialisation de mot de passe par email — lien sécurisé à usage unique, expiration 1 heure*
+*Secure login page with access profile matrix overview per role*
 
 ---
 
-### Tableau de bord
+### Sign Up & Role Selection
 
-<img src="frontend/src/assets/Interface14.png" alt="Tableau de bord" width="100%"/>
+<img src="frontend/src/assets/IN35.png" alt="Account creation" width="100%"/>
 
-*Dashboard principal : statistiques par statut, type de document et processus — retards de révision*
-
----
-
-### Supervision documentaire
-
-<img src="frontend/src/assets/IN2.png" alt="Supervision documentaire" width="100%"/>
-
-*Vue supervision : documents expirés, en validation, en retard et total — liste des documents à traiter*
+*Registration form with role selection and associated rights information*
 
 ---
 
-### Statistiques & Répartitions
+### Forgot Password
 
-<img src="frontend/src/assets/IN3.png" alt="Statistiques et répartitions" width="100%"/>
+<img src="frontend/src/assets/IN11.png" alt="Forgot password" width="100%"/>
 
-*Répartition par statut (graphique donut), par type documentaire (courbe) et par processus (barres horizontales)*
-
----
-
-### Liste des documents
-
-<img src="frontend/src/assets/IN23.png" alt="Liste des documents" width="100%"/>
-
-*Vue liste complète avec filtres avancés (type, statut, processus, responsable) et indicateurs de délai*
+*Password reset by email — secure one-time link, expires after 1 hour*
 
 ---
 
-### Archivage
+### Dashboard
 
-<img src="frontend/src/assets/IN4.png" alt="Archivage" width="100%"/>
+<img src="frontend/src/assets/Interface14.png" alt="Dashboard" width="100%"/>
 
-*Page d'archivage : documents archivés consultables avec historique de leurs versions*
-
----
-
-### Création de document — Informations
-
-<img src="frontend/src/assets/IN30.png" alt="Création de document - étape 1" width="100%"/>
-
-*Étape 1/4 : titre, responsable, type documentaire, origine et mots-clés*
+*Main dashboard: statistics by status, document type and process — overdue revision tracking*
 
 ---
 
-### Création de document — Upload & Récapitulatif
+### Document Supervision
 
-<img src="frontend/src/assets/IN33.png" alt="Création de document - étape 4" width="100%"/>
+<img src="frontend/src/assets/IN2.png" alt="Document supervision" width="100%"/>
 
-*Étape 4/4 : upload du fichier (PDF, Word, Excel — max 50 Mo) et récapitulatif avant création*
-
----
-
-### Changement de statut
-
-<img src="frontend/src/assets/IN40.png" alt="Changement de statut" width="100%"/>
-
-*Modal de confirmation de transition de statut (ex. : En relecture → En validation) avec possibilité de retour*
+*Supervision view: expired, in validation, overdue and total documents — actionable list*
 
 ---
 
-### Historique des versions
+### Statistics & Breakdowns
 
-<img src="frontend/src/assets/Interface7.png" alt="Versions d'un document" width="100%"/>
+<img src="frontend/src/assets/IN3.png" alt="Statistics and breakdowns" width="100%"/>
 
-*Détail d'un document : historique complet des révisions avec téléchargement multi-format (PDF, Word, Excel)*
-
----
-
-### Validations ISO
-
-<img src="frontend/src/assets/IN21.png" alt="Validations ISO" width="100%"/>
-
-*Interface de validation (vue Reviewer) : documents en attente avec actions Détails / Rejeter / Approuver*
+*Breakdown by status (donut chart), by document type (curve) and by process (horizontal bars)*
 
 ---
 
-### Matrice des permissions & Cycle de vie ISO 9001
+### Document List
 
-<img src="frontend/src/assets/IN24.png" alt="Matrice de permissions et cycle de vie ISO 9001" width="100%"/>
+<img src="frontend/src/assets/IN23.png" alt="Document list" width="100%"/>
 
-*Matrice RBAC par rôle et visualisation du cycle de vie ISO 9001 à 10 étapes avec transition de statut*
+*Full document list with advanced filters (type, status, process, owner) and deadline indicators*
 
 ---
 
-### Workflow ISO 9001
+### Archiving
 
-<img src="frontend/src/assets/Interface10.png" alt="Workflow ISO 9001" width="100%"/>
+<img src="frontend/src/assets/IN4.png" alt="Archiving" width="100%"/>
 
-*Vue Kanban du workflow : répartition des documents par étape avec légende des rôles responsables*
+*Archive page: archived documents with full version history access*
+
+---
+
+### Create Document — Information
+
+<img src="frontend/src/assets/IN30.png" alt="Create document - step 1" width="100%"/>
+
+*Step 1/4: title, owner, document type, origin and keywords*
+
+---
+
+### Create Document — Upload & Summary
+
+<img src="frontend/src/assets/IN33.png" alt="Create document - step 4" width="100%"/>
+
+*Step 4/4: file upload (PDF, Word, Excel — max 50 MB) and summary before creation*
+
+---
+
+### Status Change
+
+<img src="frontend/src/assets/IN40.png" alt="Status change" width="100%"/>
+
+*Status transition confirmation modal (e.g. In Review → In Validation) with rollback option*
+
+---
+
+### Version History
+
+<img src="frontend/src/assets/Interface7.png" alt="Document versions" width="100%"/>
+
+*Document detail: full revision history with multi-format download (PDF, Word, Excel)*
+
+---
+
+### ISO Validations
+
+<img src="frontend/src/assets/IN21.png" alt="ISO Validations" width="100%"/>
+
+*Validation interface (Reviewer view): pending documents with Details / Reject / Approve actions*
+
+---
+
+### Permission Matrix & ISO 9001 Lifecycle
+
+<img src="frontend/src/assets/IN24.png" alt="Permission matrix and ISO 9001 lifecycle" width="100%"/>
+
+*RBAC permission matrix per role and 10-step ISO 9001 lifecycle visualization with status transition*
+
+---
+
+### ISO 9001 Workflow
+
+<img src="frontend/src/assets/Interface10.png" alt="ISO 9001 Workflow" width="100%"/>
+
+*Kanban workflow view: document distribution per stage with responsible role legend*
 
 ---
 
 ### Notifications
 
-<img src="frontend/src/assets/Interface15.png" alt="Centre de notifications" width="100%"/>
+<img src="frontend/src/assets/Interface15.png" alt="Notification center" width="100%"/>
 
-*Centre de notifications : documents expirés, appels en relecture, nouvelles versions créées*
-
----
-
-### Emails automatiques (Kafka)
-
-<img src="frontend/src/assets/IN41.png" alt="Email automatique - documents en retard" width="100%"/>
-
-*Email automatique envoyé via Kafka/Nodemailer : rapport journalier des documents en retard de révision*
+*Notification center: expired documents, review requests, new versions created*
 
 ---
 
-### Assistant IA — Score Qualité & Amélioration Continue
+### Automated Emails (Kafka)
 
-<img src="frontend/src/assets/IN5.png" alt="Assistant IA - Score Qualité" width="100%"/>
+<img src="frontend/src/assets/IN41.png" alt="Automated email - overdue documents" width="100%"/>
 
-*Mode Amélioration Continue : score qualité global (87/100), compteurs par statut et graphique de distribution*
-
----
-
-### Assistant IA — Chatbot Qualité
-
-<img src="frontend/src/assets/IN22.png" alt="Assistant IA - Chatbot Qualité" width="100%"/>
-
-*Chatbot documentaire (GPT-4o) avec suggestions rapides classées par thème : surveillance, documents, statistiques*
+*Automated email sent via Kafka/Nodemailer: daily report of overdue documents requiring action*
 
 ---
 
-### Assistant IA — Rapport Amélioration Continue
+### AI Assistant — Quality Score & Continuous Improvement
 
-<img src="frontend/src/assets/IN34.png" alt="Assistant IA - Rapport Amélioration Continue" width="100%"/>
+<img src="frontend/src/assets/IN5.png" alt="AI Assistant - Quality Score" width="100%"/>
 
-*Rapport automatique ISO 9001 : score qualité global, axes prioritaires d'amélioration et recommandations IA*
-
----
-
-### Journal d'audit
-
-<img src="frontend/src/assets/IN20.png" alt="Journal d'audit" width="100%"/>
-
-*Journal d'activités : toutes les actions filtrables par type, utilisateur et date — export PDF*
+*Continuous Improvement mode: global quality score (87/100), status counters and distribution chart*
 
 ---
 
-### Gestion des utilisateurs
+### AI Assistant — Quality Chatbot
 
-<img src="frontend/src/assets/IN1.png" alt="Gestion des utilisateurs" width="100%"/>
+<img src="frontend/src/assets/IN22.png" alt="AI Assistant - Quality Chatbot" width="100%"/>
 
-*Administration des comptes : comptes en attente d'activation et comptes actifs avec gestion des rôles*
+*Document chatbot (GPT-4o) with quick suggestions organized by theme: surveillance, documents, statistics*
 
 ---
 
-## Rôles & Permissions
+### AI Assistant — Continuous Improvement Report
 
-| Permission | Admin | Ing. Qualité | Reviewer | Visiteur |
+<img src="frontend/src/assets/IN34.png" alt="AI Assistant - Continuous Improvement Report" width="100%"/>
+
+*Automated ISO 9001 report: global quality score, priority improvement areas and AI recommendations*
+
+---
+
+### Audit Log
+
+<img src="frontend/src/assets/IN20.png" alt="Audit log" width="100%"/>
+
+*Activity log: all actions filterable by type, user and date — PDF export*
+
+---
+
+### User Management
+
+<img src="frontend/src/assets/IN1.png" alt="User management" width="100%"/>
+
+*Account administration: pending activation accounts and active accounts with role management*
+
+---
+
+## Roles & Permissions
+
+| Permission | Admin | Quality Eng. | Reviewer | Visitor |
 |---|:---:|:---:|:---:|:---:|
-| Lire les documents | ✅ | ✅ | ✅ | ✅ |
-| Créer un document | ✅ | ✅ | ❌ | ❌ |
-| Modifier un document | ✅ | ✅ | ❌ | ❌ |
-| Valider un document | ✅ | ❌ | ✅ | ❌ |
-| Changer le statut | ✅ | ✅ | ✅ | ❌ |
-| Commenter | ✅ | ✅ | ✅ | ❌ |
-| Archiver | ✅ | ❌ | ❌ | ❌ |
-| Gérer les utilisateurs | ✅ | ❌ | ❌ | ❌ |
-| Consulter les logs | ✅ | ✅ | ❌ | ❌ |
+| Read documents | ✅ | ✅ | ✅ | ✅ |
+| Create document | ✅ | ✅ | ❌ | ❌ |
+| Edit document | ✅ | ✅ | ❌ | ❌ |
+| Validate document | ✅ | ❌ | ✅ | ❌ |
+| Change status | ✅ | ✅ | ✅ | ❌ |
+| Comment | ✅ | ✅ | ✅ | ❌ |
+| Archive | ✅ | ❌ | ❌ | ❌ |
+| Manage users | ✅ | ❌ | ❌ | ❌ |
+| View audit logs | ✅ | ✅ | ❌ | ❌ |
 
 ---
 
-## Cycle de vie ISO 9001
+## ISO 9001 Document Lifecycle
 
 ```
-Brouillon → En rédaction → Appel en relecture → En relecture
-    → En correction → En validation → Validé → Diffusé
-        → Obsolète → Archivé
+Draft → In Writing → Review Request → In Review
+    → In Correction → In Validation → Validated → Released
+        → Obsolete → Archived
 ```
 
-Chaque transition est :
-- **Contrôlée** par la matrice de permissions (rôle requis)
-- **Tracée** dans le journal d'audit (qui, quand, quoi)
-- **Notifiée** aux parties prenantes concernées
+Each transition is:
+- **Controlled** by the permission matrix (required role)
+- **Traced** in the audit log (who, when, what)
+- **Notified** to the relevant stakeholders
 
 ---
 
-## Sécurité
+## Security
 
-L'application a été conçue avec une approche **Security by Design**. Toutes les mesures ci-dessous sont couvertes par **18 suites de tests Jest automatisés**.
+The application was built with a **Security by Design** approach. All measures below are covered by **18 automated Jest test suites**.
 
-### Authentification & Sessions
+### Authentication & Sessions
 
-| Mesure | Détail |
+| Measure | Detail |
 |---|---|
-| JWT signé (HS256) | Expiration configurable, stocké côté client uniquement |
-| bcryptjs (rounds 12) | Hachage des mots de passe — jamais stockés en clair |
-| Politique de mot de passe | Longueur minimale, majuscule, chiffre, caractère spécial |
-| Verrouillage brute-force | Compte verrouillé après N tentatives échouées |
-| Réinitialisation sécurisée | Token OTP signé, usage unique, expiration courte |
-| Déconnexion par inactivité | `SessionManager` frontend — timeout configurable |
+| Signed JWT (HS256) | Configurable expiry, stored client-side only |
+| bcryptjs (rounds 12) | Password hashing — never stored in plain text |
+| Password policy | Minimum length, uppercase, digit, special character |
+| Brute-force lock | Account locked after N failed attempts |
+| Secure reset | Signed OTP token, single-use, short expiry |
+| Inactivity logout | Frontend `SessionManager` — configurable timeout |
 
-### Transport & Réseau
+### Transport & Network
 
-| Mesure | Détail |
+| Measure | Detail |
 |---|---|
-| HTTPS obligatoire | Nginx + Let's Encrypt, redirection HTTP → HTTPS |
+| Mandatory HTTPS | Nginx + Let's Encrypt, HTTP → HTTPS redirect |
 | HSTS | `max-age=31536000; includeSubDomains; preload` |
-| PostgreSQL SSL | Connexion chiffrée backend → base de données |
-| Réseau interne Docker | Backend et DB non exposés à l'extérieur, uniquement Nginx |
+| PostgreSQL SSL | Encrypted connection backend → database |
+| Internal Docker network | Backend and DB not exposed externally, only Nginx |
 
-### En-têtes HTTP de sécurité
+### HTTP Security Headers
 
-| En-tête | Valeur |
+| Header | Value |
 |---|---|
-| `Content-Security-Policy` | Sources restreintes, `upgrade-insecure-requests` |
-| `X-Frame-Options` | `DENY` (sauf routes fichiers : `SAMEORIGIN`) |
+| `Content-Security-Policy` | Restricted sources, `upgrade-insecure-requests` |
+| `X-Frame-Options` | `DENY` (file routes: `SAMEORIGIN`) |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-XSS-Protection` | `1; mode=block` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | Caméra, micro, géolocalisation désactivés |
+| `Permissions-Policy` | Camera, microphone, geolocation disabled |
 
-### Contrôle d'accès
+### Access Control
 
-| Mesure | Détail |
+| Measure | Detail |
 |---|---|
-| RBAC middleware | Chaque route vérifie le rôle JWT avant d'exécuter |
-| Principe du moindre privilège | Utilisateur DB dédié avec droits minimaux (migration 009) |
-| Validation des entrées | Sanitisation systématique, rejet des payloads malformés |
-| WAF Nginx | Règles de filtrage SQL injection, XSS, path traversal |
+| RBAC middleware | Every route verifies JWT role before executing |
+| Least privilege | Dedicated DB user with minimal rights (migration 009) |
+| Input validation | Systematic sanitization, malformed payload rejection |
+| WAF Nginx | Filtering rules for SQL injection, XSS, path traversal |
 
-### Fichiers uploadés
+### File Uploads
 
-| Mesure | Détail |
+| Measure | Detail |
 |---|---|
-| Antivirus ClamAV | Scan INSTREAM de chaque fichier avant stockage |
-| Rejet immédiat | Fichier infecté supprimé, erreur 422 retournée |
-| Extension & taille | Vérification du type MIME et limite de taille |
+| ClamAV antivirus | INSTREAM scan of every uploaded file before storage |
+| Immediate rejection | Infected file deleted, 422 error returned |
+| Extension & size | MIME type verification and size limit enforcement |
 
 ### Audit & Monitoring
 
-| Mesure | Détail |
+| Measure | Detail |
 |---|---|
-| Journal d'audit complet | Toutes les actions (création, modification, connexion, etc.) |
-| Prometheus | Collecte de métriques applicatives en temps réel |
-| Grafana | Tableaux de bord de supervision |
-| Détection d'incidents | Alertes sur comportements anormaux |
-| Sauvegardes automatiques | Dumps `.sql.gz` quotidiens avec vérification d'intégrité |
-| Scan de vulnérabilités | Trivy (images Docker) + npm audit (dépendances) |
+| Full audit log | All actions (create, edit, login, etc.) |
+| Prometheus | Real-time application metrics collection |
+| Grafana | Monitoring dashboards |
+| Incident detection | Alerts on abnormal behavior |
+| Automated backups | Daily `.sql.gz` dumps with integrity checks |
+| Vulnerability scanning | Trivy (Docker images) + npm audit (dependencies) |
 
-### Suites de tests de sécurité (Jest)
+### Security Test Suites (Jest)
 
 ```
-01 Brute Force          07 Durcissement serveur   13 Logs d'audit
-02 Politique MDP        08 Validation des entrées  14 Monitoring
-03 Erreurs génériques   09 Contrôle d'accès        15 Backup
-04 Gestion de session   10 Gestion des erreurs     16 Détection incidents
-05 HTTPS / SSL          11 WAF                     17 Monitoring DB
-06 Headers sécurité     12 Rate Limiting            18 Audit dépendances
+01 Brute Force          07 Server Hardening       13 Audit Logs
+02 Password Policy      08 Input Validation        14 Monitoring
+03 Generic Errors       09 Access Control          15 Backup
+04 Session Management   10 Error Handling          16 Incident Detection
+05 HTTPS / SSL          11 WAF                     17 DB Monitoring
+06 Security Headers     12 Rate Limiting            18 Dependency Audit
 ```
 
 ---
 
-## Infrastructure Docker
+## Docker Infrastructure
 
-L'application tourne entièrement via **Docker Compose** avec les services suivants :
+The entire application runs via **Docker Compose** with the following services:
 
-| Service | Image | Rôle |
+| Service | Image | Role |
 |---|---|---|
 | `smq_frontend` | React + Nginx | SPA + reverse proxy + WAF + SSL |
-| `smq_backend` | Node.js 20 | API REST (port 4000 interne) |
-| `smq_db` | PostgreSQL 16 Alpine | Base de données (SSL activé) |
-| `smq_kafka` | Apache Kafka 3.7 | Messagerie asynchrone (emails) |
-| `smq_clamav` | ClamAV stable | Antivirus des fichiers uploadés |
-| `smq_backup` | PostgreSQL 16 Alpine | Sauvegardes automatiques .sql.gz |
-| `smq_prometheus` | Prometheus | Collecte de métriques (`--profile monitoring`) |
-| `smq_grafana` | Grafana | Tableaux de bord (`--profile monitoring`) |
-| `smq_certbot` | Certbot | Renouvellement SSL Let's Encrypt (`--profile ssl-prod`) |
-| `smq_trivy` | Aqua Trivy | Scanner de vulnérabilités (`--profile audit`) |
-| `smq_patch_monitor` | Node 20 slim | npm audit automatique (`--profile audit`) |
+| `smq_backend` | Node.js 20 | REST API (internal port 4000) |
+| `smq_db` | PostgreSQL 16 Alpine | Database (SSL enabled) |
+| `smq_kafka` | Apache Kafka 3.7 | Async messaging (emails) |
+| `smq_clamav` | ClamAV stable | Antivirus for uploaded files |
+| `smq_backup` | PostgreSQL 16 Alpine | Automated .sql.gz backups |
+| `smq_prometheus` | Prometheus | Metrics collection (`--profile monitoring`) |
+| `smq_grafana` | Grafana | Dashboards (`--profile monitoring`) |
+| `smq_certbot` | Certbot | Automatic SSL renewal (`--profile ssl-prod`) |
+| `smq_trivy` | Aqua Trivy | Vulnerability scanner (`--profile audit`) |
+| `smq_patch_monitor` | Node 20 slim | Automated npm audit (`--profile audit`) |
 
-Tous les services communiquent via le réseau privé `smq_network`. Seul Nginx est exposé au public (ports 80/443).
+All services communicate through the private `smq_network`. Only Nginx is publicly exposed (ports 80/443).
 
 ---
 
-## Auteur
+## Author
 
 | | |
 |---|---|
-| **Étudiant** | Motez HM |
-| **Formation** | Licence Appliquée — Génie Logiciel / Systèmes d'Information |
-| **Établissement** | Faculté des Sciences de Monastir (FSM) |
-| **Entreprise d'accueil** | ACTIA Engineering Services (AES) |
-| **Année** | 2025 – 2026 |
+| **Student** | Motez HM |
+| **Degree** | Applied Bachelor's — Software Engineering / Information Systems |
+| **Institution** | Faculty of Sciences of Monastir (FSM) |
+| **Host Company** | ACTIA Engineering Services (AES) |
+| **Year** | 2025 – 2026 |
 
 ---
 
 <div align="center">
 
-*Projet privé — Propriété d'ACTIA Engineering Services & FSM Monastir*
+*Private project — Property of ACTIA Engineering Services & FSM Monastir*
 
 </div>
