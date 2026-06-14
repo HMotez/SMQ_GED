@@ -1,5 +1,5 @@
 // ============================================================
-// controllers/notificationController.js — Sprint 5 + Sprint 8
+// controllers/notificationController.js 
 // Notifications Intelligentes : table, triggers, CRON, API + Kafka
 // ============================================================
 "use strict";
@@ -277,7 +277,7 @@ async function runExpirationNotificationsJob() {
         (Date.now() - new Date(doc.next_review_date).getTime()) / 86400000
       );
       await createNotificationsForRoles(
-        ["Admin"],
+        ["Admin", "Ing. Qualité"],
         doc.id,
         `[${doc.doc_code}] "${doc.title}" — date de révision dépassée depuis ${daysOverdue} jour(s) (prévue le ${fmtDate(doc.next_review_date)}). Une révision est requise.`,
         "expiration"
@@ -302,14 +302,6 @@ async function runExpirationNotificationsJob() {
       }).catch(err => console.error("[Notif-CRON] Digest email expiration failed:", err.message));
 
       console.log(`[Notif-CRON] ${expired.rows.length} document(s) expirés — digest email envoyé:\n${expiredList}`);
-
-      // Also publish to Kafka (best-effort, non-blocking)
-      for (const doc of expired.rows) {
-        publishEvent("smq.document.expiring", {
-          docCode: doc.doc_code, title: doc.title,
-          reviewDate: fmtDate(doc.next_review_date),
-        }, doc.id).catch(() => {});
-      }
     }
 
     // 2. Documents inactifs depuis 6 mois (Validé ou Diffusé)
@@ -510,7 +502,7 @@ async function markAllAsRead(req, res) {
 // ─────────────────────────────────────────────────────────────
 async function triggerExpirationJob(req, res) {
   const role = req.currentUser?.role;
-  if (role !== "Admin") return res.status(403).json({ error: "Réservé aux administrateurs." });
+  if (!["Admin", "Ing. Qualité"].includes(role)) return res.status(403).json({ error: "Réservé aux administrateurs et Ing. Qualité." });
   try {
     await runExpirationNotificationsJob();
     return res.json({ success: true, message: "Job d'expiration exécuté avec succès." });

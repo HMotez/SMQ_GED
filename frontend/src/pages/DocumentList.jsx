@@ -658,9 +658,9 @@ export default function DocumentList() {
       {/* ══ Document detail modal ════════════════════════════ */}
       {selected && (
         <div onClick={closeDoc} className="fixed inset-0 flex items-center justify-center z-[1000] p-6 animate-fade-in"
-          style={{ background:"rgba(5,12,20,0.4)", backdropFilter:"blur(8px)" }}>
+          style={{ background:"rgba(5,12,20,0.85)", backdropFilter:"blur(8px)" }}>
           <div onClick={e => e.stopPropagation()} className="rounded-2xl w-full max-w-[800px] max-h-[90vh] overflow-auto border"
-            style={{ background:"linear-gradient(160deg,rgba(18,32,58,0.96) 0%,rgba(12,22,40,0.96) 100%)", borderColor:"rgba(255,255,255,0.14)", boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+            style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
             <div className="p-7">
               {/* Modal header */}
               <div className="flex justify-between items-start mb-5">
@@ -1024,10 +1024,10 @@ export default function DocumentList() {
           return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
         })();
         return (
-          <div onClick={() => setNewVerOpen(false)} className="fixed inset-0 z-[1200] flex items-center justify-center" style={{ background:"rgba(5,12,20,0.4)", backdropFilter:"blur(8px)" }}>
+          <div onClick={() => setNewVerOpen(false)} className="fixed inset-0 z-[1200] flex items-center justify-center" style={{ background:"rgba(5,12,20,0.85)", backdropFilter:"blur(8px)" }}>
             <form onClick={e => e.stopPropagation()} onSubmit={handleNewVersion}
               className="rounded-2xl w-[680px] flex flex-col border animate-fade-in overflow-hidden"
-              style={{ background:"linear-gradient(160deg,#0f2140 0%,#0a1830 100%)", borderColor:"rgba(255,255,255,0.14)", boxShadow:"0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08)" }}>
+              style={{ background:"#0d1f30", borderColor:"rgba(255,255,255,0.12)", boxShadow:"0 40px 120px rgba(0,0,0,0.75)" }}>
 
               {/* ── Header ── */}
               <div className="relative px-6 pt-5 pb-4" style={{ background:"linear-gradient(135deg,rgba(74,184,63,0.08),rgba(15,33,64,0))", borderBottom:"1px solid rgba(255,255,255,0.08)" }}>

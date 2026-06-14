@@ -20,7 +20,6 @@ import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { UserProvider, useUser } from "./context/UserContext";
 import SessionManager from "./components/SessionManager";
-import AnimatedBackground from "./components/AnimatedBackground";
 import Home           from "./pages/Home";
 import Login          from "./pages/Login";
 import Register        from "./pages/Register";
@@ -87,7 +86,6 @@ function AppRoutes() {
 
   return (
     <>
-    <AnimatedBackground />
     <SessionManager />
     <Routes>
       {/* Public */}

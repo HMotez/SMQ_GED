@@ -545,7 +545,7 @@ export default function Notifications() {
           </div>
 
           <div className="flex items-center gap-2">
-            {userRole === "Admin" && (
+            {(userRole === "Admin" || userRole === "Ing. Qualité") && (
               <button
                 onClick={triggerExpirationJob}
                 disabled={triggerLoading}
