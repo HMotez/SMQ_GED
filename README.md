@@ -192,6 +192,14 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 
 ---
 
+### Statistiques & Répartitions
+
+<img src="frontend/src/assets/IN3.png" alt="Statistiques et répartitions" width="100%"/>
+
+*Répartition par statut (graphique donut), par type documentaire (courbe) et par processus (barres horizontales)*
+
+---
+
 ### Liste des documents
 
 <img src="frontend/src/assets/IN23.png" alt="Liste des documents" width="100%"/>
@@ -277,6 +285,14 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 <img src="frontend/src/assets/IN41.png" alt="Email automatique - documents en retard" width="100%"/>
 
 *Email automatique envoyé via Kafka/Nodemailer : rapport journalier des documents en retard de révision*
+
+---
+
+### Assistant IA — Score Qualité & Amélioration Continue
+
+<img src="frontend/src/assets/IN5.png" alt="Assistant IA - Score Qualité" width="100%"/>
+
+*Mode Amélioration Continue : score qualité global (87/100), compteurs par statut et graphique de distribution*
 
 ---
 
