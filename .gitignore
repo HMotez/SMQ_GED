@@ -35,3 +35,7 @@ frontend/certs/server.key
 # IDE
 .vscode/
 .idea/
+
+# Reports
+reports/security/*.txt
+reports/security/*.json
