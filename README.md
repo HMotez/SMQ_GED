@@ -154,7 +154,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Login & Access Profiles
 
-<img src="frontend/src/assets/Interface1.png" alt="Login page and role matrix" width="100%"/>
+<img src="frontend/src/assets/Interface1.png" alt="Login page and role matrix" width="700"/>
 
 *Secure login page with access profile matrix overview per role*
 
@@ -162,7 +162,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Sign Up & Role Selection
 
-<img src="frontend/src/assets/IN35.png" alt="Account creation" width="100%"/>
+<img src="frontend/src/assets/IN35.png" alt="Account creation" width="700"/>
 
 *Registration form with role selection and associated rights information*
 
@@ -170,7 +170,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Forgot Password
 
-<img src="frontend/src/assets/IN11.png" alt="Forgot password" width="100%"/>
+<img src="frontend/src/assets/IN11.png" alt="Forgot password" width="700"/>
 
 *Password reset by email — secure one-time link, expires after 1 hour*
 
@@ -178,7 +178,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Dashboard
 
-<img src="frontend/src/assets/Interface14.png" alt="Dashboard" width="100%"/>
+<img src="frontend/src/assets/Interface14.png" alt="Dashboard" width="700"/>
 
 *Main dashboard: statistics by status, document type and process — overdue revision tracking*
 
@@ -186,7 +186,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Document Supervision
 
-<img src="frontend/src/assets/IN2.png" alt="Document supervision" width="100%"/>
+<img src="frontend/src/assets/IN2.png" alt="Document supervision" width="700"/>
 
 *Supervision view: expired, in validation, overdue and total documents — actionable list*
 
@@ -194,7 +194,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Statistics & Breakdowns
 
-<img src="frontend/src/assets/IN3.png" alt="Statistics and breakdowns" width="100%"/>
+<img src="frontend/src/assets/IN3.png" alt="Statistics and breakdowns" width="700"/>
 
 *Breakdown by status (donut chart), by document type (curve) and by process (horizontal bars)*
 
@@ -202,7 +202,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Document List
 
-<img src="frontend/src/assets/IN23.png" alt="Document list" width="100%"/>
+<img src="frontend/src/assets/IN23.png" alt="Document list" width="700"/>
 
 *Full document list with advanced filters (type, status, process, owner) and deadline indicators*
 
@@ -210,7 +210,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Archiving
 
-<img src="frontend/src/assets/IN4.png" alt="Archiving" width="100%"/>
+<img src="frontend/src/assets/IN4.png" alt="Archiving" width="700"/>
 
 *Archive page: archived documents with full version history access*
 
@@ -218,7 +218,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Create Document — Information
 
-<img src="frontend/src/assets/IN30.png" alt="Create document - step 1" width="100%"/>
+<img src="frontend/src/assets/IN30.png" alt="Create document - step 1" width="700"/>
 
 *Step 1/4: title, owner, document type, origin and keywords*
 
@@ -226,7 +226,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Create Document — Upload & Summary
 
-<img src="frontend/src/assets/IN33.png" alt="Create document - step 4" width="100%"/>
+<img src="frontend/src/assets/IN33.png" alt="Create document - step 4" width="700"/>
 
 *Step 4/4: file upload (PDF, Word, Excel — max 50 MB) and summary before creation*
 
@@ -234,7 +234,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Status Change
 
-<img src="frontend/src/assets/IN40.png" alt="Status change" width="100%"/>
+<img src="frontend/src/assets/IN40.png" alt="Status change" width="700"/>
 
 *Status transition confirmation modal (e.g. In Review → In Validation) with rollback option*
 
@@ -242,7 +242,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Version History
 
-<img src="frontend/src/assets/Interface7.png" alt="Document versions" width="100%"/>
+<img src="frontend/src/assets/Interface7.png" alt="Document versions" width="700"/>
 
 *Document detail: full revision history with multi-format download (PDF, Word, Excel)*
 
@@ -250,7 +250,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### ISO Validations
 
-<img src="frontend/src/assets/IN21.png" alt="ISO Validations" width="100%"/>
+<img src="frontend/src/assets/IN21.png" alt="ISO Validations" width="700"/>
 
 *Validation interface (Reviewer view): pending documents with Details / Reject / Approve actions*
 
@@ -258,7 +258,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Permission Matrix & ISO 9001 Lifecycle
 
-<img src="frontend/src/assets/IN24.png" alt="Permission matrix and ISO 9001 lifecycle" width="100%"/>
+<img src="frontend/src/assets/IN24.png" alt="Permission matrix and ISO 9001 lifecycle" width="700"/>
 
 *RBAC permission matrix per role and 10-step ISO 9001 lifecycle visualization with status transition*
 
@@ -266,7 +266,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### ISO 9001 Workflow
 
-<img src="frontend/src/assets/Interface10.png" alt="ISO 9001 Workflow" width="100%"/>
+<img src="frontend/src/assets/Interface10.png" alt="ISO 9001 Workflow" width="700"/>
 
 *Kanban workflow view: document distribution per stage with responsible role legend*
 
@@ -274,7 +274,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Notifications
 
-<img src="frontend/src/assets/Interface15.png" alt="Notification center" width="100%"/>
+<img src="frontend/src/assets/Interface15.png" alt="Notification center" width="700"/>
 
 *Notification center: expired documents, review requests, new versions created*
 
@@ -282,7 +282,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Automated Emails (Kafka)
 
-<img src="frontend/src/assets/IN41.png" alt="Automated email - overdue documents" width="100%"/>
+<img src="frontend/src/assets/IN41.png" alt="Automated email - overdue documents" width="700"/>
 
 *Automated email sent via Kafka/Nodemailer: daily report of overdue documents requiring action*
 
@@ -290,7 +290,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### AI Assistant — Quality Score & Continuous Improvement
 
-<img src="frontend/src/assets/IN5.png" alt="AI Assistant - Quality Score" width="100%"/>
+<img src="frontend/src/assets/IN5.png" alt="AI Assistant - Quality Score" width="700"/>
 
 *Continuous Improvement mode: global quality score (87/100), status counters and distribution chart*
 
@@ -298,7 +298,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### AI Assistant — Quality Chatbot
 
-<img src="frontend/src/assets/IN22.png" alt="AI Assistant - Quality Chatbot" width="100%"/>
+<img src="frontend/src/assets/IN22.png" alt="AI Assistant - Quality Chatbot" width="700"/>
 
 *Document chatbot (GPT-4o) with quick suggestions organized by theme: surveillance, documents, statistics*
 
@@ -306,7 +306,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### AI Assistant — Continuous Improvement Report
 
-<img src="frontend/src/assets/IN34.png" alt="AI Assistant - Continuous Improvement Report" width="100%"/>
+<img src="frontend/src/assets/IN34.png" alt="AI Assistant - Continuous Improvement Report" width="700"/>
 
 *Automated ISO 9001 report: global quality score, priority improvement areas and AI recommendations*
 
@@ -314,7 +314,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### Audit Log
 
-<img src="frontend/src/assets/IN20.png" alt="Audit log" width="100%"/>
+<img src="frontend/src/assets/IN20.png" alt="Audit log" width="700"/>
 
 *Activity log: all actions filterable by type, user and date — PDF export*
 
@@ -322,7 +322,7 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ### User Management
 
-<img src="frontend/src/assets/IN1.png" alt="User management" width="100%"/>
+<img src="frontend/src/assets/IN1.png" alt="User management" width="700"/>
 
 *Account administration: pending activation accounts and active accounts with role management*
 
