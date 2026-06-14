@@ -1,9 +1,10 @@
 # Environment variables — NEVER commit
 .env
-.env.example
 .env.local
 .env.*.local
+.env.staging
 backend/.env
+backend/tests/.env.test
 
 # Dependencies
 node_modules/
