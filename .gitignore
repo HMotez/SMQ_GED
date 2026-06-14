@@ -31,3 +31,7 @@ backups/*.sql
 *.key
 db/certs/server.key
 frontend/certs/server.key
+
+# IDE
+.vscode/
+.idea/
