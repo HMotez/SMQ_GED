@@ -39,3 +39,7 @@ frontend/certs/server.key
 # Reports
 reports/security/*.txt
 reports/security/*.json
+
+# OS generated
+*.DS_Store
+Thumbs.db
