@@ -22,3 +22,7 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Database backups — contain DB data, never commit
+backups/*.sql.gz
+backups/*.sql
