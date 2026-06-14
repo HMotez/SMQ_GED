@@ -372,6 +372,8 @@ All services communicate through the private `smq_network`. Only Nginx is public
 
 <div align="center">
 
-*Private project — Property of ACTIA Engineering Services & FSM Monastir*
+© 2026 Motez HM — ACTIA Engineering Services. All rights reserved.
+
+*Unauthorized use, reproduction or distribution of this project is strictly prohibited.*
 
 </div>
