@@ -152,179 +152,228 @@ It centralizes the creation, revision, validation, and archiving of quality docu
 
 ## Screenshots
 
-### Login & Access Profiles
+<table>
+<tr>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/Interface1.png" alt="Login page and role matrix" width="700"/>
+**Login & Access Profiles**
 
-*Secure login page with access profile matrix overview per role*
+<img src="frontend/src/assets/Interface1.png" alt="Login page and role matrix" width="100%"/>
 
----
+*Secure login page with access profile matrix per role*
 
-### Sign Up & Role Selection
+</td>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN35.png" alt="Account creation" width="700"/>
+**Sign Up & Role Selection**
 
-*Registration form with role selection and associated rights information*
+<img src="frontend/src/assets/IN35.png" alt="Account creation" width="100%"/>
 
----
+*Registration form with role selection and rights info*
 
-### Forgot Password
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN11.png" alt="Forgot password" width="700"/>
+**Forgot Password**
 
-*Password reset by email — secure one-time link, expires after 1 hour*
+<img src="frontend/src/assets/IN11.png" alt="Forgot password" width="100%"/>
 
----
+*Secure one-time reset link, expires after 1 hour*
 
-### Dashboard
+</td>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/Interface14.png" alt="Dashboard" width="700"/>
+**Dashboard**
 
-*Main dashboard: statistics by status, document type and process — overdue revision tracking*
+<img src="frontend/src/assets/Interface14.png" alt="Dashboard" width="100%"/>
 
----
+*Statistics by status, type and process — overdue tracking*
 
-### Document Supervision
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN2.png" alt="Document supervision" width="700"/>
+**Document Supervision**
 
-*Supervision view: expired, in validation, overdue and total documents — actionable list*
+<img src="frontend/src/assets/IN2.png" alt="Document supervision" width="100%"/>
 
----
+*Expired, in validation, overdue and total — actionable list*
 
-### Statistics & Breakdowns
+</td>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN3.png" alt="Statistics and breakdowns" width="700"/>
+**Statistics & Breakdowns**
 
-*Breakdown by status (donut chart), by document type (curve) and by process (horizontal bars)*
+<img src="frontend/src/assets/IN3.png" alt="Statistics and breakdowns" width="100%"/>
 
----
+*Donut by status, curve by type, bars by process*
 
-### Document List
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN23.png" alt="Document list" width="700"/>
+**Document List**
 
-*Full document list with advanced filters (type, status, process, owner) and deadline indicators*
+<img src="frontend/src/assets/IN23.png" alt="Document list" width="100%"/>
 
----
+*Advanced filters (type, status, process, owner) and deadline indicators*
 
-### Archiving
+</td>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN4.png" alt="Archiving" width="700"/>
+**Archiving**
 
-*Archive page: archived documents with full version history access*
+<img src="frontend/src/assets/IN4.png" alt="Archiving" width="100%"/>
 
----
+*Archived documents with full version history access*
 
-### Create Document — Information
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-<img src="frontend/src/assets/IN30.png" alt="Create document - step 1" width="700"/>
+**Create Document — Information**
+
+<img src="frontend/src/assets/IN30.png" alt="Create document - step 1" width="100%"/>
 
 *Step 1/4: title, owner, document type, origin and keywords*
 
----
+</td>
+<td align="center" width="50%">
 
-### Create Document — Upload & Summary
+**Create Document — Upload & Summary**
 
-<img src="frontend/src/assets/IN33.png" alt="Create document - step 4" width="700"/>
+<img src="frontend/src/assets/IN33.png" alt="Create document - step 4" width="100%"/>
 
-*Step 4/4: file upload (PDF, Word, Excel — max 50 MB) and summary before creation*
+*Step 4/4: file upload (PDF, Word, Excel — max 50 MB) + recap*
 
----
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-### Status Change
+**Status Change**
 
-<img src="frontend/src/assets/IN40.png" alt="Status change" width="700"/>
+<img src="frontend/src/assets/IN40.png" alt="Status change" width="100%"/>
 
-*Status transition confirmation modal (e.g. In Review → In Validation) with rollback option*
+*Transition modal (In Review → In Validation) with rollback*
 
----
+</td>
+<td align="center" width="50%">
 
-### Version History
+**Version History**
 
-<img src="frontend/src/assets/Interface7.png" alt="Document versions" width="700"/>
+<img src="frontend/src/assets/Interface7.png" alt="Document versions" width="100%"/>
 
-*Document detail: full revision history with multi-format download (PDF, Word, Excel)*
+*Full revision history with multi-format download*
 
----
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-### ISO Validations
+**ISO Validations**
 
-<img src="frontend/src/assets/IN21.png" alt="ISO Validations" width="700"/>
+<img src="frontend/src/assets/IN21.png" alt="ISO Validations" width="100%"/>
 
-*Validation interface (Reviewer view): pending documents with Details / Reject / Approve actions*
+*Reviewer view: Details / Reject / Approve actions*
 
----
+</td>
+<td align="center" width="50%">
 
-### Permission Matrix & ISO 9001 Lifecycle
+**Permission Matrix & ISO 9001 Lifecycle**
 
-<img src="frontend/src/assets/IN24.png" alt="Permission matrix and ISO 9001 lifecycle" width="700"/>
+<img src="frontend/src/assets/IN24.png" alt="Permission matrix and ISO 9001 lifecycle" width="100%"/>
 
-*RBAC permission matrix per role and 10-step ISO 9001 lifecycle visualization with status transition*
+*RBAC matrix per role and 10-step lifecycle visualization*
 
----
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-### ISO 9001 Workflow
+**ISO 9001 Workflow**
 
-<img src="frontend/src/assets/Interface10.png" alt="ISO 9001 Workflow" width="700"/>
+<img src="frontend/src/assets/Interface10.png" alt="ISO 9001 Workflow" width="100%"/>
 
-*Kanban workflow view: document distribution per stage with responsible role legend*
+*Kanban: document distribution per stage with role legend*
 
----
+</td>
+<td align="center" width="50%">
 
-### Notifications
+**Notifications**
 
-<img src="frontend/src/assets/Interface15.png" alt="Notification center" width="700"/>
+<img src="frontend/src/assets/Interface15.png" alt="Notification center" width="100%"/>
 
-*Notification center: expired documents, review requests, new versions created*
+*Expired docs, review requests, new versions created*
 
----
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-### Automated Emails (Kafka)
+**Automated Emails (Kafka)**
 
-<img src="frontend/src/assets/IN41.png" alt="Automated email - overdue documents" width="700"/>
+<img src="frontend/src/assets/IN41.png" alt="Automated email - overdue documents" width="100%"/>
 
-*Automated email sent via Kafka/Nodemailer: daily report of overdue documents requiring action*
+*Daily overdue report sent via Kafka/Nodemailer*
 
----
+</td>
+<td align="center" width="50%">
 
-### AI Assistant — Quality Score & Continuous Improvement
+**AI — Quality Score & Continuous Improvement**
 
-<img src="frontend/src/assets/IN5.png" alt="AI Assistant - Quality Score" width="700"/>
+<img src="frontend/src/assets/IN5.png" alt="AI Assistant - Quality Score" width="100%"/>
 
-*Continuous Improvement mode: global quality score (87/100), status counters and distribution chart*
+*Score 87/100, status counters and distribution chart*
 
----
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-### AI Assistant — Quality Chatbot
+**AI — Quality Chatbot**
 
-<img src="frontend/src/assets/IN22.png" alt="AI Assistant - Quality Chatbot" width="700"/>
+<img src="frontend/src/assets/IN22.png" alt="AI Assistant - Quality Chatbot" width="100%"/>
 
-*Document chatbot (GPT-4o) with quick suggestions organized by theme: surveillance, documents, statistics*
+*GPT-4o chatbot with themed quick suggestions*
 
----
+</td>
+<td align="center" width="50%">
 
-### AI Assistant — Continuous Improvement Report
+**AI — Continuous Improvement Report**
 
-<img src="frontend/src/assets/IN34.png" alt="AI Assistant - Continuous Improvement Report" width="700"/>
+<img src="frontend/src/assets/IN34.png" alt="AI Assistant - Continuous Improvement Report" width="100%"/>
 
-*Automated ISO 9001 report: global quality score, priority improvement areas and AI recommendations*
+*ISO 9001 report: score, priority areas and AI recommendations*
 
----
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
 
-### Audit Log
+**Audit Log**
 
-<img src="frontend/src/assets/IN20.png" alt="Audit log" width="700"/>
+<img src="frontend/src/assets/IN20.png" alt="Audit log" width="100%"/>
 
-*Activity log: all actions filterable by type, user and date — PDF export*
+*All actions filterable by type, user and date — PDF export*
 
----
+</td>
+<td align="center" width="50%">
 
-### User Management
+**User Management**
 
-<img src="frontend/src/assets/IN1.png" alt="User management" width="700"/>
+<img src="frontend/src/assets/IN1.png" alt="User management" width="100%"/>
 
-*Account administration: pending activation accounts and active accounts with role management*
+*Pending activation accounts and active accounts with roles*
+
+</td>
+</tr>
+</table>
 
 ---
 
