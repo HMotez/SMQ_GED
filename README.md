@@ -156,7 +156,23 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 
 <img src="frontend/src/assets/Interface1.png" alt="Page de connexion et matrice des rôles" width="100%"/>
 
-*Page de connexion sécurisée avec aperçu de la matrice des profils d'accès*
+*Page de connexion sécurisée avec aperçu de la matrice des profils d'accès par rôle*
+
+---
+
+### Inscription & Sélection du rôle
+
+<img src="frontend/src/assets/IN35.png" alt="Création de compte" width="100%"/>
+
+*Formulaire d'inscription avec sélection du rôle souhaité et informations sur les droits associés*
+
+---
+
+### Mot de passe oublié
+
+<img src="frontend/src/assets/IN11.png" alt="Mot de passe oublié" width="100%"/>
+
+*Réinitialisation de mot de passe par email — lien sécurisé à usage unique, expiration 1 heure*
 
 ---
 
@@ -164,15 +180,55 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 
 <img src="frontend/src/assets/Interface14.png" alt="Tableau de bord" width="100%"/>
 
-*Dashboard : statistiques par statut, type de document et processus — documents en retard de révision*
+*Dashboard principal : statistiques par statut, type de document et processus — retards de révision*
+
+---
+
+### Supervision documentaire
+
+<img src="frontend/src/assets/IN2.png" alt="Supervision documentaire" width="100%"/>
+
+*Vue supervision : documents expirés, en validation, en retard et total — liste des documents à traiter*
 
 ---
 
 ### Liste des documents
 
-<img src="frontend/src/assets/Interface6.png" alt="Liste des documents" width="100%"/>
+<img src="frontend/src/assets/IN23.png" alt="Liste des documents" width="100%"/>
 
-*Vue liste avec filtres avancés (type, statut, processus, responsable)*
+*Vue liste complète avec filtres avancés (type, statut, processus, responsable) et indicateurs de délai*
+
+---
+
+### Archivage
+
+<img src="frontend/src/assets/IN4.png" alt="Archivage" width="100%"/>
+
+*Page d'archivage : documents archivés consultables avec historique de leurs versions*
+
+---
+
+### Création de document — Informations
+
+<img src="frontend/src/assets/IN30.png" alt="Création de document - étape 1" width="100%"/>
+
+*Étape 1/4 : titre, responsable, type documentaire, origine et mots-clés*
+
+---
+
+### Création de document — Upload & Récapitulatif
+
+<img src="frontend/src/assets/IN33.png" alt="Création de document - étape 4" width="100%"/>
+
+*Étape 4/4 : upload du fichier (PDF, Word, Excel — max 50 Mo) et récapitulatif avant création*
+
+---
+
+### Changement de statut
+
+<img src="frontend/src/assets/IN40.png" alt="Changement de statut" width="100%"/>
+
+*Modal de confirmation de transition de statut (ex. : En relecture → En validation) avec possibilité de retour*
 
 ---
 
@@ -180,23 +236,23 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 
 <img src="frontend/src/assets/Interface7.png" alt="Versions d'un document" width="100%"/>
 
-*Détail d'un document avec historique complet des révisions et options de téléchargement multi-format*
+*Détail d'un document : historique complet des révisions avec téléchargement multi-format (PDF, Word, Excel)*
 
 ---
 
 ### Validations ISO
 
-<img src="frontend/src/assets/Interface8.png" alt="Validations ISO" width="100%"/>
+<img src="frontend/src/assets/IN21.png" alt="Validations ISO" width="100%"/>
 
-*Interface de validation documentaire avec compteurs (En validation, Validés, Rejetés)*
+*Interface de validation (vue Reviewer) : documents en attente avec actions Détails / Rejeter / Approuver*
 
 ---
 
-### Matrice des permissions & Cycle de vie
+### Matrice des permissions & Cycle de vie ISO 9001
 
-<img src="frontend/src/assets/Interface9.png" alt="Matrice de permissions et cycle de vie ISO 9001" width="100%"/>
+<img src="frontend/src/assets/IN24.png" alt="Matrice de permissions et cycle de vie ISO 9001" width="100%"/>
 
-*Matrice RBAC des permissions par rôle et visualisation du cycle de vie ISO 9001 à 10 étapes*
+*Matrice RBAC par rôle et visualisation du cycle de vie ISO 9001 à 10 étapes avec transition de statut*
 
 ---
 
@@ -204,7 +260,7 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 
 <img src="frontend/src/assets/Interface10.png" alt="Workflow ISO 9001" width="100%"/>
 
-*Vue Kanban du workflow : répartition des documents par étape avec légende des rôles*
+*Vue Kanban du workflow : répartition des documents par étape avec légende des rôles responsables*
 
 ---
 
@@ -212,39 +268,47 @@ Elle centralise la création, la révision, la validation et l'archivage des doc
 
 <img src="frontend/src/assets/Interface15.png" alt="Centre de notifications" width="100%"/>
 
-*Centre de notifications : documents expirés, appels en relecture, nouvelles versions*
+*Centre de notifications : documents expirés, appels en relecture, nouvelles versions créées*
 
 ---
 
-### Nouveau document
+### Emails automatiques (Kafka)
 
-<img src="frontend/src/assets/Interface18.png" alt="Création de document" width="100%"/>
+<img src="frontend/src/assets/IN41.png" alt="Email automatique - documents en retard" width="100%"/>
 
-*Formulaire de création de document avec classification, processus et origine*
+*Email automatique envoyé via Kafka/Nodemailer : rapport journalier des documents en retard de révision*
 
 ---
 
-### Assistant IA
+### Assistant IA — Chatbot Qualité
 
-<img src="frontend/src/assets/Interface17.png" alt="Assistant IA" width="100%"/>
+<img src="frontend/src/assets/IN22.png" alt="Assistant IA - Chatbot Qualité" width="100%"/>
 
-*Assistant documentaire IA (GPT-4o) avec suggestions rapides et modes spécialisés*
+*Chatbot documentaire (GPT-4o) avec suggestions rapides classées par thème : surveillance, documents, statistiques*
+
+---
+
+### Assistant IA — Rapport Amélioration Continue
+
+<img src="frontend/src/assets/IN34.png" alt="Assistant IA - Rapport Amélioration Continue" width="100%"/>
+
+*Rapport automatique ISO 9001 : score qualité global, axes prioritaires d'amélioration et recommandations IA*
 
 ---
 
 ### Journal d'audit
 
-<img src="frontend/src/assets/Interface3.png" alt="Journal d'audit" width="100%"/>
+<img src="frontend/src/assets/IN20.png" alt="Journal d'audit" width="100%"/>
 
-*Journal d'activités système : 66 entrées filtrables par action, utilisateur et date — export PDF*
+*Journal d'activités : toutes les actions filtrables par type, utilisateur et date — export PDF*
 
 ---
 
 ### Gestion des utilisateurs
 
-<img src="frontend/src/assets/Interface2.png" alt="Gestion des utilisateurs" width="100%"/>
+<img src="frontend/src/assets/IN1.png" alt="Gestion des utilisateurs" width="100%"/>
 
-*Interface d'administration des comptes avec gestion des rôles en temps réel*
+*Administration des comptes : comptes en attente d'activation et comptes actifs avec gestion des rôles*
 
 ---
 
