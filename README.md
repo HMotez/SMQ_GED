@@ -377,3 +377,5 @@ All services communicate through the private `smq_network`. Only Nginx is public
 *Unauthorized use, reproduction or distribution of this project is strictly prohibited.*
 
 </div>
+
+<!-- badge -->
