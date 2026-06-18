@@ -378,4 +378,4 @@ All services communicate through the private `smq_network`. Only Nginx is public
 
 </div>
 
-<!-- badge-17 -->
+<!-- badge-18 -->
